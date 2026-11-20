@@ -1,9 +1,11 @@
+<img src="assets/icon.png" width="96" align="left" alt="">
+
 # UPA3-ANALYZER-CONTROL
 
 Local web GUI for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV export and a log of every bus command.
 
-> **Status:** pre-release (v0.11.2). All measurement programs marked *GETESTET* have been verified on real hardware.
+> **Status:** pre-release (v0.12.0). All measurement programs marked *GETESTET* have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)

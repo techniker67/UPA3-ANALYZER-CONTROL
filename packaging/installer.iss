@@ -34,6 +34,7 @@ Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 UninstallDisplayIcon={app}\{#AppExe}
+SetupIconFile=..\assets\icon.ico
 UninstallDisplayName={#AppName} {#AppVersion}
 ; laufende Software vor dem Ueberschreiben schliessen lassen
 CloseApplications=yes

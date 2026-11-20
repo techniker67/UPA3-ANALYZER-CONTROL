@@ -451,6 +451,13 @@ def make_handler(app):
             if u.path in ("/", "/index.html"):
                 with open(os.path.join(paths.RES_DIR, "index.html"), "rb") as fh:
                     return self._send(200, fh.read(), "text/html; charset=utf-8")
+            if u.path in ("/icon.png", "/favicon.ico"):
+                pfad = os.path.join(paths.RES_DIR, "assets", "icon.png" if u.path == "/icon.png" else "icon.ico")
+                if os.path.exists(pfad):
+                    with open(pfad, "rb") as fh:
+                        return self._send(200, fh.read(), "image/png" if pfad.endswith(".png") else "image/x-icon",
+                                          )
+                return self._send(404, {"error": "kein Icon"})
             if u.path == "/api/state":
                 since = 0
                 for kv in u.query.split("&"):
