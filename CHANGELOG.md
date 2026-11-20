@@ -2,6 +2,14 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.10.0 – 2026-11-20
+- **Prüfling** (Hersteller, Typ, Seriennummer) oben in der Kopfzeile festlegen. Alle folgenden Messungen landen im **Geräteordner** `Messungen/<Hersteller>_<Typ>_<Seriennr>/`:
+  - CSV wie bisher (Kopfzeile jetzt mit Prüfling),
+  - **Diagramm als PNG** (helle Druckdarstellung, deutsche Dezimalkommas) für Frequenzgang, THD+N über f/Pegel, Kanaltrennung,
+  - `messungen.json` mit allen Messungen und Kernergebnissen je Kanal, `geraet.json`.
+- Der Prüfling bleibt bis zur Änderung gespeichert (auch über Neustarts); während einer Messung nicht änderbar. „Kein Prüfling" = Ablage wie bisher direkt in `Messungen/`.
+- Grundlage für das Prüfprotokoll (PDF/DOCX) im nächsten Schritt.
+
 ## 0.9.0 – 2026-11-20
 - **Eigenes Programmfenster** statt Browser (pywebview / Edge-WebView2): startet maximiert in der Bildschirmauflösung, frei veränderbar, Zoom mit Strg + Mausrad bzw. Strg +/−/0. Kein Konsolenfenster mehr in der installierten Version.
 - QUIT und das Fenster-X beenden die Software vollständig; während einer Messung wird beides abgelehnt (erst Stop).
