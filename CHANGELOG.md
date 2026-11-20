@@ -2,6 +2,13 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.9.0 – 2026-11-20
+- **Eigenes Programmfenster** statt Browser (pywebview / Edge-WebView2): startet maximiert in der Bildschirmauflösung, frei veränderbar, Zoom mit Strg + Mausrad bzw. Strg +/−/0. Kein Konsolenfenster mehr in der installierten Version.
+- QUIT und das Fenster-X beenden die Software vollständig; während einer Messung wird beides abgelehnt (erst Stop).
+- Zweiter Start bei laufender Software: Hinweis „läuft bereits".
+- Ohne pywebview (Quellcode-Variante) oder wenn das Fenster nicht startet: wie bisher im Browser. Startoption `--browser` erzwingt den Browser.
+- Build-Test prüft zusätzlich das Programmfenster; GitHub-Bausteine auf aktuelle Versionen.
+
 ## 0.8.3 – 2026-11-20
 - **Windows-Installation:** GitHub baut automatisch eine `Setup.exe` (PyInstaller + Inno Setup) – keine Python-Installation nötig. Startmenü-Eintrag, optionale Desktop-Verknüpfung, Verknüpfung „Messdaten-Ordner", Deinstallation. Installierbar ohne Administratorrechte. Der Datenordner bleibt beim Deinstallieren erhalten.
 - Jeder Bau wird automatisch getestet (Programmstart, Oberfläche, Version, QUIT).

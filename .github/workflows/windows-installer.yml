@@ -23,16 +23,16 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
 
       - name: Abhaengigkeiten
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt pyinstaller
+          pip install -r requirements.txt "pywebview>=5,<7" pyinstaller
 
       - name: Version lesen
         id: ver
@@ -47,17 +47,18 @@ jobs:
 
       - name: Programm bauen (PyInstaller)
         run: >
-          pyinstaller --noconfirm --clean --onedir --console
+          pyinstaller --noconfirm --clean --onedir --windowed
           --name UPA-Analyzer-Control
           --add-data "index.html;."
           --hidden-import serial.tools.list_ports
+          --hidden-import webview.platforms.edgechromium
           upa_server.py
 
-      - name: Starttest (ohne Adapter)
+      - name: Starttest Server (ohne Adapter, ohne Fenster)
         shell: pwsh
         run: |
           $exe = "dist\UPA-Analyzer-Control\UPA-Analyzer-Control.exe"
-          $p = Start-Process -FilePath $exe -ArgumentList "--no-browser","--http","8499" -PassThru -NoNewWindow
+          $p = Start-Process -FilePath $exe -ArgumentList "--no-browser","--http","8499" -PassThru
           $null = $p.Handle
           Start-Sleep -Seconds 6
           $html = (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8499/).Content
@@ -70,6 +71,25 @@ jobs:
           if ($p.ExitCode -ne 0) { throw "Exit-Code $($p.ExitCode)" }
           Write-Host "QUIT OK"
 
+      - name: Starttest Programmfenster
+        shell: pwsh
+        run: |
+          $exe = "dist\UPA-Analyzer-Control\UPA-Analyzer-Control.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList "--http","8498" -PassThru
+          $null = $p.Handle
+          Start-Sleep -Seconds 10
+          if ($p.HasExited) { throw "Programm nach dem Start beendet (Exit $($p.ExitCode))" }
+          $st = Invoke-RestMethod http://127.0.0.1:8498/api/state
+          Write-Host "Server laeuft, Version $($st.app_version)"
+          Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/quit -Body "{}" -ContentType "application/json" | Out-Null
+          if (-not $p.WaitForExit(20000)) { $p.Kill(); throw "QUIT schliesst das Programmfenster nicht" }
+          if ($p.ExitCode -ne 0) { throw "Exit-Code $($p.ExitCode)" }
+          $log = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "UPA-Analyzer-Control\upa_log.txt"
+          Get-Content $log -Tail 6
+          if (Select-String -Path $log -Pattern "Programmfenster nicht verfuegbar" -Quiet) {
+            Write-Host "::warning::Programmfenster startete auf dem Build-Rechner nicht (Browser-Ersatz lief)"
+          } else { Write-Host "Programmfenster OK, QUIT OK" }
+
       - name: Installer bauen (Inno Setup)
         shell: pwsh
         run: |
@@ -80,7 +100,7 @@ jobs:
           Get-ChildItem dist-installer
 
       - name: Setup.exe als Download (Actions)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: UPA-Analyzer-Control-${{ steps.ver.outputs.version }}-Setup
           path: dist-installer/*.exe

@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 import upa_core as core
 import upa_paths as paths
 import upa_programs as progs
+import upa_window as window
 from upa_version import __version__, DATUM, GETESTETE_FIRMWARE
 
 # Speicherorte: siehe upa_paths.py (Programm- und Datenordner getrennt)
@@ -47,6 +48,7 @@ class App:
         self.sweep_meta = {}
         self.last_csv = None
         self.version = ""
+        self.on_quit = None          # vom Programmfenster gesetzt: Fenster schliessen
         self._reset_steps()
 
     # ---- Zustand --------------------------------------------------------
@@ -436,8 +438,15 @@ def make_handler(app):
                     return self._send(409, {"error": "Bitte erst die laufende Messung stoppen"})
                 app.log("Beenden ueber QUIT - Software wird geschlossen.")
                 self._send(200, {"ok": True})
-                # Serverschleife aus einem eigenen Thread beenden (nicht aus dem Handler)
-                threading.Timer(0.5, self.server.shutdown).start()
+                # Serverschleife aus einem eigenen Thread beenden (nicht aus dem Handler),
+                # danach ggf. das Programmfenster schliessen
+                srv = self.server
+
+                def beenden():
+                    srv.shutdown()
+                    if app.on_quit:
+                        app.on_quit()
+                threading.Timer(0.5, beenden).start()
                 return None
             if u.path == "/api/stop":
                 app.stop_flag = True
@@ -473,8 +482,12 @@ def main():
     ap.add_argument("--http", type=int, default=8488, help="HTTP-Port der Oberflaeche")
     ap.add_argument("--listen", default="127.0.0.1",
                     help="127.0.0.1 = nur dieser PC (Standard); 0.0.0.0 = im Netz")
-    ap.add_argument("--no-browser", action="store_true")
+    ap.add_argument("--browser", action="store_true",
+                    help="Oberflaeche im Browser statt im eigenen Programmfenster")
+    ap.add_argument("--no-browser", action="store_true",
+                    help="weder Fenster noch Browser oeffnen (nur Server, z. B. Mini-PC/Test)")
     a = ap.parse_args()
+    fenster = window.available() and not a.browser and not a.no_browser
 
     app = App(a.port, a.addr)
     app.log(f"UPA-Software v{__version__} - Datenordner: {paths.DATA_DIR}")
@@ -486,7 +499,11 @@ def main():
     try:
         srv = Server((a.listen, a.http), make_handler(app))
     except OSError:
-        # meist: Software laeuft schon -> deren Oberflaeche zeigen statt abzubrechen
+        # meist: Software laeuft schon
+        if fenster:
+            window.message_box("Die UPA-Software laeuft bereits.\n\n"
+                               f"(Port {a.http} ist belegt.)")
+            return 0
         print(f"  Port {a.http} ist belegt - die UPA-Software laeuft vermutlich schon.")
         print(f"  Oeffne {url}")
         if not a.no_browser:
@@ -501,6 +518,24 @@ def main():
         print(f"  {m}")
     print("  Beenden: QUIT in der Oberflaeche, dieses Fenster schliessen oder Strg+C")
     print("=" * 60)
+    if fenster:
+        # Server im Hintergrund, Programmfenster im Hauptthread (so verlangt es pywebview)
+        t = threading.Thread(target=srv.serve_forever, daemon=True)
+        t.start()
+        app.log("Oberflaeche im Programmfenster.")
+        if window.run(app, url, f"UPA·3 // Analyzer Control  v{__version__}", paths.data("webview")):
+            srv.shutdown()        # Fenster zu (X oder QUIT) -> Software beenden
+            srv.server_close()
+            print("  UPA-Software beendet.")
+            return 0
+        webbrowser.open(url)      # Fenster ging nicht -> Browser wie bisher
+        try:
+            t.join()
+        except KeyboardInterrupt:
+            srv.shutdown()
+        srv.server_close()
+        print("  UPA-Software beendet.")
+        return 0
     if not a.no_browser:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
     try:
@@ -520,7 +555,11 @@ if __name__ == "__main__":
             raise
         except Exception:
             import traceback
-            traceback.print_exc()
-            input("\nFehler beim Start - Enter druecken zum Schliessen ...")
+            txt = traceback.format_exc()
+            if sys.stdout is None:        # Fenster-Version ohne Konsole
+                window.message_box("Fehler beim Start:\n\n" + txt[-1500:])
+            else:
+                print(txt)
+                input("\nFehler beim Start - Enter druecken zum Schliessen ...")
             sys.exit(1)
     sys.exit(main() or 0)
