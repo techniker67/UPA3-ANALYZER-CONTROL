@@ -189,7 +189,8 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
          ("h1", "1. Prüfling und Messsystem"),
          ("tabelle", ["Parameter", "Wert"],
           [["Hersteller", g["hersteller"]], ["Typ / Modell", g["typ"]],
-           ["Seriennummer", g["seriennr"]], ["Prüfdatum", ", ".join(tage)],
+           ["Seriennummer", g["seriennr"]]] + ([["Auftragsnummer", g["auftrag"]]] if g.get("auftrag") else []) + [
+           ["Prüfdatum", ", ".join(tage)],
            ["Prüfer", firma or "–"],
            ["Messsystem", "R&S UPA Audioanalysator, AR488-GPIB-Adapter"],
            ["Adapter-Firmware", adapter],
@@ -229,7 +230,7 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
 
 
 def dateiname(g):
-    return (f"Pruefprotokoll_{report.ordnername(g)}_"
+    return (f"Pruefprotokoll_{report.geraetename(g)}_"
             f"{datetime.now().strftime('%Y%m%d-%H%M')}")
 
 
@@ -238,6 +239,8 @@ def erstellen(ordner, auswahl=None, bemerkung="", firma="", version=""):
     g, bl = inhalt(ordner, auswahl, bemerkung, firma)
     basis = os.path.join(ordner, dateiname(g))
     kopf = f"Prüfprotokoll  |  {g['hersteller'].upper()} {g['typ']}  |  SN {g['seriennr']}"
+    if g.get("auftrag"):
+        kopf += f"  |  {g['auftrag']}"
     fuss = "  |  ".join(t for t in (firma, f"Prüfprotokoll Audiomessung · UPA-Analyzer-Control v{version}") if t)
     out = []
     if A4 is not None:

@@ -2,6 +2,12 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.13.0 – 2026-11-20
+- **Auftragsnummer** (optional) im Prüfling-Dialog, z. B. `R-20246281650-003`. Ist sie angegeben, heißt der Messordner genau so; die Protokoll-Dateinamen bleiben `Pruefprotokoll_<Hersteller>_<Typ>_<Seriennr>_<Datum>`. Im Protokoll steht die Auftragsnummer in der Kopfzeile und in der Gerätetabelle.
+- **Ablageordner für Messungen** wählbar (Prüfling-Dialog), z. B. ein Netzlaufwerk `\\NAS\Messdaten`. Wird beim Übernehmen geprüft (anlegen + Schreibtest). Leer = `Dokumente\UPA-Analyzer-Control\Messungen`.
+- Ist der Ablageordner bei einer Messung nicht erreichbar, wird lokal gespeichert und im Protokollfenster gewarnt.
+- Vorhandene Einstellung `"ablage"` in `upa_einstellungen.json` wird übernommen.
+
 ## 0.12.0 – 2026-11-20
 - **Eigenes Programm-Icon** im TRON-Look: Sinuskurve auf dem Raster eines analogen Oszilloskop-Bildschirms, Cyan auf Schwarz. Für .exe, Startmenü, Desktop, Taskleiste, Installer und Fenster; vereinfachte Fassung für 16–32 px. Auch in der Kopfzeile und im Startbildschirm.
 

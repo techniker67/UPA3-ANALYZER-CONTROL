@@ -5,7 +5,7 @@
 Local web GUI for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV export and a log of every bus command.
 
-> **Status:** pre-release (v0.12.0). All measurement programs marked *GETESTET* have been verified on real hardware.
+> **Status:** pre-release (v0.13.0). All measurement programs marked *GETESTET* have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -73,7 +73,7 @@ All user data lives in **`Documents/UPA-Analyzer-Control`** (shown in the consol
 |---|---|
 | `upa_einstellungen.json` | company name, last working COM port and GPIB address |
 | `p78_kalibrierung.json` | attenuator calibration (optional, see docs) |
-| `Messungen/` | one CSV per run; with a *device under test* set (manufacturer, type, serial no. — top bar), everything goes into `Messungen/<Manufacturer>_<Type>_<Serial>/` together with a PNG chart per run and `messungen.json` (key results) |
+| `Messungen/` | one CSV per run; with a *device under test* set (manufacturer, type, serial no., optional order number — top bar), everything goes into `Messungen/<Order no.>/` or `Messungen/<Manufacturer>_<Type>_<Serial>/` together with a PNG chart per run, `messungen.json` (key results) and the test reports. The storage folder can be changed to any path, e.g. a network share; if it is unreachable, data is saved locally. |
 | `upa_log.txt` | log of every bus command |
 
 Other locations: start option `--data <folder>`, environment variable `UPA_DATA`, or an empty file named `portable` in the program folder (everything stays in the program folder, e.g. on a USB stick).

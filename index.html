@@ -65,6 +65,9 @@ body.tick .pill.run::before{opacity:.2}
 #dutdlg h2{font:600 20px var(--f);letter-spacing:.4em;color:var(--cy);margin:0 0 6px;text-shadow:0 0 10px var(--cy)}
 #dutdlg .sub{font:12px var(--m);color:var(--mut);margin-bottom:20px;letter-spacing:.04em}
 #dutdlg .f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+#dutdlg .f3.r2{margin-top:14px}
+#dutdlg .f3 .w2{grid-column:span 2}
+#dutdlg .sub2{font:11px var(--m);color:var(--mut);margin-top:10px;min-height:14px;word-break:break-all}
 #dutdlg .ctl{display:flex;gap:12px;justify-content:flex-end;margin-top:22px}
 #dutdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:10px}
 #protdlg{position:fixed;inset:0;background:rgba(1,5,10,.9);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(3px)}
@@ -330,12 +333,17 @@ tr.new td{animation:flash 1s}
 
 <div id="dutdlg"><div class="box">
   <h2>PRÜFLING</h2>
-  <div class="sub">Alle folgenden Messungen werden im Geräteordner gesammelt (CSV, Diagramm, Zusammenfassung) – Grundlage für das Prüfprotokoll.</div>
+  <div class="sub">Alle folgenden Messungen werden in einem eigenen Ordner gesammelt (CSV, Diagramm, Zusammenfassung) – Grundlage für das Prüfprotokoll. Ordnername: Auftragsnummer, sonst Hersteller_Typ_Seriennummer.</div>
   <div class="f3">
     <div><label>Hersteller</label><input id="dHer" maxlength="60" placeholder="z. B. Yamaha"></div>
     <div><label>Typ / Modell</label><input id="dTyp" maxlength="60" placeholder="z. B. CA-V1"></div>
     <div><label>Seriennummer</label><input id="dSn" maxlength="60" placeholder="z. B. 116339"></div>
   </div>
+  <div class="f3 r2">
+    <div><label>Auftragsnummer (optional)</label><input id="dAuf" maxlength="40" placeholder="z. B. R-20246281650-003"></div>
+    <div class="w2"><label>Ablageordner für Messungen</label><input id="dAbl" maxlength="260" placeholder="leer = Dokumente\UPA-Analyzer-Control\Messungen"></div>
+  </div>
+  <div class="sub2" id="dZiel"></div>
   <div class="err" id="dErr"></div>
   <div class="ctl"><button class="btn ghost" id="dNone">Kein Prüfling</button><button class="btn ghost" id="dCancel">Abbrechen</button><button class="btn" id="dOk">Übernehmen</button></div>
 </div></div>
@@ -615,11 +623,23 @@ $("stop").onclick=()=>api("/api/stop",{});
 $("csv").onclick=()=>{location.href="/api/csv";};
 function dutOpen(){ if(S&&S.busy) return; const pr=(S&&S.pruefling)||{};
   $("dHer").value=pr.hersteller||""; $("dTyp").value=pr.typ||""; $("dSn").value=pr.seriennr||""; $("dErr").textContent="";
+  $("dAuf").value=pr.auftrag||""; $("dAbl").value=(S&&S.ablage)||""; dZiel();
   $("dutdlg").classList.add("on"); setTimeout(()=>$("dHer").focus(),50); }
-async function dutSet(body){ const r=await api("/api/pruefling",body);
+function dZiel(){ const basis=$("dAbl").value.trim()||(S&&S.ablage_lokal)||"";
+  const name=$("dAuf").value.trim()||[$("dHer").value,$("dTyp").value,$("dSn").value].map(v=>v.trim()).filter(Boolean).join("_");
+  $("dZiel").textContent=name?("Ordner: "+basis+(basis.includes("/")?"/":"\\")+name):""; }
+["dHer","dTyp","dSn","dAuf","dAbl"].forEach(id=>$(id).addEventListener("input",dZiel));
+async function dutSet(body){
+  const abl=$("dAbl").value.trim();
+  if(abl!==((S&&S.ablage)||"")){
+    $("dErr").textContent="Prüfe Ablageordner …";
+    const a=await api("/api/ablage",{pfad:abl});
+    if(!a.ok){ $("dErr").textContent=a.error||"Ablageordner nicht erreichbar"; return; }
+  }
+  const r=await api("/api/pruefling",body);
   if(!r.ok){ $("dErr").textContent=r.error||"Fehler"; return; } $("dutdlg").classList.remove("on"); }
 $("dut").onclick=dutOpen;
-$("dOk").onclick=()=>dutSet({hersteller:$("dHer").value,typ:$("dTyp").value,seriennr:$("dSn").value});
+$("dOk").onclick=()=>dutSet({hersteller:$("dHer").value,typ:$("dTyp").value,seriennr:$("dSn").value,auftrag:$("dAuf").value});
 $("dNone").onclick=()=>dutSet({});
 $("dCancel").onclick=()=>$("dutdlg").classList.remove("on");
 $("dutdlg").addEventListener("keydown",e=>{ if(e.key==="Enter")$("dOk").click(); if(e.key==="Escape")$("dCancel").click(); });
@@ -629,7 +649,7 @@ async function protOpen(){
   if(!S||S.busy||!S.pruefling) return;
   const j=await (await fetch("/api/protokoll")).json();
   const pr=j.pruefling;
-  $("pSub").textContent=`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr} · Ordner Messungen/${j.ordner}`;
+  $("pSub").textContent=`${pr.auftrag?pr.auftrag+" · ":""}${pr.hersteller} ${pr.typ} · SN ${pr.seriennr} · Ordner ${j.ordner}`;
   $("pErr").textContent=""; $("pFertig").classList.add("hide");
   const f=j.formate||{}; $("pMake").textContent="Erstellen · "+[f.pdf&&"PDF",f.docx&&"DOCX"].filter(Boolean).join(" + ");
   $("pMake").disabled=!(f.pdf||f.docx);
@@ -695,7 +715,7 @@ async function poll(){
     {const o=$("att").querySelector('option[value="p78"]'); if(o){o.disabled=!j.p78; o.textContent=j.p78?"P78 - kalibriert":"P78 - Kalibrierdatei fehlt";}}
     if(wasMeasuring&&j.phase!=="measuring")(j.points.some(p=>p.abbruch)?Snd.denied():Snd.tone(660,990,.12,"sine",.05));
     { const pr=j.pruefling, t=$("dutTxt");
-      if(pr){ t.textContent=`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr}`; t.className="v"; $("dut").title="Geräteordner: Messungen/"+j.pruefling_ordner+" – klicken zum Ändern"; }
+      if(pr){ t.textContent=(pr.auftrag?pr.auftrag+" · ":"")+`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr}`; t.className="v"; $("dut").title="Ordner: "+(j.ablage||j.ablage_lokal)+"\\"+j.pruefling_ordner+" – klicken zum Ändern"; }
       else { t.textContent="KEINER – FESTLEGEN"; t.className="v leer"; } }
     wasMeasuring=j.phase==="measuring"; render();
   }catch(e){$("pgt").textContent="Server getrennt …";}

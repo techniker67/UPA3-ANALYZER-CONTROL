@@ -44,11 +44,16 @@ def pruefling_pruefen(d):
     if not d:
         return None
     pr = {k: re.sub(r"\s+", " ", str(d.get(k, "") or "")).strip()[:60] for k, _ in FELDER}
-    if not any(pr.values()):
+    auftrag = re.sub(r"\s+", "", str(d.get("auftrag", "") or ""))[:40]
+    if not any(pr.values()) and not auftrag:
         return None
     fehlt = [n for k, n in FELDER if not pr[k]]
     if fehlt:
         raise ValueError("Bitte ausfüllen: " + ", ".join(fehlt))
+    if auftrag:
+        if re.search(r'[\\/:*?"<>|]', auftrag):
+            raise ValueError('Auftragsnummer darf keine Zeichen \\ / : * ? " < > | enthalten')
+        pr["auftrag"] = auftrag
     return pr
 
 
@@ -57,25 +62,55 @@ def _sicher(s):
     return re.sub(r"\s+", " ", s) or "unbekannt"
 
 
-def ordnername(pr):
+def geraetename(pr):
+    """Hersteller_Typ_Seriennr – Grundlage der Dateinamen."""
     return "_".join(_sicher(pr[k]) for k, _ in FELDER)
 
 
+def ordnername(pr):
+    """Ordnername: Auftragsnummer (falls angegeben), sonst Hersteller_Typ_Seriennr."""
+    return _sicher(pr["auftrag"]) if pr.get("auftrag") else geraetename(pr)
+
+
+WARNUNG = ""          # letzte Meldung, falls die Ablage nicht erreichbar war
+
+
 def ordner(pr):
-    """Messordner: Geraeteordner oder (ohne Pruefling) Messungen/ direkt."""
-    d = os.path.join(paths.mess_dir(), ordnername(pr)) if pr else paths.mess_dir()
-    os.makedirs(d, exist_ok=True)
+    """Messordner im Ablageordner: Geraete-/Auftragsordner oder (ohne Pruefling)
+    die Ablage direkt. Ist die Ablage (z. B. NAS) nicht erreichbar, wird lokal
+    unter <Datenordner>/Messungen gespeichert."""
+    global WARNUNG
+    WARNUNG = ""
+    basis = paths.mess_dir()
+    d = os.path.join(basis, ordnername(pr)) if pr else basis
+    try:
+        os.makedirs(d, exist_ok=True)
+    except OSError as e:
+        if basis == paths.mess_dir_lokal():
+            raise
+        WARNUNG = f"Ablage {basis} nicht erreichbar ({e.strerror or e}) – lokal gespeichert."
+        lokal = paths.mess_dir_lokal()
+        d = os.path.join(lokal, ordnername(pr)) if pr else lokal
+        os.makedirs(d, exist_ok=True)
     if pr:
         gj = os.path.join(d, "geraet.json")
-        if not os.path.exists(gj):
+        try:
+            with open(gj, encoding="utf-8") as fh:
+                alt = json.load(fh)
+        except Exception:
+            alt = {}
+        neu = dict(pr, angelegt=alt.get("angelegt") or datetime.now().isoformat(timespec="seconds"))
+        if {k: v for k, v in alt.items()} != neu:
             with open(gj, "w", encoding="utf-8") as fh:
-                json.dump(dict(pr, angelegt=datetime.now().isoformat(timespec="seconds")),
-                          fh, ensure_ascii=False, indent=1)
+                json.dump(neu, fh, ensure_ascii=False, indent=1)
     return d
 
 
 def bezeichnung(pr):
-    return f"{pr['hersteller']} {pr['typ']} · SN {pr['seriennr']}" if pr else ""
+    if not pr:
+        return ""
+    t = f"{pr['hersteller']} {pr['typ']} · SN {pr['seriennr']}"
+    return f"{t} · {pr['auftrag']}" if pr.get("auftrag") else t
 
 
 # ---------------------------------------------------------------------------
