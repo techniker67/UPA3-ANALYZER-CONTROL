@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.11.1 – 2026-11-20
+- Prüfprotokoll (PDF und DOCX): jede Messung beginnt auf einer neuen Seite.
+
 ## 0.11.0 – 2026-11-20
 - **Prüfprotokoll** (Schaltfläche ▤ PROTOKOLL): Messungen des Prüflings auswählen, optionale Bemerkung, dann **PDF und DOCX** im Geräteordner erstellen. Inhalt: Prüfling und Messsystem, Ergebnisübersicht, je Messung Einstellungen, Diagramm und Messwerttabelle, Bemerkung, Datum/Unterschrift. Firmenname in Kopf und Fußzeile.
 - Aus dem Dialog: PDF öffnen, Drucken (PDF-Betrachter, Strg+P), DOCX öffnen, Geräteordner öffnen.

@@ -5,7 +5,7 @@ Beide Ausgaben entstehen aus derselben Blockliste und sind damit inhaltsgleich.
 
 Bloecke:  ("titel", text) ("h1", text) ("h2", text) ("p", text) ("klein", text)
           ("kv", [(Name, Wert), ...])  ("tabelle", kopf, zeilen, spaltenanteile)
-          ("bild", pfad)  ("unterschrift", None)
+          ("bild", pfad)  ("unterschrift", None)  ("umbruch", None)
 """
 import csv
 import json
@@ -23,7 +23,7 @@ try:
     from reportlab.lib.units import mm
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
-    from reportlab.platypus import (Image, KeepTogether, Paragraph, SimpleDocTemplate,
+    from reportlab.platypus import (Image, KeepTogether, PageBreak, Paragraph, SimpleDocTemplate,
                                     Spacer, Table, TableStyle)
 except Exception:
     A4 = None
@@ -205,6 +205,7 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
     for n, e in enumerate(ms, 1):
         prog = e["programm"]
         pts = lese_csv(os.path.join(ordner, e["csv"]))
+        b.append(("umbruch", None))          # jede Messung auf neuer Seite
         b.append(("h1", f"{n}. {PROG_NAMEN.get(prog, e.get('name'))}"))
         zeile = f"{_datum(e.get('start'))} · {einstellungen(e)}"
         if e.get("bezeichnung"):
@@ -322,8 +323,11 @@ def pdf(bl, pfad, fuss):
         if art == "h1":
             halten_ende()
             halten_aktiv[0] = True
-        if art in ("tabelle", "kv"):
+        if art in ("tabelle", "kv", "umbruch"):
             halten_ende()
+        if art == "umbruch":
+            story.append(PageBreak())
+            continue
         if art in ("titel", "h1", "p", "klein"):
             ablegen(Paragraph(_esc(blk[1]), st[art]))
             continue
@@ -430,7 +434,9 @@ def als_docx(bl, pfad, fuss):
 
     for blk in bl:
         art = blk[0]
-        if art == "titel":
+        if art == "umbruch":
+            d.add_page_break()
+        elif art == "titel":
             p = d.add_paragraph()
             run = p.add_run(blk[1])
             run.bold = True
