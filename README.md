@@ -3,7 +3,7 @@
 Local web GUI for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV export and a log of every bus command.
 
-> **Status:** pre-release (v0.10.0). All measurement programs marked *GETESTET* have been verified on real hardware.
+> **Status:** pre-release (v0.11.0). All measurement programs marked *GETESTET* have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -29,6 +29,7 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 - **External attenuator support** with a per-channel calibration table (log-f interpolation), e.g. for measuring power amplifiers.
 - Charts (log frequency axis, THD in % or dB), result tables, CSV export with a header containing software version, adapter firmware and all parameters.
 - Free choice of COM port and GPIB address (0–30); the last working values are remembered.
+- **Test report** (PDF + DOCX) per device under test: overview of results, charts, measured values, remarks, signature line — open, print or edit in Word.
 - Robust bus handling: every command that has not been verified on the device is checked individually via serial poll before the measurement is triggered — no endless error loops on the analyzer.
 
 ## Requirements
@@ -53,6 +54,8 @@ pip install -r requirements.txt
 python upa_server.py --port COM4 --addr 7      # Windows
 ./upa_software_starten.sh --port /dev/ttyACM0   # Linux/macOS
 ```
+
+Optional extras (all included in the Windows setup): `pip install pywebview matplotlib reportlab python-docx` — program window, charts, test report.
 
 On Windows you can simply double-click `UPA_Software_starten.bat`. To exit, use **⏻ QUIT** in the top right corner — the console window closes as well.
 The GUI opens in its own program window (maximized, freely resizable, zoom with Ctrl + mouse wheel) if [pywebview](https://pywebview.flowheater.net/) is installed (`pip install pywebview`; included in the Windows setup) — otherwise in your browser at <http://127.0.0.1:8488>. Port and address can also be entered in the start screen.
@@ -86,7 +89,7 @@ More details: [docs/hardware-setup.md](docs/hardware-setup.md) · [docs/measurem
 - **0.8** – separate data folder ✔, Windows installer built automatically on GitHub ✔
 - **0.9** – own program window instead of browser ✔
 - **0.10** – device under test + device folder with charts ✔
-- **0.11** – test report as PDF and DOCX, print
+- **0.11** – test report as PDF and DOCX, print ✔
 - **later** – optional storage on a network share, before/after measurements
 - **1.0** – DOCX test report, first public release
 
