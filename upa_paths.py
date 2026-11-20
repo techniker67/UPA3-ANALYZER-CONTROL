@@ -79,8 +79,22 @@ def cache_dir(name):
     return data(name)
 
 
-def mess_dir():
+# Ablageordner fuer Messungen (Einstellung "ablage", z. B. ein Netzlaufwerk
+# \\NAS\Messdaten). Leer = <Datenordner>/Messungen.
+ABLAGE = ""
+
+
+def set_ablage(pfad):
+    global ABLAGE
+    ABLAGE = str(pfad or "").strip()
+
+
+def mess_dir_lokal():
     return data("Messungen")
+
+
+def mess_dir():
+    return ABLAGE or mess_dir_lokal()
 
 
 def prepare():
@@ -88,7 +102,7 @@ def prepare():
     dem Programmordner KOPIEREN (Originale bleiben unveraendert liegen).
     Liefert eine Liste von Meldungen fuer das Protokoll."""
     meldungen = []
-    os.makedirs(mess_dir(), exist_ok=True)
+    os.makedirs(mess_dir_lokal(), exist_ok=True)
     if os.path.normcase(os.path.abspath(DATA_DIR)) == os.path.normcase(os.path.abspath(PROG_DIR)):
         return meldungen
     for name in UEBERNAHME:

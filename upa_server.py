@@ -51,6 +51,7 @@ class App:
         self.last_csv = None
         self.version = ""
         self.on_quit = None          # vom Programmfenster gesetzt: Fenster schliessen
+        paths.set_ablage(load_settings().get("ablage", ""))
         try:                         # zuletzt festgelegter Pruefling
             self.pruefling = report.pruefling_pruefen(load_settings().get("pruefling"))
         except ValueError:
@@ -98,6 +99,7 @@ class App:
                 "firma": load_settings().get("firma", ""),
                 "pruefling": self.pruefling,
                 "pruefling_ordner": report.ordnername(self.pruefling) if self.pruefling else None,
+                "ablage": paths.ABLAGE, "ablage_lokal": paths.mess_dir_lokal(),
                 "diagramme": report.plt is not None,
                 "limits": {"fmin": FREQ_MIN, "fmax": FREQ_MAX, "umin": LEVEL_MIN,
                            "umax": LEVEL_MAX, "nmax": MAX_POINTS},
@@ -211,9 +213,10 @@ class App:
         meta, pts = self.sweep_meta, list(self.points)
         pr = meta.get("pruefling")
         ziel = report.ordner(pr)
+        if report.WARNUNG:
+            self.log("ACHTUNG: " + report.WARNUNG)
         self.last_csv = write_csv(pts, meta, ziel)
-        rel = os.path.relpath(self.last_csv, paths.DATA_DIR)
-        self.log(f"CSV gespeichert: {rel}")
+        self.log(f"CSV gespeichert: {self.last_csv}")
         if not pr:
             return
         basis = os.path.splitext(self.last_csv)[0]
@@ -244,10 +247,28 @@ class App:
             self.pruefling = pr
         save_settings({"pruefling": pr or {}})
         if pr:
-            report.ordner(pr)
-            self.log(f"Prüfling: {report.bezeichnung(pr)} -> Messungen/{report.ordnername(pr)}")
+            ziel = report.ordner(pr)
+            self.log(f"Prüfling: {report.bezeichnung(pr)} -> {ziel}")
+            if report.WARNUNG:
+                self.log("ACHTUNG: " + report.WARNUNG)
         else:
-            self.log("Kein Prüfling - Messungen landen direkt in Messungen/.")
+            self.log(f"Kein Prüfling - Messungen landen direkt in {paths.mess_dir()}.")
+
+    def set_ablage(self, pfad):
+        """Ablageordner pruefen (anlegen, Schreibtest) und speichern. Leer = lokal."""
+        pfad = str(pfad or "").strip().strip('"')
+        if pfad:
+            try:
+                os.makedirs(pfad, exist_ok=True)
+                test = os.path.join(pfad, ".upa_schreibtest")
+                with open(test, "w") as fh:
+                    fh.write("ok")
+                os.remove(test)
+            except OSError as e:
+                raise ValueError(f"Ablageordner nicht erreichbar/beschreibbar: {pfad} ({e.strerror or e})")
+        paths.set_ablage(pfad)
+        save_settings({"ablage": pfad})
+        self.log(f"Ablageordner: {paths.mess_dir()}")
 
 
 CSV_COLS = ["i", "ch", "x", "f_soll", "f", "u_soll", "u", "u_true", "p_w", "gain", "gain_db",
@@ -478,7 +499,7 @@ def make_handler(app):
                        "kanaele": [c["kanal"] for c in e.get("ergebnis", [])]}
                       for e in protokoll.messungen(ordner)]
                 dateien = sorted(n for n in os.listdir(ordner) if n.startswith("Pruefprotokoll_"))
-                return self._send(200, {"pruefling": pr, "ordner": report.ordnername(pr), "messungen": ms,
+                return self._send(200, {"pruefling": pr, "ordner": ordner, "messungen": ms,
                                         "dateien": dateien, "formate": protokoll.verfuegbar()})
             if u.path == "/api/programs":
                 return self._send(200, progs.PROGRAMS)
@@ -523,6 +544,14 @@ def make_handler(app):
                 if not app.run_prog(prog, p):
                     return self._send(409, {"error": "beschaeftigt"})
                 return self._send(200, {"ok": True})
+            if u.path == "/api/ablage":
+                if app.busy:
+                    return self._send(409, {"error": "Während einer Messung nicht änderbar"})
+                try:
+                    app.set_ablage(body.get("pfad", ""))
+                except ValueError as e:
+                    return self._send(400, {"error": str(e)})
+                return self._send(200, {"ok": True, "ablage": paths.ABLAGE})
             if u.path == "/api/pruefling":
                 if app.busy:
                     return self._send(409, {"error": "Während einer Messung nicht änderbar"})
