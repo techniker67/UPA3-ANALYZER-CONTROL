@@ -107,9 +107,10 @@ The Windows setup is built and tested automatically by GitHub Actions on every c
 This software stands on the shoulders of the open GPIB adapter projects:
 
 - [AR488](https://github.com/Twilight-Logic/AR488) by Twilight-Logic — the original Arduino GPIB adapter firmware with Prologix-compatible `++` commands.
-- [AR488-ESP32](https://github.com/WilheJo/AR488-ESP32) — port of AR488 to the ESP32.
-- [Astralix/AR488-ESP32](https://github.com/Astralix/AR488-ESP32) — further development with ESP32-S2 support, `++spoll` for addresses 0–30 and WiFi; background in the article [AR488 on ESP32 at dc3ax.de](https://dc3ax.de/blog/ar488-esp32-gpib/). Not yet tested with this software.
-- [mikrocontroller.net forum thread](https://www.mikrocontroller.net/topic/574123) (German) — ESP32-S2 GPIB adapter hardware and firmware.
+- [douardda/AR488-ESP32](https://github.com/douardda/AR488-ESP32) — the original port of AR488 to the ESP32.
+- [WilheJo-Org1/AR488](https://github.com/WilheJo-Org1/AR488) — AR488 firmware adapted to the pinout of the ESP32-S2 GPIB adapter from the forum thread below, kept in sync with upstream; the AR488 manual (all `++` commands) is included there.
+- [Astralix/AR488-ESP32](https://github.com/Astralix/AR488-ESP32) — further development with `++spoll` for addresses 0–30 and WiFi; background in the article [AR488 on ESP32 at dc3ax.de](https://dc3ax.de/blog/ar488-esp32-gpib/). Not yet tested with this software.
+- [mikrocontroller.net forum thread](https://www.mikrocontroller.net/topic/574123) (German) — the ESP32-S2 GPIB adapter: hardware, firmware and user experience.
 
 Tested so far with firmware **0.53.26 (JW)**. Feedback with other adapters and firmware versions is welcome — please open an issue.
 
