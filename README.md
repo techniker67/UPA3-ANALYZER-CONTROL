@@ -2,10 +2,10 @@
 
 # UPA3-ANALYZER-CONTROL
 
-Local web GUI for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
-Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV export and a log of every bus command.
+Windows program for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
+Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV files and a printable test report (PDF + DOCX).
 
-> **Status:** pre-release (v0.13.0). All measurement programs marked *GETESTET* have been verified on real hardware.
+> **Status:** pre-release (v0.13.1). All measurement programs marked *GETESTET* (tested) have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -14,90 +14,104 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 
 ## Features
 
-- **Boot check** of the whole chain before measuring: adapter (9 steps incl. GPIB address and stability), remote takeover of the UPA, loopback test measurement at 1 kHz / 0.3 V with frequency plausibility check, and release back to local.
-- **Measurement programs** (left/right/both channels):
+- **Own program window** (maximized, freely resizable, zoom with Ctrl + mouse wheel) — installed with a regular Windows setup, no Python required.
+- **Start-up check of the whole chain**: adapter (9 steps incl. firmware, GPIB address and stability), remote takeover of the UPA, loopback test measurement at 1 kHz / 0.3 V with frequency plausibility check, release back to local.
+- **Measurement programs** for the left, right or both channels:
 
   | Program | Analyzer option | Status |
   |---|---|---|
   | Frequency response (level + measured frequency) | B6 | tested |
-  | Level / Gain at 1 kHz (with power into a given load) | B6 | tested |
+  | Level / gain at a fixed frequency (power into a given load) | B6 | tested |
   | THD+N vs. frequency | B8 | tested |
   | THD+N vs. level (up to clipping) | B8 | tested |
   | Signal-to-noise, unweighted 22 Hz–22 kHz | B6 | tested |
   | Crosstalk vs. frequency | B6 | tested |
   | SINAD, weighted S/N (A/CCIR), wow & flutter, azimuth/phase | – | locked until verified |
 
-- Filters LP 22 kHz / HP 22 Hz, range AUTO (4 digits) or HOLD (3 digits).
-- **External attenuator support** with a per-channel calibration table (log-f interpolation), e.g. for measuring power amplifiers.
-- Charts (log frequency axis, THD in % or dB), result tables, CSV export with a header containing software version, adapter firmware and all parameters.
+- Filters LP 22 kHz / HP 22 Hz, range AUTO (4 digits) or HOLD (3 digits), live charts (log frequency axis, THD+N in % or dB).
+- **Device under test**: enter manufacturer, type and serial number (optionally an order number) — all following measurements are collected in one folder with CSV, chart (PNG) and a summary of the key results.
+- **Test report** as **PDF and DOCX** from the selected measurements: device data, result overview, one page per measurement with settings, chart and measured values, remarks, signature line. Open, print or edit in Word directly from the program.
+- **Storage folder** freely selectable, e.g. a network share; if it is unreachable, data is saved locally and a warning is shown.
+- **External attenuator** with a per-channel calibration table (log-f interpolation), e.g. for power amplifiers.
 - Free choice of COM port and GPIB address (0–30); the last working values are remembered.
-- **Test report** (PDF + DOCX) per device under test: overview of results, charts, measured values, remarks, signature line — open, print or edit in Word.
-- Robust bus handling: every command that has not been verified on the device is checked individually via serial poll before the measurement is triggered — no endless error loops on the analyzer.
+- **Robust bus handling**: every command that has not been verified on the device is checked individually via serial poll before triggering — no endless error loops on the analyzer. Every bus command is logged.
 
 ## Requirements
 
 - R&S UPA audio analyzer with IEC bus (options as listed above)
-- AR488 GPIB adapter (tested: ESP32-S2 build, firmware **0.53.26 (JW)**; other versions run but are flagged in the log)
-- Python 3.9 or newer and `pyserial`
-- Windows, Linux or macOS with a current browser
+- AR488 GPIB adapter — tested: ESP32-S2 build, firmware **0.53.26 (JW)**; other versions run but are flagged in the log
+- Windows 10 or 11 (64 bit). The program window uses Microsoft Edge WebView2, which is part of current Windows versions.
 
-## Installation (Windows)
+## Installation
 
-Download `UPA-Analyzer-Control-<version>-Setup.exe` from [Releases](../../releases) and run it — no Python needed, no administrator rights required.
-The setup creates a Start-menu entry, an optional desktop shortcut and a shortcut to the data folder. Uninstalling keeps your data.
+1. Download `UPA-Analyzer-Control-<version>-Setup.exe` from [Releases](../../releases) and run it — no administrator rights required.
+2. The setup creates a Start-menu entry, an optional desktop shortcut and a shortcut **“Messdaten-Ordner”** (data folder).
+3. Updates: simply install the new version over the old one. Uninstalling keeps your data.
 
-The installer is not code-signed yet: Windows SmartScreen may warn — click *More info* → *Run anyway*.
+The installer is not code-signed yet, so Windows SmartScreen may warn: click *More info* → *Run anyway*.
 
-## Run from source
+## First steps
 
+1. Connect the AR488 adapter (USB) and the UPA (IEC bus). For the start-up check, connect generator output L to analyzer input L (loopback).
+2. Start **UPA-Analyzer-Control**, enter COM port and GPIB address in the start screen and start the initialisation. When all steps are green: *YOUR SYSTEM IS READY*.
+3. Click **PRÜFLING** in the top bar and enter manufacturer, type and serial number (optionally an order number and the storage folder).
+4. Choose a measurement program, set generator level, channels and filters, press **Start**.
+5. Click **▤ PROTOKOLL**, select the measurements and create the test report (PDF + DOCX).
+6. Exit with **⏻ QUIT** (or the window's close button) — the UPA is released to local operation.
 
-```bash
-pip install -r requirements.txt
-python upa_server.py --port COM4 --addr 7      # Windows
-./upa_software_starten.sh --port /dev/ttyACM0   # Linux/macOS
-```
-
-Optional extras (all included in the Windows setup): `pip install pywebview matplotlib reportlab python-docx` — program window, charts, test report.
-
-On Windows you can simply double-click `UPA_Software_starten.bat`. To exit, use **⏻ QUIT** in the top right corner — the console window closes as well.
-The GUI opens in its own program window (maximized, freely resizable, zoom with Ctrl + mouse wheel) if [pywebview](https://pywebview.flowheater.net/) is installed (`pip install pywebview`; included in the Windows setup) — otherwise in your browser at <http://127.0.0.1:8488>. Port and address can also be entered in the start screen.
-
-Options: `--http <port>` (GUI port, default 8488), `--listen 0.0.0.0` (reachable from the network — only in a trusted LAN), `--browser` (use the browser instead of the program window), `--no-browser` (server only).
+Wiring, measurement details and attenuator calibration: [docs/hardware-setup.md](docs/hardware-setup.md) · [docs/measurements.md](docs/measurements.md) · [docs/attenuator-calibration.md](docs/attenuator-calibration.md)
 
 ## Data folder
 
-Program and user data are kept apart, so updates never overwrite your settings, calibration or measurements.
-All user data lives in **`Documents/UPA-Analyzer-Control`** (shown in the console window at start):
+Program and user data are kept apart, so updates never overwrite settings, calibration or measurements.
+User data lives in **`Documents\UPA-Analyzer-Control`**:
 
 | File / folder | Content |
 |---|---|
-| `upa_einstellungen.json` | company name, last working COM port and GPIB address |
-| `p78_kalibrierung.json` | attenuator calibration (optional, see docs) |
-| `Messungen/` | one CSV per run; with a *device under test* set (manufacturer, type, serial no., optional order number — top bar), everything goes into `Messungen/<Order no.>/` or `Messungen/<Manufacturer>_<Type>_<Serial>/` together with a PNG chart per run, `messungen.json` (key results) and the test reports. The storage folder can be changed to any path, e.g. a network share; if it is unreachable, data is saved locally. |
+| `upa_einstellungen.json` | company name, storage folder, last COM port, GPIB address and device under test |
+| `p78_kalibrierung.json` | attenuator calibration (optional) |
+| `Messungen\` | default storage folder: one subfolder per device under test (`<order no.>` or `<manufacturer>_<type>_<serial>`) with CSV files, charts, `messungen.json` and test reports |
 | `upa_log.txt` | log of every bus command |
 
-Other locations: start option `--data <folder>`, environment variable `UPA_DATA`, or an empty file named `portable` in the program folder (everything stays in the program folder, e.g. on a USB stick).
-On first start, settings and calibration found in the program folder are **copied** to the data folder; the originals are left untouched.
+**Company name:** copy `upa_einstellungen.beispiel.json` to `upa_einstellungen.json` in the data folder and enter your company name — it appears in the program, in every CSV and in the test report.
+**Start-up sound:** an MP3 file with “ready” in its name in the data folder is played when the system is ready; otherwise speech synthesis is used.
 
-## Configuration (optional)
+## Run from source (developers)
 
-Copy `upa_einstellungen.beispiel.json` to `upa_einstellungen.json` in the data folder and enter your company name — it is shown in the GUI and written into every CSV.
-An MP3 file with “ready” in its name placed in the data folder (or the program folder) is played when the system is ready; otherwise speech synthesis is used.
+Requires Python 3.9 or newer.
 
-More details: [docs/hardware-setup.md](docs/hardware-setup.md) · [docs/measurements.md](docs/measurements.md) · [docs/attenuator-calibration.md](docs/attenuator-calibration.md)
+```bash
+pip install -r requirements.txt                          # pyserial
+pip install pywebview matplotlib reportlab python-docx   # program window, charts, test report
+python upa_server.py --port COM4 --addr 7
+```
+
+Without the optional packages the program still runs: the GUI then opens in the browser at <http://127.0.0.1:8488>, and charts/test reports are unavailable.
+On Windows, `UPA_Software_starten.bat` starts it with a console window; on Linux/macOS use `./upa_software_starten.sh --port /dev/ttyACM0`.
+
+Start options:
+
+| Option | Meaning |
+|---|---|
+| `--port`, `--addr` | COM port and GPIB address (otherwise the last working values) |
+| `--browser` | use the browser instead of the program window |
+| `--no-browser` | server only, no window (e.g. headless mini PC) |
+| `--http <port>` | port of the internal web server (default 8488) |
+| `--listen 0.0.0.0` | reachable from the network — only in a trusted LAN |
+| `--data <folder>` | other data folder (also: environment variable `UPA_DATA`, or an empty file `portable` in the program folder) |
+
+The Windows setup is built and tested automatically by GitHub Actions on every change — see [docs/release.md](docs/release.md).
 
 ## Roadmap
 
-- **0.8** – separate data folder ✔, Windows installer built automatically on GitHub ✔
-- **0.9** – own program window instead of browser ✔
-- **0.10** – device under test + device folder with charts ✔
-- **0.11** – test report as PDF and DOCX, print ✔
-- **later** – optional storage on a network share, before/after measurements
-- **1.0** – DOCX test report, first public release
+- English user interface
+- Weighted S/N (A/CCIR), SINAD, wow & flutter, azimuth/phase — once verified on a real device
+- Before/after measurements in the test report
+- Code-signed installer
 
 ## Disclaimer
 
-This is an independent hobby/workshop project. It is **not affiliated with or endorsed by Rohde & Schwarz**; “Rohde & Schwarz” and “UPA” are trademarks of their respective owners.
+This is an independent workshop project. It is **not affiliated with or endorsed by Rohde & Schwarz**; “Rohde & Schwarz” and “UPA” are trademarks of their respective owners.
 The software sends remote-control commands to your instrument. Use it at your own risk — see [LICENSE](LICENSE).
 Service manuals and other R&S documents are not included and must be obtained separately.
 
@@ -105,11 +119,15 @@ Service manuals and other R&S documents are not included and must be obtained se
 
 ## Deutsch
 
-Lokale Web-Oberfläche zur Steuerung des **R&S UPA Audioanalysators** über einen **AR488-GPIB-Adapter**. Gedacht für den Reparaturtisch: Frequenzgang, Verstärkung, THD+N, Störabstand und Kanaltrennung mit Diagrammen, CSV-Export und Protokoll.
+Windows-Programm zur Steuerung des **R&S UPA Audioanalysators** über einen **AR488-GPIB-Adapter** – für den Reparaturtisch: Frequenzgang, Verstärkung, THD+N, Störabstand und Kanaltrennung mit Diagrammen, CSV-Dateien und Prüfprotokoll (PDF + DOCX).
 
-**Installation:** `Setup.exe` unter [Releases](../../releases) herunterladen und starten (ohne Python, ohne Administratorrechte). **Aus dem Quellcode:** `pip install -r requirements.txt`, dann `UPA_Software_starten.bat` doppelklicken (oder `python upa_server.py --port COM4 --addr 7`). Die Oberfläche öffnet sich unter <http://127.0.0.1:8488>; COM-Port und GPIB-Adresse lassen sich auch im Startfenster einstellen.
+- **Installation:** `Setup.exe` unter [Releases](../../releases) herunterladen und starten – ohne Python, ohne Administratorrechte. Updates einfach drüber installieren; Daten bleiben erhalten.
+- **Start:** über das Startmenü „UPA-Analyzer-Control". Im Startfenster COM-Port und GPIB-Adresse eintragen, initialisieren (dafür Generator L auf Eingang L stecken).
+- **Prüfling** (Hersteller, Typ, Seriennummer, optional Auftragsnummer und Ablageordner) in der Kopfzeile festlegen – alle Messungen landen dann in einem eigenen Ordner.
+- **▤ PROTOKOLL** erstellt das Prüfprotokoll als PDF und DOCX; Drucken direkt aus dem Programm.
+- **Daten:** `Dokumente\UPA-Analyzer-Control` (Einstellungen, Kalibrierung, Messungen, Protokoll); der Ablageordner für Messungen ist frei wählbar, z. B. ein NAS.
 
-Einstellungen, Kalibrierung, Messungen und Protokoll liegen im Ordner `Dokumente/UPA-Analyzer-Control`. Die Oberfläche ist derzeit deutsch. Getestet mit UPA3 und AR488 (ESP32-S2, Firmware 0.53.26 (JW)). Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.
+Getestet mit UPA3 und AR488 (ESP32-S2, Firmware 0.53.26 (JW)). Die Oberfläche ist derzeit deutsch. Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.
 
 ---
 

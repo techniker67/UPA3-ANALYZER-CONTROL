@@ -2,6 +2,10 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.13.1 – 2026-11-21
+- Taskleiste zeigt jetzt das Programm-Icon: Fenster-Icon wird direkt gesetzt, eigene AppUserModelID für Programm und Verknüpfungen (vorher erschien teils das Standard-Icon).
+- README komplett überarbeitet: Installation und erste Schritte mit dem Programmfenster; Browser/Quellcode nur noch im Entwickler-Abschnitt.
+
 ## 0.13.0 – 2026-11-20
 - **Auftragsnummer** (optional) im Prüfling-Dialog, z. B. `R-20246281650-003`. Ist sie angegeben, heißt der Messordner genau so; die Protokoll-Dateinamen bleiben `Pruefprotokoll_<Hersteller>_<Typ>_<Seriennr>_<Datum>`. Im Protokoll steht die Auftragsnummer in der Kopfzeile und in der Gerätetabelle.
 - **Ablageordner für Messungen** wählbar (Prüfling-Dialog), z. B. ein Netzlaufwerk `\\NAS\Messdaten`. Wird beim Übernehmen geprüft (anlegen + Schreibtest). Leer = `Dokumente\UPA-Analyzer-Control\Messungen`.
