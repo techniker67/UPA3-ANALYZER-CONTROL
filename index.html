@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <title>UPA·3 // Audio Analyzer Control</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%221%22 y=%221%22 width=%2214%22 height=%2214%22 fill=%22none%22 stroke=%22%2300e5ff%22 stroke-width=%222%22/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="/icon.png">
 <style>
 :root{
   --bg:#01050a; --panel:rgba(4,20,32,.72);
@@ -25,6 +25,8 @@ body{background:
 /* Header */
 header{display:flex;align-items:center;gap:22px;border-bottom:1px solid var(--cyd);
   box-shadow:0 1px 0 rgba(0,229,255,.25),0 8px 24px -16px var(--cy);padding:0 4px}
+.appicon{width:40px;height:40px;margin-right:-8px;filter:drop-shadow(0 0 8px rgba(0,229,255,.45))}
+.booticon{width:84px;height:84px;display:block;margin:0 auto 18px;filter:drop-shadow(0 0 18px rgba(0,229,255,.5))}
 .logo{font-size:21px;letter-spacing:.32em;font-weight:600;color:var(--cy);text-shadow:0 0 8px var(--cy),0 0 22px rgba(0,229,255,.5);white-space:nowrap}
 .logo small{display:block;font-size:10px;letter-spacing:.42em;color:var(--mut);text-shadow:none;margin-top:2px}
 .logo .ver{font:600 10px var(--m);letter-spacing:.08em;color:var(--or);border:1px solid rgba(255,155,47,.55);padding:2px 6px;margin-left:12px;vertical-align:4px;text-shadow:none}
@@ -220,7 +222,7 @@ tr.new td{animation:flash 1s}
 <body>
 <div class="app">
   <header>
-    <div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
+    <img class="appicon" src="/icon.png" alt=""><div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
     <div class="dut" id="dut" title="Prüfling festlegen – Messungen werden im Geräteordner gesammelt"><span class="k">PRÜFLING</span><span class="v leer" id="dutTxt">KEINER – FESTLEGEN</span><span class="e">✎</span></div>
     <div class="pills"><span class="pill" id="pAd">ADAPTER</span><span class="pill" id="pUp">UPA</span><span class="pill" id="pMe">MESSUNG</span></div>
     <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="prot" title="Prüfprotokoll (PDF + DOCX) aus den Messungen des Prüflings">▤ PROTOKOLL</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn quit" id="quit" title="UPA freigeben, Software beenden und Fenster schliessen">⏻ QUIT</button></div>
@@ -310,7 +312,7 @@ tr.new td{animation:flash 1s}
 
 <div id="boot">
   <div class="bootbox">
-    <h1 class="boottitle">SYSTEM-INITIALISIERUNG</h1>
+    <img class="booticon" src="/icon.png" alt=""><h1 class="boottitle">SYSTEM-INITIALISIERUNG</h1>
     <div class="bootsub">ADAPTER-CHECK → UPA-VERBINDUNG → MESSUNG FREIGEBEN</div>
     <div class="ring"><b id="ringTxt">0/15</b></div>
     <div class="cols"><div><h4>AR488 ADAPTER</h4><div id="sA"></div></div><div><h4>R&amp;S UPA3</h4><div id="sU"></div></div></div>

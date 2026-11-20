@@ -50,6 +50,9 @@ jobs:
           pyinstaller --noconfirm --clean --onedir --windowed
           --name UPA-Analyzer-Control
           --add-data "index.html;."
+          --add-data "assets/icon.png;assets"
+          --add-data "assets/icon.ico;assets"
+          --icon assets/icon.ico
           --hidden-import serial.tools.list_ports
           --hidden-import webview.platforms.edgechromium
           --exclude-module tkinter

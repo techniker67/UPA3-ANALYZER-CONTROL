@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.12.0 – 2026-11-20
+- **Eigenes Programm-Icon** im TRON-Look: Sinuskurve auf dem Raster eines analogen Oszilloskop-Bildschirms, Cyan auf Schwarz. Für .exe, Startmenü, Desktop, Taskleiste, Installer und Fenster; vereinfachte Fassung für 16–32 px. Auch in der Kopfzeile und im Startbildschirm.
+
 ## 0.11.2 – 2026-11-20
 - Prüfprotokoll im Hausstil der Reparaturberichte: Calibri, Akzentfarbe #2E5A88, Kopfzeilen der Tabellen weiß auf Blau, Zebrastreifen, feine Rahmen, Kopfzeile mit Gerät und Linie, Fußzeile „Seite x von y | Firma | …", nummerierte Abschnitte (1. Prüfling und Messsystem, 2. Ergebnisübersicht, 3.x Messergebnisse, 4. Bemerkung), 2 cm Rand.
 - DOCX mit echten Überschrift-Formaten (Navigation in Word), festen Spaltenbreiten und wiederholter Tabellenkopfzeile.
