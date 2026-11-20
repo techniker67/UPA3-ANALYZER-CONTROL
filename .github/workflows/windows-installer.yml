@@ -32,7 +32,7 @@ jobs:
       - name: Abhaengigkeiten
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt "pywebview>=5,<7" matplotlib pyinstaller
+          pip install -r requirements.txt "pywebview>=5,<7" matplotlib reportlab python-docx pyinstaller
 
       - name: Version lesen
         id: ver
@@ -53,9 +53,10 @@ jobs:
           --hidden-import serial.tools.list_ports
           --hidden-import webview.platforms.edgechromium
           --exclude-module tkinter
+          --collect-data docx
           upa_server.py
 
-      - name: Selbsttest Diagramm (matplotlib in der .exe)
+      - name: Selbsttest Diagramm + Pruefprotokoll in der .exe
         shell: pwsh
         run: |
           $exe = "dist\UPA-Analyzer-Control\UPA-Analyzer-Control.exe"
@@ -64,6 +65,11 @@ jobs:
           $png = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "UPA-Analyzer-Control\selbsttest\selbsttest_frequenzgang.png"
           if (-not (Test-Path $png)) { throw "Diagramm fehlt" }
           Write-Host "Diagramm OK: $((Get-Item $png).Length) Bytes"
+          $prot = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "UPA-Analyzer-Control\selbsttest\protokoll"
+          $pdf = Get-ChildItem $prot -Filter "Pruefprotokoll_*.pdf"
+          $dx = Get-ChildItem $prot -Filter "Pruefprotokoll_*.docx"
+          if (-not $pdf -or -not $dx) { throw "Pruefprotokoll PDF/DOCX fehlt" }
+          Write-Host "Protokoll OK: $($pdf.Name) ($($pdf.Length) Bytes), $($dx.Name) ($($dx.Length) Bytes)"
 
       - name: Starttest Server (ohne Adapter, ohne Fenster)
         shell: pwsh

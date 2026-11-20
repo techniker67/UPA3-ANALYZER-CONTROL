@@ -24,6 +24,7 @@ import upa_core as core
 import upa_paths as paths
 import upa_programs as progs
 import upa_report as report
+import upa_protokoll as protokoll
 import upa_window as window
 from upa_version import __version__, DATUM, GETESTETE_FIRMWARE
 
@@ -279,6 +280,19 @@ def write_csv(points, meta, ziel=None):
     return path
 
 
+def oeffnen(pfad, drucken=False):
+    """Datei/Ordner mit dem Standardprogramm oeffnen bzw. drucken (Windows)."""
+    if os.name != "nt":
+        return False, f"Bitte selbst öffnen: {pfad}"
+    try:
+        # Drucken bewusst ueber den PDF-Betrachter (Strg+P): dort Drucker und
+        # Seiten waehlbar - kein stilles Drucken auf den Standarddrucker
+        os.startfile(pfad)
+        return True, "PDF geöffnet – mit Strg+P drucken." if drucken else ""
+    except OSError as e:
+        return False, f"Öffnen nicht möglich: {e}"
+
+
 def find_sound():
     """Erste MP3 mit 'ready' im Namen (Datenordner, Programmordner, dessen Elternordner)."""
     for d in (paths.DATA_DIR, paths.PROG_DIR, os.path.dirname(paths.PROG_DIR)):
@@ -446,6 +460,19 @@ def make_handler(app):
                         except ValueError:
                             pass
                 return self._send(200, app.state(since))
+            if u.path == "/api/protokoll":
+                pr = app.pruefling
+                if not pr:
+                    return self._send(200, {"pruefling": None, "messungen": [], "dateien": []})
+                ordner = report.ordner(pr)
+                ms = [{"csv": e["csv"], "name": protokoll.PROG_NAMEN.get(e["programm"], e.get("name")),
+                       "start": e.get("start"), "abgebrochen": e.get("abgebrochen"),
+                       "bezeichnung": e.get("bezeichnung", ""),
+                       "kanaele": [c["kanal"] for c in e.get("ergebnis", [])]}
+                      for e in protokoll.messungen(ordner)]
+                dateien = sorted(n for n in os.listdir(ordner) if n.startswith("Pruefprotokoll_"))
+                return self._send(200, {"pruefling": pr, "ordner": report.ordnername(pr), "messungen": ms,
+                                        "dateien": dateien, "formate": protokoll.verfuegbar()})
             if u.path == "/api/programs":
                 return self._send(200, progs.PROGRAMS)
             if u.path == "/api/ports":
@@ -497,6 +524,31 @@ def make_handler(app):
                 except ValueError as e:
                     return self._send(400, {"error": str(e)})
                 return self._send(200, {"ok": True, "pruefling": app.pruefling})
+            if u.path == "/api/protokoll":
+                pr = app.pruefling
+                if not pr:
+                    return self._send(400, {"error": "Kein Prüfling festgelegt"})
+                try:
+                    dateien = protokoll.erstellen(report.ordner(pr), body.get("auswahl") or None,
+                                                  str(body.get("bemerkung", ""))[:2000],
+                                                  load_settings().get("firma", ""), __version__)
+                except Exception as e:
+                    app.log(f"Prüfprotokoll nicht erstellt: {e}")
+                    return self._send(400, {"error": str(e)})
+                app.log("Prüfprotokoll erstellt: " + ", ".join(dateien))
+                return self._send(200, {"ok": True, "dateien": dateien})
+            if u.path == "/api/oeffnen":
+                # nur Dateien im Geraeteordner bzw. der Ordner selbst; nur auf diesem Rechner
+                pr = app.pruefling
+                if not pr:
+                    return self._send(400, {"error": "Kein Prüfling festgelegt"})
+                ordner = report.ordner(pr)
+                name = os.path.basename(str(body.get("datei", "")))
+                ziel = os.path.join(ordner, name) if name else ordner
+                if not os.path.exists(ziel):
+                    return self._send(404, {"error": "Datei nicht gefunden"})
+                ok, hinweis = oeffnen(ziel, drucken=bool(body.get("drucken")))
+                return self._send(200 if ok else 400, {"ok": ok, "hinweis": hinweis, "error": None if ok else hinweis})
             if u.path == "/api/quit":
                 if app.busy:
                     return self._send(409, {"error": "Bitte erst die laufende Messung stoppen"})
@@ -554,6 +606,7 @@ def main():
     a = ap.parse_args()
     if a.selbsttest:              # Build-Pruefung: Diagramm-Erzeugung ohne Geraet
         print("Selbsttest:", report.selbsttest(paths.data("selbsttest")))
+        print("Selbsttest Protokoll:", protokoll.selbsttest(paths.data("selbsttest", "protokoll")))
         return 0
     fenster = window.available() and not a.browser and not a.no_browser
 
@@ -591,7 +644,7 @@ def main():
         t = threading.Thread(target=srv.serve_forever, daemon=True)
         t.start()
         app.log("Oberflaeche im Programmfenster.")
-        if window.run(app, url, f"UPA·3 // Analyzer Control  v{__version__}", paths.data("webview")):
+        if window.run(app, url, f"UPA·3 // Analyzer Control  v{__version__}", paths.cache_dir("webview")):
             srv.shutdown()        # Fenster zu (X oder QUIT) -> Software beenden
             srv.server_close()
             print("  UPA-Software beendet.")

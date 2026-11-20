@@ -70,6 +70,15 @@ def data(*teile):
     return os.path.join(DATA_DIR, *teile)
 
 
+def cache_dir(name):
+    """Interne Zwischenspeicher (z. B. Programmfenster) - nicht im Datenordner,
+    damit dort nur Dateien des Benutzers liegen. Windows: %LOCALAPPDATA%."""
+    basis = os.environ.get("LOCALAPPDATA")
+    if os.name == "nt" and basis and DATA_DIR != PROG_DIR:
+        return os.path.join(basis, APP_NAME, name)
+    return data(name)
+
+
 def mess_dir():
     return data("Messungen")
 

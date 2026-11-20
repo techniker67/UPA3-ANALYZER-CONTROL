@@ -65,6 +65,23 @@ body.tick .pill.run::before{opacity:.2}
 #dutdlg .f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
 #dutdlg .ctl{display:flex;gap:12px;justify-content:flex-end;margin-top:22px}
 #dutdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:10px}
+#protdlg{position:fixed;inset:0;background:rgba(1,5,10,.9);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(3px)}
+#protdlg.on{display:flex}
+#protdlg .box{width:min(900px,94vw);max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--cy);background:rgba(2,11,18,.97);padding:24px 28px;box-shadow:0 0 40px -10px var(--cy)}
+#protdlg h2{font:600 20px var(--f);letter-spacing:.4em;color:var(--cy);margin:0 0 4px;text-shadow:0 0 10px var(--cy)}
+#protdlg .sub{font:12px var(--m);color:var(--mut);margin-bottom:14px}
+#protdlg .liste{overflow:auto;min-height:80px;max-height:38vh;border:1px solid var(--cyd);padding:4px 0;margin-bottom:12px}
+#protdlg .m{display:grid;grid-template-columns:28px 1.6fr 1fr 1.4fr;gap:8px;align-items:center;padding:5px 10px;font:12.5px var(--m);color:var(--txt);cursor:pointer}
+#protdlg .m{text-transform:none;letter-spacing:normal;margin:0}
+#protdlg .m:hover{background:rgba(0,229,255,.06)}
+#protdlg .m input{width:16px;height:16px;accent-color:var(--cy)}
+#protdlg .m .ab{color:var(--or)}
+#protdlg .m small{color:var(--mut)}
+#protdlg textarea{width:100%;height:58px;background:#020b12;border:1px solid var(--cyd);color:var(--cy2);font:13px var(--m);padding:6px 9px;resize:vertical;outline:none}
+#protdlg .ctl{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
+#protdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:8px}
+#protdlg .fertig{font:12px var(--m);color:var(--grn);margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+#protdlg .fertig .btn{padding:5px 12px;font-size:11px}
 #bye{position:fixed;inset:0;background:rgba(1,5,10,.97);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:20}
 #bye.on{display:flex}
 #bye h1{font:600 26px var(--f);letter-spacing:.45em;color:var(--red);text-shadow:0 0 14px var(--red);margin:0}
@@ -206,7 +223,7 @@ tr.new td{animation:flash 1s}
     <div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
     <div class="dut" id="dut" title="Prüfling festlegen – Messungen werden im Geräteordner gesammelt"><span class="k">PRÜFLING</span><span class="v leer" id="dutTxt">KEINER – FESTLEGEN</span><span class="e">✎</span></div>
     <div class="pills"><span class="pill" id="pAd">ADAPTER</span><span class="pill" id="pUp">UPA</span><span class="pill" id="pMe">MESSUNG</span></div>
-    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn quit" id="quit" title="UPA freigeben, Software beenden und Fenster schliessen">⏻ QUIT</button></div>
+    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="prot" title="Prüfprotokoll (PDF + DOCX) aus den Messungen des Prüflings">▤ PROTOKOLL</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn quit" id="quit" title="UPA freigeben, Software beenden und Fenster schliessen">⏻ QUIT</button></div>
   </header>
 
   <nav class="menu" id="menu"><div class="mt">MESS-<br>PROGRAMM<small>KATALOG 19.11.</small></div></nav>
@@ -319,6 +336,17 @@ tr.new td{animation:flash 1s}
   </div>
   <div class="err" id="dErr"></div>
   <div class="ctl"><button class="btn ghost" id="dNone">Kein Prüfling</button><button class="btn ghost" id="dCancel">Abbrechen</button><button class="btn" id="dOk">Übernehmen</button></div>
+</div></div>
+<div id="protdlg"><div class="box">
+  <h2>PRÜFPROTOKOLL</h2>
+  <div class="sub" id="pSub"></div>
+  <label>Messungen für das Protokoll</label>
+  <div class="liste" id="pListe"></div>
+  <label>Bemerkung (optional)</label>
+  <textarea id="pBem" maxlength="2000" placeholder="z. B. Messung nach Reparatur, Lautstärkeregler auf Maximum, 8 Ω Last"></textarea>
+  <div class="err" id="pErr"></div>
+  <div class="fertig hide" id="pFertig"></div>
+  <div class="ctl"><button class="btn ghost" id="pOrdner">Ordner öffnen</button><button class="btn ghost" id="pClose">Schließen</button><button class="btn" id="pMake">Erstellen · PDF + DOCX</button></div>
 </div></div>
 <div id="bye"><h1>SYSTEM SHUTDOWN</h1><p id="byeTxt">UPA-Software beendet · UPA freigegeben</p><p>Dieses Browserfenster kann geschlossen werden.</p></div>
 
@@ -526,7 +554,7 @@ function render(){
   $("ringTxt").textContent=`${S.steps.filter(s=>s.status==="ok").length}/${S.steps.length}`;
   S.steps.forEach(s=>{if(prevStatus[s.id]!==s.status){if(bootActive&&s.status==="ok")Snd.blip();prevStatus[s.id]=s.status;}});
   $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
-  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; $("reboot").disabled=S.busy; $("quit").disabled=S.busy; $("dut").classList.toggle("dis",!!S.busy);
+  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; $("reboot").disabled=S.busy; $("quit").disabled=S.busy; $("dut").classList.toggle("dis",!!S.busy); $("prot").disabled=S.busy||!S.pruefling;
   const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
   if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
   else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
@@ -593,6 +621,51 @@ $("dOk").onclick=()=>dutSet({hersteller:$("dHer").value,typ:$("dTyp").value,seri
 $("dNone").onclick=()=>dutSet({});
 $("dCancel").onclick=()=>$("dutdlg").classList.remove("on");
 $("dutdlg").addEventListener("keydown",e=>{ if(e.key==="Enter")$("dOk").click(); if(e.key==="Escape")$("dCancel").click(); });
+// ---- Pruefprotokoll
+function dt(iso){ try{ const d=new Date(iso); return d.toLocaleDateString("de-DE")+" "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); }catch(e){ return iso||""; } }
+async function protOpen(){
+  if(!S||S.busy||!S.pruefling) return;
+  const j=await (await fetch("/api/protokoll")).json();
+  const pr=j.pruefling;
+  $("pSub").textContent=`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr} · Ordner Messungen/${j.ordner}`;
+  $("pErr").textContent=""; $("pFertig").classList.add("hide");
+  const f=j.formate||{}; $("pMake").textContent="Erstellen · "+[f.pdf&&"PDF",f.docx&&"DOCX"].filter(Boolean).join(" + ");
+  $("pMake").disabled=!(f.pdf||f.docx);
+  if(!(f.pdf||f.docx)) $("pErr").textContent="Für das Protokoll fehlen reportlab/python-docx (in der installierten Version enthalten).";
+  $("pListe").innerHTML = j.messungen.length ? j.messungen.slice().reverse().map(m=>
+    `<label class="m"><input type="checkbox" value="${esc(m.csv)}" ${m.abgebrochen?"":"checked"}>`+
+    `<span>${esc(m.name)}${m.abgebrochen?' <span class="ab">· abgebrochen</span>':""}</span>`+
+    `<span>${esc(m.kanaele.join(", "))}</span><small>${dt(m.start)}${m.bezeichnung?" · "+esc(m.bezeichnung):""}</small></label>`).join("")
+    : '<div class="m"><span></span><small>Noch keine Messungen für diesen Prüfling.</small></div>';
+  if(j.dateien.length) zeigeDateien(j.dateien.slice(-2), "Vorhanden:");
+  $("protdlg").classList.add("on");
+}
+function zeigeDateien(dateien, titel){
+  const pdf=dateien.find(n=>n.endsWith(".pdf")), dx=dateien.find(n=>n.endsWith(".docx"));
+  $("pFertig").innerHTML=`<span>${titel} ${dateien.map(esc).join(" · ")}</span>`+
+    (pdf?`<button class="btn ghost" data-o="${esc(pdf)}">PDF öffnen</button><button class="btn ghost" data-p="${esc(pdf)}">Drucken</button>`:"")+
+    (dx?`<button class="btn ghost" data-o="${esc(dx)}">DOCX öffnen</button>`:"");
+  $("pFertig").classList.remove("hide");
+  $("pFertig").querySelectorAll("button").forEach(b=>b.onclick=()=>oeffne(b.dataset.o||b.dataset.p, !!b.dataset.p));
+}
+async function oeffne(datei, drucken){
+  const r=await api("/api/oeffnen",{datei, drucken});
+  $("pErr").textContent = r.ok ? (r.hinweis||"") : (r.error||"Öffnen nicht möglich");
+  $("pErr").style.color = r.ok ? "var(--cy2)" : "";
+}
+$("prot").onclick=protOpen;
+$("pClose").onclick=()=>$("protdlg").classList.remove("on");
+$("pOrdner").onclick=()=>oeffne("", false);
+$("pMake").onclick=async()=>{
+  const auswahl=[...$("pListe").querySelectorAll("input:checked")].map(i=>i.value);
+  if(!auswahl.length){ $("pErr").textContent="Bitte mindestens eine Messung auswählen."; return; }
+  $("pMake").disabled=true; $("pErr").style.color=""; $("pErr").textContent="Erstelle Protokoll …";
+  const r=await api("/api/protokoll",{auswahl, bemerkung:$("pBem").value});
+  $("pMake").disabled=false;
+  if(!r.ok){ $("pErr").textContent=r.error||"Fehler"; return; }
+  $("pErr").textContent=""; zeigeDateien(r.dateien, "✓ Erstellt:");
+};
+$("protdlg").addEventListener("keydown",e=>{ if(e.key==="Escape")$("pClose").click(); });
 let quitting=false;
 $("quit").onclick=async()=>{
   if(S&&S.busy){ alert("Bitte erst die laufende Messung stoppen."); return; }
