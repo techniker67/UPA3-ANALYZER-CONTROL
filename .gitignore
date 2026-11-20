@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.spec
+
+# Local settings and device-specific calibration (never commit)
+upa_einstellungen.json
+p78_kalibrierung.json
+*_kalibrierung.json
+!*.beispiel.json
+
+# Measurements, logs, sound
+Messungen/
+*.csv
+upa_log.txt
+*_log.txt
+*.mp3
+
+# Manuals / vendor documents
+*.pdf
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

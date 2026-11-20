@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<title>UPA·3 // Audio Analyzer Control</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 16 16%22%3E%3Crect x=%221%22 y=%221%22 width=%2214%22 height=%2214%22 fill=%22none%22 stroke=%22%2300e5ff%22 stroke-width=%222%22/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#01050a; --panel:rgba(4,20,32,.72);
+  --cy:#00e5ff; --cy2:#6ff6ff; --cyd:#0a7f93; --cydim:rgba(0,229,255,.18);
+  --or:#ff9b2f; --red:#ff3b4e; --grn:#3dffb5; --txt:#c9f6ff; --mut:#5d8a98;
+  --f:"Bahnschrift","DIN Alternate","Segoe UI",system-ui,sans-serif;
+  --m:"Consolas","Cascadia Mono","DejaVu Sans Mono",monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:var(--f)}
+body{background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,229,255,.10), transparent 60%),
+    linear-gradient(rgba(0,229,255,.045) 1px, transparent 1px) 0 0/40px 40px,
+    linear-gradient(90deg, rgba(0,229,255,.045) 1px, transparent 1px) 0 0/40px 40px, var(--bg);
+  overflow:hidden}
+.app{display:grid;grid-template-rows:58px 96px auto 1fr 112px;gap:12px;height:100vh;padding:12px 18px}
+
+/* Header */
+header{display:flex;align-items:center;gap:22px;border-bottom:1px solid var(--cyd);
+  box-shadow:0 1px 0 rgba(0,229,255,.25),0 8px 24px -16px var(--cy);padding:0 4px}
+.logo{font-size:21px;letter-spacing:.32em;font-weight:600;color:var(--cy);text-shadow:0 0 8px var(--cy),0 0 22px rgba(0,229,255,.5);white-space:nowrap}
+.logo small{display:block;font-size:10px;letter-spacing:.42em;color:var(--mut);text-shadow:none;margin-top:2px}
+.logo .ver{font:600 10px var(--m);letter-spacing:.08em;color:var(--or);border:1px solid rgba(255,155,47,.55);padding:2px 6px;margin-left:12px;vertical-align:4px;text-shadow:none}
+.logo small b{color:var(--cy2);font-weight:600}
+.bootfoot{margin-top:26px;font:11px var(--m);letter-spacing:.32em;color:var(--mut)}
+.bootfoot b{color:var(--cy2);font-weight:400}
+.pills{display:flex;gap:10px;margin-left:auto}
+.pill{font:600 11px var(--f);letter-spacing:.2em;padding:7px 14px 7px 26px;position:relative;border:1px solid var(--cyd);color:var(--mut);
+  clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%)}
+.pill::before{content:"";position:absolute;left:11px;top:50%;width:7px;height:7px;margin-top:-3.5px;border-radius:50%;background:#18323b}
+.pill.run{color:var(--or);border-color:var(--or)} .pill.run::before{background:var(--or);box-shadow:0 0 8px var(--or);transition:opacity .15s}
+body.tick .pill.run::before{opacity:.2}
+.pill.ok{color:var(--cy);border-color:var(--cy)} .pill.ok::before{background:var(--cy);box-shadow:0 0 8px var(--cy)}
+.pill.fail{color:var(--red);border-color:var(--red)} .pill.fail::before{background:var(--red);box-shadow:0 0 8px var(--red)}
+@keyframes blink{50%{opacity:.25}}
+.hdr-ctl{display:flex;gap:10px}
+.iconbtn{background:none;border:1px solid var(--cyd);color:var(--cy);font:12px var(--m);padding:7px 10px;cursor:pointer}
+.iconbtn:hover{border-color:var(--cy);box-shadow:0 0 10px var(--cydim)}
+
+/* Messprogramm-Menue */
+.menu{display:grid;grid-template-columns:120px repeat(10,minmax(0,1fr));gap:8px;align-items:stretch}
+.menu .mt{font:600 11px var(--f);letter-spacing:.32em;color:var(--cy);display:flex;flex-direction:column;justify-content:center;
+  border-left:2px solid var(--cy);padding-left:12px;line-height:1.7}
+.menu .mt small{color:var(--mut);letter-spacing:.2em;font-weight:400}
+.tile{position:relative;background:rgba(3,16,26,.8);border:1px solid var(--cyd);padding:10px 11px 8px;cursor:pointer;text-align:left;color:var(--txt);
+  font-family:var(--f);clip-path:polygon(0 0,calc(100% - 12px) 0,100% 12px,100% 100%,0 100%);transition:.15s;display:flex;flex-direction:column}
+.tile:hover{border-color:var(--cy);background:rgba(0,229,255,.07)}
+.tile .n{font:600 14px var(--f);letter-spacing:.04em;color:var(--cy2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .s{font:11px var(--m);color:var(--mut);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tile .o{position:absolute;right:10px;bottom:9px;font:10px var(--m);color:var(--mut)}
+.tile .b{margin-top:auto;font:600 9px var(--f);letter-spacing:.22em;align-self:flex-start;padding:2px 6px;border:1px solid}
+.tile .b.ok{color:var(--grn);border-color:rgba(61,255,181,.5)}
+.tile .b.test{color:var(--or);border-color:rgba(255,155,47,.5)}
+.tile .b.locked{color:var(--mut);border-color:var(--cydim)}
+.tile.sel{border-color:var(--cy);background:rgba(0,229,255,.12);box-shadow:inset 0 0 22px rgba(0,229,255,.18)}
+.tile.sel::after{content:"";position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--cy);box-shadow:0 0 10px var(--cy)}
+.tile.sel .n{color:#fff;text-shadow:0 0 8px var(--cy)}
+.tile.locked{opacity:.42;cursor:not-allowed}
+.tile.locked .n::before{content:"⊘ ";color:var(--mut)}
+
+/* Panels */
+.row1{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.row1>*,.row2>*,.grid4>*,.tile{min-width:0}
+.pill{white-space:nowrap}
+header{min-width:0}
+@media (max-width:1800px){.pill{padding:7px 10px 7px 22px;letter-spacing:.12em}.logo{letter-spacing:.22em}.row2{grid-template-columns:1fr 380px}}
+.panel{background:var(--panel);border:1px solid var(--cyd);position:relative;padding:14px 18px 12px;
+  clip-path:polygon(0 0,calc(100% - 18px) 0,100% 18px,100% 100%,18px 100%,0 calc(100% - 18px));box-shadow:inset 0 0 40px rgba(0,229,255,.05)}
+.panel::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(90deg,var(--cy),transparent 30%) top left/100% 1px no-repeat,linear-gradient(0deg,var(--cy),transparent 40%) bottom right/1px 100% no-repeat}
+.ptitle{font:600 12px var(--f);letter-spacing:.34em;color:var(--cy);margin:0 0 10px;display:flex;gap:10px;align-items:center}
+.ptitle .tag{font:11px var(--m);letter-spacing:.08em;color:var(--mut)}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:9px 14px;align-items:end}
+label{display:block;font:10px var(--f);letter-spacing:.22em;color:var(--mut);text-transform:uppercase;margin-bottom:5px}
+input,select{width:100%;background:#020b12;border:1px solid var(--cyd);color:var(--cy2);font:14px var(--m);padding:6px 9px;outline:none;border-radius:0}
+input:focus,select:focus{border-color:var(--cy);box-shadow:0 0 0 1px var(--cy),0 0 14px var(--cydim)}
+select option{background:#020b12}
+.seg{display:flex}
+.seg button{flex:1;background:#020b12;border:1px solid var(--cyd);color:var(--mut);font:13px var(--m);padding:6px 8px;cursor:pointer;margin-left:-1px}
+.seg button.on{color:var(--bg);background:var(--cy);border-color:var(--cy);font-weight:700}
+.tog{display:flex;align-items:center;gap:8px;font:13px var(--m);color:var(--mut);cursor:pointer;user-select:none;border:1px solid var(--cyd);padding:6px 9px;background:#020b12}
+.tog i{width:26px;height:12px;border:1px solid var(--cyd);position:relative;flex:none}
+.tog i::after{content:"";position:absolute;left:1px;top:1px;width:9px;height:8px;background:var(--mut);transition:.15s}
+.tog.on{color:var(--cy2);border-color:var(--cy)} .tog.on i{border-color:var(--cy)} .tog.on i::after{left:14px;background:var(--cy);box-shadow:0 0 6px var(--cy)}
+.chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px;min-height:22px;max-height:48px;overflow:auto}
+.chip{font:11px var(--m);color:var(--cy2);border:1px solid var(--cydim);padding:2px 7px;transition:.2s}
+.chip.done{color:var(--mut);border-color:rgba(0,229,255,.1);background:rgba(0,229,255,.06)}
+.chip.act{color:#fff;border-color:var(--or);background:rgba(255,155,47,.16);box-shadow:0 0 0 1px var(--or),0 0 12px rgba(255,155,47,.55);transition:box-shadow .15s,background .15s}
+body.tick .chip.act{box-shadow:0 0 0 1px rgba(255,155,47,.35);background:rgba(255,155,47,.04)}
+.chip.act::before{content:"▶ ";color:var(--or)}
+.readout{display:grid;grid-template-columns:1fr 1fr 130px;gap:12px;margin-top:11px}
+.disp{border:1px solid var(--cydim);background:#010810;padding:6px 12px}
+.disp .k{font:10px var(--f);letter-spacing:.3em;color:var(--mut)}
+.disp .v{font:30px var(--m);color:var(--cy);text-shadow:0 0 10px var(--cy),0 0 26px rgba(0,229,255,.35);white-space:nowrap}
+.disp .v small{font-size:14px;color:var(--cy2);margin-left:6px;text-shadow:none}
+.note{margin-top:9px;font:12px/1.4 var(--m);padding:7px 10px;border-left:2px solid var(--grn);background:rgba(61,255,181,.05);color:#a9e9d3}
+.note.test{border-color:var(--or);background:rgba(255,155,47,.06);color:#f4c690}
+.note.locked{border-color:var(--red);background:rgba(255,59,78,.06);color:#ff9aa5}
+.actions{display:flex;gap:12px;align-items:center;margin-top:11px}
+.btn{font:600 13px var(--f);letter-spacing:.26em;padding:10px 20px;cursor:pointer;background:rgba(0,229,255,.06);color:var(--cy);border:1px solid var(--cy);
+  text-transform:uppercase;clip-path:polygon(10px 0,100% 0,calc(100% - 10px) 100%,0 100%);transition:.15s;white-space:nowrap}
+.btn:hover:not(:disabled){background:rgba(0,229,255,.18);box-shadow:0 0 18px var(--cydim);color:#fff}
+.btn:disabled{opacity:.3;cursor:not-allowed}
+.btn.warn{color:var(--or);border-color:var(--or);background:rgba(255,155,47,.06)}
+.btn.ghost{border-color:var(--cyd);color:var(--cy2)}
+.prog{flex:1;height:6px;background:#06202b;position:relative;overflow:hidden}
+.prog i{position:absolute;left:0;top:0;bottom:0;width:0;background:var(--cy);box-shadow:0 0 10px var(--cy);transition:width .4s}
+.progtxt{font:12px var(--m);color:var(--mut);min-width:170px;text-align:right}
+.hide{display:none!important}
+
+/* Charts */
+.row2{display:grid;grid-template-columns:1fr 420px;gap:14px;min-height:0}
+.charts{display:grid;grid-template-rows:1fr 140px;gap:8px;min-height:0}
+.chartbox{position:relative;min-height:0}
+.chartbox .ptitle{position:absolute;left:0;right:0;top:-4px;z-index:1}
+.chartbox .ptitle .seg{margin-left:auto;flex:none}
+.chartbox .ptitle .seg button{font-size:11px;padding:3px 10px;flex:none}
+svg.chart{width:100%;height:100%;display:block}
+.cards{position:absolute;inset:34px 0 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;align-content:start}
+.card{border:1px solid var(--cyd);background:#010810;padding:14px 18px}
+.card h5{margin:0 0 8px;font:600 11px var(--f);letter-spacing:.34em;color:var(--cy)}
+.card .big{font:44px var(--m);color:var(--cy);text-shadow:0 0 12px var(--cy)}
+.card .big small{font-size:18px;color:var(--cy2);margin-left:8px;text-shadow:none}
+.card dl{display:grid;grid-template-columns:auto 1fr;gap:4px 16px;margin:10px 0 0;font:13px var(--m)}
+.card dt{color:var(--mut)} .card dd{margin:0;color:var(--cy2);text-align:right}
+.tbl{overflow:auto;min-height:0}
+table{width:100%;border-collapse:collapse;font:12px var(--m)}
+th{font:10px var(--f);letter-spacing:.16em;color:var(--mut);text-align:right;padding:4px 6px;border-bottom:1px solid var(--cyd);position:sticky;top:0;background:#031019;white-space:nowrap}
+td{padding:4px 6px;text-align:right;color:var(--cy2);border-bottom:1px solid rgba(0,229,255,.07);white-space:nowrap}
+td.bad{color:var(--red)} td.r{color:#9fe8ff}
+tr.new td{animation:flash 1s}
+@keyframes flash{from{background:rgba(0,229,255,.25)}to{background:transparent}}
+.legend{display:flex;gap:16px;font:11px var(--m);color:var(--mut);margin-left:18px}
+.legend span::before{content:"";display:inline-block;width:22px;height:0;border-top:2px solid var(--cy);vertical-align:middle;margin-right:6px}
+.legend span.r::before{border-top-style:dashed;border-color:#9fe8ff}
+
+/* Log */
+.logp{padding:9px 14px}
+#log{font:12px/1.45 var(--m);color:#7fc6d4;height:100%;overflow:auto;white-space:pre-wrap;margin:0}
+#log .e{color:var(--red)} #log .o{color:var(--cy)}
+
+/* Boot */
+#boot{position:fixed;inset:0;background:rgba(1,5,10,.94);display:flex;align-items:center;justify-content:center;z-index:10;backdrop-filter:blur(3px);transition:opacity .8s}
+#boot.gone{opacity:0;pointer-events:none}
+.bootbox{width:min(1100px,92vw);text-align:center}
+.boottitle{font:600 34px var(--f);letter-spacing:.5em;color:var(--cy);text-shadow:0 0 12px var(--cy),0 0 40px rgba(0,229,255,.45);margin:0 0 6px}
+.bootsub{font:12px var(--m);letter-spacing:.3em;color:var(--mut);margin-bottom:28px}
+.ring{width:120px;height:120px;margin:0 auto 24px;border-radius:50%;border:2px solid var(--cyd);position:relative}
+.ring::before{content:"";position:absolute;inset:-2px;border-radius:50%;border:2px solid transparent;border-top-color:var(--cy);filter:drop-shadow(0 0 6px var(--cy))}
+.booting .ring::before{animation:spin 1s linear infinite}
+.ring b{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:22px var(--m);color:var(--cy)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:30px;text-align:left;margin:0 auto 26px}
+.cols h4{font:600 11px var(--f);letter-spacing:.4em;color:var(--cy);margin:0 0 10px;border-bottom:1px solid var(--cyd);padding-bottom:6px}
+.step{display:grid;grid-template-columns:22px 1fr auto;gap:10px;font:13px var(--m);padding:4px 0;color:var(--mut)}
+.step .ic{width:14px;height:14px;border:1px solid var(--cyd);margin-top:2px;position:relative}
+.step.run{color:var(--or)} .step.run .ic{border-color:var(--or);animation:blink .5s infinite}
+.step.ok{color:var(--txt)} .step.ok .ic{border-color:var(--cy);background:var(--cy);box-shadow:0 0 8px var(--cy)}
+.step.ok .ic::after{content:"";position:absolute;left:4px;top:1px;width:4px;height:8px;border:solid #001;border-width:0 2px 2px 0;transform:rotate(45deg)}
+.step.fail{color:var(--red)} .step.fail .ic{border-color:var(--red);background:var(--red)}
+.step .d{font-size:11px;color:var(--mut);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.step.fail .d{color:var(--red)}
+.bootmsg{font:600 22px var(--f);letter-spacing:.4em;min-height:34px;margin-bottom:18px}
+.bootmsg.ok{color:var(--grn);text-shadow:0 0 14px var(--grn)} .bootmsg.fail{color:var(--red);text-shadow:0 0 14px var(--red)}
+.bootctl{display:flex;gap:14px;justify-content:center;align-items:end}
+.bootctl .pf{width:170px;text-align:left}
+.hint{font:11px var(--m);color:var(--mut);margin-top:16px;letter-spacing:.06em}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
+    <div class="pills"><span class="pill" id="pAd">ADAPTER</span><span class="pill" id="pUp">UPA</span><span class="pill" id="pMe">MESSUNG</span></div>
+    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="reboot">⟲ INIT</button></div>
+  </header>
+
+  <nav class="menu" id="menu"><div class="mt">MESS-<br>PROGRAMM<small>KATALOG 19.11.</small></div></nav>
+
+  <div class="row1">
+    <!-- LINKS: AUSGANG / GENERATOR -->
+    <section class="panel">
+      <h3 class="ptitle">UPA-AUSGANG <span class="tag">// GENERATOR · SINUS</span></h3>
+      <div class="grid4">
+        <div class="f-level"><label>Pegel (V rms)</label><input id="lev" type="number" step="0.01" value="0.5"></div>
+        <div class="f-fix"><label>Frequenz (Hz)</label><input id="fix" type="number" value="1000"></div>
+        <div class="f-freqs" style="grid-column:span 3"><label>Frequenzen</label>
+          <select id="preset">
+            <option value="std10">10 Punkte 20 Hz – 20 kHz (getestet)</option>
+            <option value="oct">Oktaven 31,5 Hz – 16 kHz (10)</option>
+            <option value="third">Terzen 20 Hz – 20 kHz (31)</option>
+            <option value="xt3">100 Hz · 1 kHz · 10 kHz</option>
+            <option value="log">Logarithmisch: Start / Stopp / Punkte</option>
+            <option value="list">Eigene Liste</option>
+          </select></div>
+        <div class="f-freqs cust log"><label>Start (Hz)</label><input id="fs" type="number" value="20"></div>
+        <div class="f-freqs cust log"><label>Stopp (Hz)</label><input id="fe" type="number" value="20000"></div>
+        <div class="f-freqs cust log"><label>Punkte</label><input id="fn" type="number" value="21"></div>
+        <div class="f-freqs cust list" style="grid-column:span 4"><label>Liste (Hz)</label><input id="fl" value="100, 1000, 10000"></div>
+        <div class="f-lsw"><label>Startpegel (V)</label><input id="ls" type="number" step="0.01" value="0.05"></div>
+        <div class="f-lsw"><label>Endpegel (V)</label><input id="le" type="number" step="0.01" value="1"></div>
+        <div class="f-lsw"><label>Punkte</label><input id="ln" type="number" value="8"></div>
+      </div>
+      <div class="chips" id="chips"></div>
+      <div class="note" id="note"></div>
+      <div class="actions">
+        <button class="btn" id="go" disabled>Messung starten</button>
+        <button class="btn warn" id="stop" disabled>Stop</button>
+        <button class="btn ghost" id="csv" disabled>CSV</button>
+        <div class="prog"><i id="pg"></i></div>
+        <div class="progtxt" id="pgt">bereit nach Initialisierung</div>
+      </div>
+    </section>
+    <!-- RECHTS: EINGANG / ANALYZER -->
+    <section class="panel">
+      <h3 class="ptitle">UPA-EINGANG <span class="tag">// ANALYZER · DUT</span></h3>
+      <div class="grid4">
+        <div><label>Kanal</label><div class="seg" id="chSeg"><button data-v="L" class="on">L</button><button data-v="R">R</button><button data-v="LR">L+R</button></div></div>
+        <div><label>Bereich</label><select id="rng"><option value="AUTO">AUTO · 4 Stellen</option><option value="HOLD(10)">HOLD(10) · 3 Stellen</option></select></div>
+        <div><label>Tiefpass</label><div class="tog" id="tLP"><i></i>TP 22 kHz</div></div>
+        <div><label>Hochpass</label><div class="tog" id="tHP"><i></i>HP 22 Hz</div></div>
+        <div><label>Gleichrichter</label><select disabled><option>RMS</option></select></div>
+        <div><label>Abschwächer</label><select id="att"><option value="1">keiner (1:1)</option><option value="p78">P78 - kalibriert</option></select></div>
+        <div><label>Last (Ω, für P)</label><input id="load" type="number" min="0" step="0.1" placeholder="z. B. 8"></div>
+        <div><label>Bezeichnung</label><input id="lbl" placeholder="z. B. NAD 306 L"></div>
+      </div>
+      <div class="readout">
+        <div class="disp"><div class="k">PEGEL</div><div class="v" id="rU">-.----<small>V</small></div></div>
+        <div class="disp"><div class="k" id="rFk">FREQUENZ</div><div class="v" id="rF">-----<small>Hz</small></div></div>
+        <div class="disp"><div class="k">MESSUNG</div><div class="v" id="rN">--<small>/--</small></div></div>
+      </div>
+    </section>
+
+  </div>
+
+  <div class="row2">
+    <section class="panel charts">
+      <div class="chartbox" id="box1">
+        <h3 class="ptitle"><span id="t1">FREQUENZGANG</span> <span class="tag" id="ctag"></span>
+          <span class="legend" id="leg"><span>L</span><span class="r">R</span></span>
+          <span class="seg" id="unit"><button data-u="V" class="on">V</button><button data-u="dBV">dBV</button><button data-u="dBr">dB rel 1 kHz</button></span>
+          <span class="seg hide" id="tunit"><button data-u="pc" class="on">%</button><button data-u="db">dB</button></span></h3>
+        <svg class="chart" id="ch1"></svg>
+        <div class="cards hide" id="cards"></div>
+      </div>
+      <div class="chartbox" id="box2">
+        <h3 class="ptitle"><span id="t2">FREQUENZ-ABWEICHUNG</span> <span class="tag" id="t2tag"></span></h3>
+        <svg class="chart" id="ch2"></svg>
+      </div>
+    </section>
+    <section class="panel tbl">
+      <h3 class="ptitle">MESSWERTE <span class="tag" id="ttag"></span></h3>
+      <table><thead id="th"></thead><tbody id="tb"></tbody></table>
+    </section>
+  </div>
+
+  <section class="panel logp"><pre id="log"></pre></section>
+</div>
+
+<div id="boot">
+  <div class="bootbox">
+    <h1 class="boottitle">SYSTEM-INITIALISIERUNG</h1>
+    <div class="bootsub">ADAPTER-CHECK → UPA-VERBINDUNG → MESSUNG FREIGEBEN</div>
+    <div class="ring"><b id="ringTxt">0/15</b></div>
+    <div class="cols"><div><h4>AR488 ADAPTER</h4><div id="sA"></div></div><div><h4>R&amp;S UPA3</h4><div id="sU"></div></div></div>
+    <div class="bootmsg" id="bmsg"></div>
+    <div class="bootctl">
+      <div class="pf"><label>Adapter-Port</label><input id="port" value="COM4" list="portlist"><datalist id="portlist"></datalist></div>
+      <div class="pf" style="width:150px"><label>GPIB-Adresse (0–30)</label><input id="gaddr" type="number" min="0" max="30" step="1" value="7"></div>
+      <button class="btn" id="start">System starten</button>
+      <button class="btn ghost hide" id="close">Schliessen</button>
+    </div>
+    <div class="hint">Voraussetzung: UPA eingeschaltet, am Gerät eingestellte IEC-Adresse eintragen · für den Verbindungstest Loopback (Ausgang → Eingang) gesteckt</div>
+    <div class="bootfoot"><b id="bFirma"></b><span id="bSep"></span>UPA-SOFTWARE <span id="bVer">v–</span></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const $=id=>document.getElementById(id);
+let S=null, PROGS=[], SEL=null, logLen=0, prevStatus={}, unit="V", bootActive=false, lastSig="";
+
+/* ---------------- Sound ---------------- */
+const Snd={ctx:null,on:true,ready:null,
+  init(){ if(!this.ctx){try{this.ctx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){}}
+          try{this.on=localStorage.getItem("upa_snd")!=="0";}catch(e){} paintSnd(); },
+  tone(f1,f2,dur,type="sine",vol=.05,when=0){ if(!this.on||!this.ctx) return; const c=this.ctx,t=c.currentTime+when,o=c.createOscillator(),g=c.createGain();
+    o.type=type;o.frequency.setValueAtTime(f1,t);o.frequency.exponentialRampToValueAtTime(f2,t+dur);
+    g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g).connect(c.destination);o.start(t);o.stop(t+dur+.02); },
+  blip(){this.tone(880,1320,.07,"sine",.04);},
+  click(){this.tone(1800,1400,.03,"square",.015);},
+  denied(){this.tone(150,90,.32,"square",.05);this.tone(110,55,.5,"square",.05,.36);},
+  async sysReady(){ if(!this.on||!this.ctx) return;
+    if(S&&S.sound){ try{ if(!this.ready){const r=await fetch("/sound/ready");this.ready=await this.ctx.decodeAudioData(await r.arrayBuffer());}
+      const s=this.ctx.createBufferSource();s.buffer=this.ready;s.connect(this.ctx.destination);s.start();return;}catch(e){} }
+    [55,82.4,110].forEach((f,i)=>this.tone(f,f*1.001,1.6,"sawtooth",.025,i*.05));
+    try{const u=new SpeechSynthesisUtterance("Your system is ready for use.");u.lang="en-US";u.pitch=.1;u.rate=.82;speechSynthesis.speak(u);}catch(e){} }
+};
+function paintSnd(){$("snd").textContent=Snd.on?"♪ SOUND AN":"♪ SOUND AUS";}
+$("snd").onclick=()=>{Snd.init();Snd.on=!Snd.on;try{localStorage.setItem("upa_snd",Snd.on?"1":"0");}catch(e){}paintSnd();};
+
+/* ---------------- Helfer ---------------- */
+const esc=t=>String(t).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fmtF=f=>f>=1000?(+(f/1000).toFixed(2))+"k":String(+(+f).toFixed(2));
+const fmtV=v=>v>=1?(+v.toFixed(3))+"":v>=0.001?(+(v*1000).toFixed(1))+"m":v.toExponential(1);
+/* Spannung lesbar: µV / mV / V */
+const fmtU=v=>v==null||!isFinite(v)?"---":v<1e-3?(+(v*1e6).toPrecision(3))+" µV":v<1?(+(v*1e3).toPrecision(4))+" mV":(+v.toPrecision(5))+" V";
+const n4=(v,d=4)=>v==null||!isFinite(v)?"---":(+v).toFixed(d);
+const db=(a,b)=>a>0&&b>0?20*Math.log10(a/b):null;
+/* Klirr aus FNCT: Header DISPC = Prozent (bestaetigt 19.11.), ...DB = dB */
+function thd(p){ if(p.fnct==null) return {pc:null,db:null}; const h=((p.fnct_line||"").split(/\s+/)[0]||"").toUpperCase();
+  if(h.endsWith("DB")) return {db:p.fnct, pc:100*Math.pow(10,p.fnct/20)};
+  return {pc:p.fnct, db:p.fnct>0?20*Math.log10(p.fnct/100):null}; }
+let tunit="pc", wasMeasuringChips=false, chipSig="";
+/* Ein gemeinsamer 1-Hz-Takt fuer alle Blinkanzeigen (Pill MESSUNG + aktive Frequenz) */
+setInterval(()=>document.body.classList.toggle("tick", Math.floor(Date.now()/500)%2===1), 50);
+const P10=[20,50,100,200,500,1000,2000,5000,10000,20000], OCT=[31.5,63,125,250,500,1000,2000,4000,8000,16000],
+ THIRD=[20,25,31.5,40,50,63,80,100,125,160,200,250,315,400,500,630,800,1000,1250,1600,2000,2500,3150,4000,5000,6300,8000,10000,12500,16000,20000];
+function nice(f){const p=Math.pow(10,Math.floor(Math.log10(f))-2);return Math.round(f/p)*p;}
+function freqs(){ const v=$("preset").value;
+  if(v==="std10")return P10; if(v==="oct")return OCT; if(v==="third")return THIRD; if(v==="xt3")return [100,1000,10000];
+  if(v==="log"){const a=+$("fs").value,b=+$("fe").value,n=Math.round(+$("fn").value); if(!(a>0&&b>a&&n>=2))return[];
+    const r=[];for(let i=0;i<n;i++)r.push(nice(a*Math.pow(b/a,i/(n-1))));return r;}
+  return $("fl").value.split(/[,;\s]+/).map(Number).filter(x=>x>0); }
+function levels(){ const a=+$("ls").value,b=+$("le").value,n=Math.round(+$("ln").value); if(!(a>0&&b>a&&n>=2))return[];
+  const r=[];for(let i=0;i<n;i++)r.push(+(a*Math.pow(b/a,i/(n-1))).toFixed(4));return r; }
+const chSel=()=>document.querySelector("#chSeg .on").dataset.v;
+
+/* ---------------- Menue ---------------- */
+const BADGE={ok:"GETESTET",test:"VERIFIKATION",locked:"GESPERRT"};
+function buildMenu(){
+  const m=$("menu");
+  PROGS.forEach(p=>{ const b=document.createElement("button"); b.className="tile "+(p.status==="locked"?"locked":""); b.dataset.id=p.id;
+    b.title=p.lock||p.note||""; b.innerHTML=`<span class="o">${p.opt}</span><span class="n">${esc(p.name)}</span><span class="s">${esc(p.sub)}</span><span class="b ${p.status}">${BADGE[p.status]}</span>`;
+    b.onclick=()=>select(p.id,true); m.appendChild(b); });
+}
+function select(id,user){
+  const p=PROGS.find(x=>x.id===id); if(!p) return;
+  if(p.status==="locked"){ const n=$("note"); n.className="note locked"; n.textContent="⊘ "+p.name+" gesperrt: "+p.lock; if(user){Snd.init();Snd.denied();} return; }
+  SEL=p; if(user){Snd.init();Snd.click();}
+  document.querySelectorAll(".tile").forEach(t=>t.classList.toggle("sel",t.dataset.id===id));
+  const d=p.def;
+  setTog("tLP",d.lp22); setTog("tHP",d.hp22); $("rng").value=d.rng;
+  document.querySelectorAll("#chSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===(d.ch||"L")));
+  if(d.preset) $("preset").value=d.preset; if(d.level!=null) $("lev").value=d.level; if(d.fixfreq) $("fix").value=d.fixfreq;
+  if(d.lstart){ $("ls").value=d.lstart; $("le").value=d.lstop; $("ln").value=d.ln; }
+  const n=$("note"); n.className="note "+(p.status==="test"?"test":""); n.textContent=(p.status==="test"?"⚠ ":"✓ ")+p.note;
+  try{localStorage.setItem("upa_prog",id);}catch(e){}
+  paintFields();
+}
+function setTog(id,on){$(id).classList.toggle("on",!!on);}
+$("att").addEventListener("change",()=>{ if($("att").value==="p78") $("rng").value="AUTO"; });
+["tLP","tHP"].forEach(id=>$(id).onclick=()=>{$(id).classList.toggle("on");Snd.click();});
+$("chSeg").onclick=e=>{const b=e.target.closest("button");if(!b)return;document.querySelectorAll("#chSeg button").forEach(x=>x.classList.toggle("on",x===b));paintFields();};
+function paintFields(){
+  if(!SEL) return; const ui=SEL.ui, v=$("preset").value;
+  document.querySelectorAll(".f-level").forEach(e=>e.classList.toggle("hide",!ui.level));
+  document.querySelectorAll(".f-fix").forEach(e=>e.classList.toggle("hide",!ui.fixfreq));
+  document.querySelectorAll(".f-lsw").forEach(e=>e.classList.toggle("hide",!ui.levelsweep));
+  document.querySelectorAll(".f-freqs").forEach(e=>{ const c=e.classList.contains("cust"); e.classList.toggle("hide",!ui.freqs||(c&&!e.classList.contains(v))); });
+  const nch=chSel()==="LR"?2:1; let html="", n=1;
+  if(ui.freqs){ const fl=freqs(); n=fl.length; html=fl.map(f=>`<span class="chip">${fmtF(f)}</span>`).join(""); }
+  else if(ui.levelsweep){ const l=levels(); n=l.length; html=l.map(x=>`<span class="chip">${fmtV(x)}V</span>`).join(""); }
+  else html=`<span class="chip">${fmtF(+$("fix").value)} Hz · ${$("lev").value} V</span>`;
+  const tot=n*nch; html+=`<span class="chip" style="border-color:transparent;color:var(--mut)">${tot} Messung${tot>1?"en":""} · ca. ${Math.max(1,Math.ceil(tot*SEL.est/60))} min</span>`;
+  $("chips").innerHTML=html;
+}
+["preset","fs","fe","fn","fl","ls","le","ln","fix","lev"].forEach(id=>$(id).addEventListener("input",paintFields));
+
+/* ---------------- Diagramme ---------------- */
+const NS="http://www.w3.org/2000/svg";
+function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;}
+function niceTicks(lo,hi,n=5){const span=hi-lo||1,st=Math.pow(10,Math.floor(Math.log10(span/n))),m=[1,2,2.5,5,10].find(x=>span/(x*st)<=n*1.001)*st;
+  const r=[];for(let v=Math.ceil(lo/m)*m;v<=hi+1e-12;v+=m)r.push(+v.toFixed(10));return r;}
+function drawChart(svg,series,o){
+  svg.innerHTML="";const W=svg.clientWidth||800,H=svg.clientHeight||300;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const L=66,R=18,T=o.top||30,B=28,pw=W-L-R,ph=H-T-B;
+  const lx0=Math.log10(o.xmin), lx1=Math.log10(o.xmax), fx=x=>L+(Math.log10(x)-lx0)/(lx1-lx0)*pw;
+  let ys=[];series.forEach(s=>s.pts.forEach(p=>p[1]!=null&&isFinite(p[1])&&ys.push(p[1])));
+  let lo=o.defLo,hi=o.defHi;
+  if(ys.length){const a=Math.min(...ys),b=Math.max(...ys),span=Math.max(b-a,o.minSpan),mid=(a+b)/2;lo=mid-span*.75;hi=mid+span*.75;}
+  const fy=v=>T+(1-(v-lo)/(hi-lo))*ph, g=el("g",{});
+  for(let d=Math.pow(10,Math.floor(lx0));d<=o.xmax;d*=10){for(let k=1;k<10;k++){const x=d*k;if(x<o.xmin*0.999||x>o.xmax*1.001)continue;
+    g.appendChild(el("line",{x1:fx(x),x2:fx(x),y1:T,y2:T+ph,stroke:k===1?"rgba(0,229,255,.28)":"rgba(0,229,255,.08)"}));
+    if([1,2,5].includes(k))g.appendChild(el("text",{x:fx(x),y:H-9,fill:"#5d8a98","font-size":11,"text-anchor":"middle","font-family":"Consolas,monospace"},o.xfmt(x)));}}
+  niceTicks(lo,hi,o.nt||5).forEach(v=>{g.appendChild(el("line",{x1:L,x2:L+pw,y1:fy(v),y2:fy(v),stroke:"rgba(0,229,255,.12)"}));
+    g.appendChild(el("text",{x:L-8,y:fy(v)+4,fill:"#5d8a98","font-size":11,"text-anchor":"end","font-family":"Consolas,monospace"},o.fmt(v)));});
+  g.appendChild(el("rect",{x:L,y:T,width:pw,height:ph,fill:"none",stroke:"rgba(0,229,255,.45)"}));
+  g.appendChild(el("text",{x:L-18,y:H-9,fill:"#5d8a98","font-size":10,"text-anchor":"end","font-family":"Consolas,monospace"},o.xunit));
+  if(o.ylab)g.appendChild(el("text",{x:14,y:T+ph/2,fill:"#5d8a98","font-size":10,"text-anchor":"middle",transform:`rotate(-90 14 ${T+ph/2})`},o.ylab));
+  svg.appendChild(g);
+  const defs=el("defs",{}),fl=el("filter",{id:"gl"+svg.id,x:"-20%",y:"-20%",width:"140%",height:"140%"});
+  fl.appendChild(el("feGaussianBlur",{stdDeviation:3,result:"b"}));const mg=el("feMerge",{});mg.appendChild(el("feMergeNode",{in:"b"}));mg.appendChild(el("feMergeNode",{in:"SourceGraphic"}));fl.appendChild(mg);defs.appendChild(fl);svg.appendChild(defs);
+  series.forEach(s=>{const pts=s.pts.filter(p=>p[1]!=null&&isFinite(p[1])&&p[0]>0);if(!pts.length)return;
+    const d=pts.map((p,i)=>(i?"L":"M")+fx(p[0]).toFixed(1)+","+fy(p[1]).toFixed(1)).join("");
+    svg.appendChild(el("path",{d,fill:"none",stroke:s.c,"stroke-width":s.w||2,"stroke-dasharray":s.dash||"",filter:s.glow?`url(#gl${svg.id})`:""}));
+    if(s.dots)pts.forEach(p=>svg.appendChild(el("circle",{cx:fx(p[0]),cy:fy(p[1]),r:3.5,fill:"#01050a",stroke:s.c,"stroke-width":2})));});
+  if(!ys.length)svg.appendChild(el("text",{x:L+pw/2,y:T+ph/2,fill:"#2d5866","font-size":13,"text-anchor":"middle","letter-spacing":"4"},"KEINE MESSDATEN"));
+}
+const XF={xmin:10,xmax:50000,xfmt:fmtF,xunit:"Hz"};
+function XL(pts){const xs=pts.map(p=>p.x).filter(x=>x>0);const a=xs.length?Math.min(...xs):0.01,b=xs.length?Math.max(...xs):1;
+  return {xmin:Math.pow(10,Math.floor(Math.log10(a))),xmax:Math.pow(10,Math.ceil(Math.log10(b*1.0001))),xfmt:fmtV,xunit:"V"};}
+const COL={L:"#00e5ff",R:"#9fe8ff"};
+function byCh(pts,fy,fx=p=>p.x){return ["L","R"].map(ch=>({ch,pts:pts.filter(p=>p.ch===ch).map(p=>[fx(p),fy(p)])})).filter(s=>s.pts.length);}
+function mkSeries(groups,extra={}){return groups.map(g=>Object.assign({pts:g.pts,c:COL[g.ch],w:2.2,glow:g.ch==="L",dots:1,dash:g.ch==="R"?"7 5":""},extra));}
+
+/* Ansicht je Programm */
+function view(){
+  const pts=(S&&S.points)||[], pid=(S&&S.meta&&S.meta.prog)||(SEL&&SEL.id)||"fr";
+  const box2=$("box2"), cards=$("cards"), ch1=$("ch1");
+  $("unit").classList.toggle("hide",pid!=="fr"); $("tunit").classList.toggle("hide",!(pid==="thdf"||pid==="thdl")); $("leg").classList.toggle("hide",!pts.some(p=>p.ch==="R"));
+  const single=pid==="gain"||pid==="sn";
+  cards.classList.toggle("hide",!single); ch1.classList.toggle("hide",single); box2.classList.toggle("hide",single);
+  $("ctag").textContent=S&&S.meta&&S.meta.label?"// "+S.meta.label:"";
+  const refU=ch=>{const p=pts.find(q=>q.ch===ch&&q.f_soll===1000&&q.u_true);return p&&p.u_true;};
+  if(pid==="fr"){
+    $("t1").textContent="FREQUENZGANG";
+    const yf=p=>p.u_true==null?null:unit==="V"?p.u_true:unit==="dBV"?20*Math.log10(p.u_true):db(p.u_true,refU(p.ch));
+    drawChart(ch1,mkSeries(byCh(pts,yf)),Object.assign({},XF,{fmt:unit==="V"?v=>v.toFixed(3):v=>v.toFixed(2),minSpan:unit==="V"?0.02:0.5,defLo:unit==="V"?0:-10,defHi:unit==="V"?1:2,top:34,
+      ylab:unit==="V"?"PEGEL  V rms":unit==="dBV"?"PEGEL  dBV":"dB rel 1 kHz"}));
+    $("t2").textContent="FREQUENZ-ABWEICHUNG"; $("t2tag").textContent="// gemessen vs. Soll, %";
+    drawChart($("ch2"),mkSeries(byCh(pts.filter(p=>p.f!=null),p=>(p.f-p.f_soll)/p.f_soll*100),{w:1.8}).map(s=>Object.assign(s,{c:s.dash?"#9fffd8":"#3dffb5"})),
+      Object.assign({},XF,{fmt:v=>v.toFixed(3),minSpan:.1,defLo:-.1,defHi:.1,nt:3,ylab:"Δf  %"}));
+  } else if(pid==="thdf"||pid==="thdl"){
+    const X=pid==="thdf"?XF:XL(pts), hdr=(pts.find(p=>p.fnct_line)||{}).fnct_line||"";
+    $("t1").textContent=pid==="thdf"?"THD+N ÜBER FREQUENZ":"THD+N ÜBER PEGEL";
+    drawChart(ch1,mkSeries(byCh(pts,p=>thd(p)[tunit])),Object.assign({},X,tunit==="pc"?{fmt:v=>(+v.toPrecision(3))+"",minSpan:.002,defLo:0,defHi:.01,top:34,ylab:"THD+N  %"}
+      :{fmt:v=>v.toFixed(1),minSpan:3,defLo:-100,defHi:-80,top:34,ylab:"THD+N  dB"}));
+    const pw=pts.some(p=>p.p_w!=null);
+    $("t2").textContent=pid==="thdf"?"AUSGANGSPEGEL":"AUSGANGSPEGEL / LEISTUNG"; $("t2tag").textContent=pw?"// W an Last":"// V rms (mit Abschwächer)";
+    drawChart($("ch2"),mkSeries(byCh(pts,p=>pw?p.p_w:p.u_true),{w:1.8}),Object.assign({},X,{fmt:v=>(+v.toPrecision(3))+"",minSpan:.01,defLo:0,defHi:1,nt:3,ylab:pw?"P  W":"U  V"}));
+  } else if(pid==="xt"){
+    $("t1").textContent="KANALTRENNUNG";
+    drawChart(ch1,mkSeries(byCh(pts,p=>p.xt_db)),Object.assign({},XF,{fmt:v=>v.toFixed(1),minSpan:6,defLo:-100,defHi:0,top:34,ylab:"ÜBERSPRECHEN  dB"}));
+    $("t2").textContent="REFERENZPEGEL"; $("t2tag").textContent="// angeregter Kanal, V";
+    const at=(S&&S.meta&&S.meta.params&&S.meta.params.atten)||1;
+    drawChart($("ch2"),mkSeries(byCh(pts,p=>p.ref_u_true!=null?p.ref_u_true:p.ref_u!=null?p.ref_u*at:null),{w:1.8}),Object.assign({},XF,{fmt:v=>v.toFixed(3),minSpan:.02,defLo:0,defHi:1,nt:3,ylab:"U  V"}));
+  } else if(single){
+    const prm=(S&&S.meta&&S.meta.params)||{};
+    $("t1").textContent=pid==="gain"?"PEGEL / VERSTÄRKUNG":"STÖRABSTAND";
+    cards.innerHTML=pts.length?pts.map(p=>pid==="gain"?
+      `<div class="card"><h5>KANAL ${p.ch} · ${fmtF(p.f_soll)} Hz</h5><div class="big">${p.gain_db!=null?p.gain_db.toFixed(2):"---"}<small>dB</small></div>
+       <dl><dt>Generator</dt><dd>${n4(p.u_soll)} V</dd><dt>Ausgang</dt><dd>${n4(p.u_true)} V</dd><dt>Verstärkung</dt><dd>${p.gain!=null?p.gain.toFixed(3)+" ×":"---"}</dd>
+       ${p.p_w!=null?`<dt>Leistung</dt><dd>${p.p_w.toFixed(3)} W</dd>`:""}<dt>Frequenz</dt><dd>${p.f!=null?p.f.toFixed(2)+" Hz":"---"}</dd></dl></div>`:
+      `<div class="card"><h5>KANAL ${p.ch} · ${p.step||""}</h5><div class="big">${p.sn_db!=null?p.sn_db.toFixed(1):"---"}<small>dB S/N</small></div>
+       <dl><dt>Referenz</dt><dd>${fmtU(p.ref_u)}</dd><dt>Rauschen</dt><dd>${fmtU(p.noise_u)}</dd>
+       <dt>Rohwert</dt><dd>${esc(p.raw||"")}</dd>${p.noise_u!=null&&p.noise_u<2e-5?`<dt>Auflösung</dt><dd style="color:var(--or)">1 µV-Schritte → S/N ±${(20*Math.log10((p.noise_u+5e-7)/p.noise_u)).toFixed(1)} dB</dd>`:""}
+       <dt>Filter</dt><dd>${((prm.lp22?"TP22k ":"")+(prm.hp22?"HP22":""))||"keine"}</dd></dl></div>`).join("")
+      :`<div class="card"><h5>NOCH KEIN ERGEBNIS</h5><div class="big" style="color:#2d5866;text-shadow:none">---</div></div>`;
+  }
+}
+const COLS={
+  fr:[["#",p=>p.i],["K",p=>p.ch],["SOLL",p=>fmtF(p.f_soll)],["IST HZ",p=>p.f!=null?p.f.toFixed(p.f<1000?3:1):"---"],["U V",p=>n4(p.u_true)]],
+  gain:[["#",p=>p.i],["K",p=>p.ch],["U GEN",p=>n4(p.u_soll)],["U AUS",p=>n4(p.u_true)],["DB",p=>p.gain_db!=null?p.gain_db.toFixed(2):"---"],["P W",p=>p.p_w!=null?p.p_w.toFixed(3):"–"]],
+  thdf:[["#",p=>p.i],["K",p=>p.ch],["HZ",p=>fmtF(p.x)],["U AUS",p=>n4(p.u_true)],["THD+N %",p=>{const t=thd(p);return t.pc!=null?t.pc.toFixed(4):"---";}],["DB",p=>{const t=thd(p);return t.db!=null?t.db.toFixed(1):"---";}]],
+  thdl:[["#",p=>p.i],["K",p=>p.ch],["U GEN",p=>n4(p.x)],["U AUS",p=>n4(p.u_true)],["P W",p=>p.p_w!=null?p.p_w.toFixed(2):"–"],["THD+N %",p=>{const t=thd(p);return t.pc!=null?t.pc.toFixed(4):"---";}],["DB",p=>{const t=thd(p);return t.db!=null?t.db.toFixed(1):"---";}]],
+  sn:[["#",p=>p.i],["K",p=>p.ch],["REFERENZ",p=>fmtU(p.ref_u)],["RAUSCHEN",p=>fmtU(p.noise_u)],["S/N DB",p=>p.sn_db!=null?p.sn_db.toFixed(1):"---"]],
+  xt:[["#",p=>p.i],["RICHT.",p=>p.dir||p.ch],["HZ",p=>fmtF(p.x)],["REF",p=>fmtU(p.ref_u)],["ÜBERSPR.",p=>fmtU(p.xt_u)],["DB",p=>p.xt_db!=null?p.xt_db.toFixed(1):"---"]]};
+function table(){
+  const pts=(S&&S.points)||[], pid=(S&&S.meta&&S.meta.prog)||(SEL&&SEL.id)||"fr",
+    hasLoad=!!(S&&S.meta&&S.meta.params&&S.meta.params.load>0),
+    cols=(COLS[pid]||COLS.fr).filter(c=>c[0]!=="P W"||hasLoad);   // Leistung nur mit Lastangabe
+  $("th").innerHTML="<tr>"+cols.map(c=>`<th>${c[0]}</th>`).join("")+"</tr>";
+  $("tb").innerHTML=pts.map((p,i)=>`<tr class="${i===pts.length-1?"new":""}" title="${esc(p.abbruch||p.raw||"")}">`+cols.map(c=>{const v=c[1](p);return `<td class="${p.abbruch&&c[0]!=="#"?"bad":p.ch==="R"?"r":""}">${esc(v)}</td>`;}).join("")+"</tr>").join("");
+  $("ttag").textContent=S&&S.meta&&S.meta.name?"// "+S.meta.name:"";
+}
+$("tunit").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;tunit=b.dataset.u;document.querySelectorAll("#tunit button").forEach(x=>x.classList.toggle("on",x===b));view();});
+$("unit").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;unit=b.dataset.u;document.querySelectorAll("#unit button").forEach(x=>x.classList.toggle("on",x===b));view();});
+window.addEventListener("resize",view);
+
+/* ---------------- Rendern ---------------- */
+const stepHTML=s=>`<div class="step ${s.status}"><span class="ic"></span><span>${esc(s.label)}</span><span class="d">${esc(s.detail||"")}</span></div>`;
+function grp(g){const st=S.steps.filter(s=>s.group===g).map(s=>s.status);return st.includes("fail")?"fail":st.every(x=>x==="ok")?"ok":st.some(x=>x!=="pending")?"run":"";}
+function render(){
+  if(!S) return;
+  $("sA").innerHTML=S.steps.filter(s=>s.group==="ADAPTER").map(stepHTML).join("");
+  $("sU").innerHTML=S.steps.filter(s=>s.group==="UPA").map(stepHTML).join("");
+  $("ringTxt").textContent=`${S.steps.filter(s=>s.status==="ok").length}/${S.steps.length}`;
+  S.steps.forEach(s=>{if(prevStatus[s.id]!==s.status){if(bootActive&&s.status==="ok")Snd.blip();prevStatus[s.id]=s.status;}});
+  $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
+  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; $("reboot").disabled=S.busy;
+  const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
+  if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
+  else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
+  else $("pgt").textContent=S.boot_ok?"bereit":"bereit nach Initialisierung";
+  const lp=pts[pts.length-1], fn=lp&&lp.fnct_line;
+  $("rU").innerHTML=lp&&lp.u_true!=null?(lp.u_true<1e-3?(+(lp.u_true*1e6).toPrecision(3))+"<small>µV</small>":lp.u_true<0.1?(+(lp.u_true*1e3).toPrecision(4))+"<small>mV</small>":lp.u_true.toFixed(4)+"<small>V</small>"):"-.----<small>V</small>";
+  $("rFk").textContent=fn?"THD+N":"FREQUENZ";
+  $("rF").innerHTML=fn?(()=>{const t=thd(lp);return t.pc!=null?`${t.pc.toFixed(4)}<small>% · ${t.db.toFixed(1)} dB</small>`:"---";})():
+    (lp&&lp.f!=null?(lp.f>=1000?(lp.f/1000).toFixed(3)+"<small>kHz</small>":lp.f.toFixed(2)+"<small>Hz</small>"):"-----<small>Hz</small>");
+  $("rN").innerHTML=(pts.length?String(pts.length).padStart(2,"0"):"--")+`<small>/${n?String(n).padStart(2,"0"):"--"}</small>`;
+  if(S.phase==="measuring"&&S.meta&&S.meta.params){ const pr=S.meta.params;
+    const list=pr.freqs||pr.levels||[pr.fixfreq||1000], isL=!pr.freqs&&!!pr.levels, nch=(pr.channels||["L"]).length, k=pts.length,
+      ci=Math.floor(k/list.length), ai=k%list.length;
+    const cs=k+"|"+S.meta.start; if(cs!==chipSig){ chipSig=cs;
+    $("chips").innerHTML=list.map((v,i)=>{const st=ci>=nch?"done":i<ai?"done":i===ai?"act":"";
+      return `<span class="chip ${st}">${isL?fmtV(v)+"V":fmtF(v)}</span>`;}).join("")+
+      `<span class="chip" style="border-color:transparent;color:var(--or)">Kanal ${(pr.channels||["L"])[Math.min(ci,nch-1)]} · ${Math.min(k+1,n)}/${n}</span>`; }
+  } else if(wasMeasuringChips){ chipSig=""; paintFields(); }
+  wasMeasuringChips=S.phase==="measuring";
+  const sig=pts.length+"|"+(S.meta&&S.meta.start);
+  if(sig!==lastSig){lastSig=sig;table();view();}
+}
+function addLog(lines){const L=$("log"),atEnd=L.scrollTop+L.clientHeight>=L.scrollHeight-20;
+  lines.forEach(t=>{const s=document.createElement("span");s.className=/FEHLER|ABBRUCH|fehlgeschlagen|lehnt/i.test(t)?"e":/\[OK\]|BEREIT/.test(t)?"o":"";s.textContent=t+"\n";L.appendChild(s);});
+  if(atEnd)L.scrollTop=L.scrollHeight;}
+
+/* ---------------- Boot ---------------- */
+let bootWatch=null;
+async function startBoot(){
+  Snd.init(); if(Snd.ctx&&Snd.ctx.state==="suspended")Snd.ctx.resume();
+  $("bmsg").className="bootmsg";$("bmsg").textContent="SYSTEM-INITIALISIERUNG LÄUFT …";$("start").disabled=true;$("close").classList.add("hide");
+  const ga=parseInt($("gaddr").value,10);
+  if(!(ga>=0&&ga<=30)){ $("bmsg").className="bootmsg fail"; $("bmsg").textContent="GPIB-ADRESSE 0 BIS 30"; $("start").disabled=false; return; }
+  const r=await api("/api/boot",{port:$("port").value.trim(),addr:ga});
+  if(!r.ok){$("bmsg").className="bootmsg fail";$("bmsg").textContent=r.error||"FEHLER";$("start").disabled=false;return;}
+  bootActive=true;document.querySelector(".bootbox").classList.add("booting");clearInterval(bootWatch);
+  bootWatch=setInterval(()=>{ if(!S||S.phase==="booting"||S.busy)return; clearInterval(bootWatch);bootActive=false;document.querySelector(".bootbox").classList.remove("booting");
+    if(S.boot_ok){$("bmsg").className="bootmsg ok";$("bmsg").textContent="YOUR SYSTEM IS READY";Snd.sysReady();setTimeout(()=>$("boot").classList.add("gone"),2600);}
+    else{$("bmsg").className="bootmsg fail";$("bmsg").textContent="ZUGRIFF VERWEIGERT — PRÜFUNG FEHLGESCHLAGEN";Snd.denied();$("start").disabled=false;$("start").textContent="Erneut versuchen";$("close").classList.remove("hide");}
+  },300);
+}
+$("start").onclick=startBoot; $("close").onclick=()=>$("boot").classList.add("gone");
+$("reboot").onclick=()=>{$("boot").classList.remove("gone");$("start").disabled=false;$("start").textContent="System starten";$("bmsg").textContent="";$("bmsg").className="bootmsg";};
+
+/* ---------------- Messung ---------------- */
+$("go").onclick=async()=>{
+  Snd.init(); if(!SEL)return;
+  const body={prog:SEL.id,channels:chSel(),rng:$("rng").value,lp22:$("tLP").classList.contains("on"),hp22:$("tHP").classList.contains("on"),
+    atten:$("att").value==="p78"?"p78":+$("att").value,load:+$("load").value||0,label:$("lbl").value,level:+$("lev").value,fixfreq:+$("fix").value,
+    freqs:SEL.ui.freqs?freqs():[],lstart:+$("ls").value,lstop:+$("le").value,ln:+$("ln").value};
+  const r=await api("/api/run",body);
+  if(!r.ok){addLog(["FEHLER: "+(r.error||"Start abgelehnt")]);Snd.denied();return;}
+  Snd.blip();
+};
+$("stop").onclick=()=>api("/api/stop",{});
+$("csv").onclick=()=>{location.href="/api/csv";};
+
+/* ---------------- Netzwerk ---------------- */
+async function api(url,body){try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  const j=await r.json().catch(()=>({}));return r.ok?{ok:true,...j}:{ok:false,...j};}catch(e){return{ok:false,error:"Server nicht erreichbar - läuft upa_server.py?"};}}
+let wasMeasuring=false;
+async function poll(){
+  try{const r=await fetch("/api/state?since="+logLen),j=await r.json();
+    if(j.log_len<logLen){$("log").textContent="";logLen=0;}
+    addLog(j.log);logLen=j.log_len;S=j;
+    $("iecTxt").textContent=String(j.addr).padStart(2,"0");
+    if(!$("port").dataset.set){$("port").value=j.port;$("port").dataset.set=1; $("gaddr").value=j.addr;
+      $("ver").textContent="v"+j.app_version; $("ver").title="UPA-Software "+j.app_version+" vom "+j.app_datum;
+      $("bVer").textContent="v"+j.app_version+" · "+j.app_datum;
+      if(j.firma){ $("firma").textContent=j.firma.toUpperCase(); $("firmaSep").textContent=" · "; $("bFirma").textContent=j.firma.toUpperCase(); $("bSep").textContent="  //  "; }
+      document.title="UPA·3 // Analyzer Control v"+j.app_version; }
+    {const o=$("att").querySelector('option[value="p78"]'); if(o){o.disabled=!j.p78; o.textContent=j.p78?"P78 - kalibriert":"P78 - Kalibrierdatei fehlt";}}
+    if(wasMeasuring&&j.phase!=="measuring")(j.points.some(p=>p.abbruch)?Snd.denied():Snd.tone(660,990,.12,"sine",.05));
+    wasMeasuring=j.phase==="measuring"; render();
+  }catch(e){$("pgt").textContent="Server getrennt …";}
+  setTimeout(poll,400);
+}
+fetch("/api/ports").then(r=>r.json()).then(ps=>{$("portlist").innerHTML=ps.map(p=>`<option value="${esc(p.device)}">${esc(p.desc)}</option>`).join("");}).catch(()=>{});
+fetch("/api/programs").then(r=>r.json()).then(ps=>{PROGS=ps;buildMenu();let last="fr";try{last=localStorage.getItem("upa_prog")||"fr";}catch(e){}
+  select(PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();});
+poll();
+</script>
+</body>
+</html>
