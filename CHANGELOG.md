@@ -2,6 +2,12 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.13.2 – 2026-11-21
+- Icon-Datei neu aufgebaut (16–128 px als klassische Bitmaps, 256 px als PNG) – manche Windows-Funktionen lesen PNG-Einträge in kleinen Größen nicht und fielen auf das Standard-Icon zurück.
+- Fenster-Icon zusätzlich als Fensterklassen-Icon und mehrfach gesetzt; großes Icon mindestens 48 px für die Taskleiste.
+- Build prüft jetzt, dass die .exe das Programm-Icon trägt.
+- README: Abschnitt „Related projects & thanks" (AR488, AR488-ESP32, Astralix-Fork, dc3ax-Artikel, Forumsthread).
+
 ## 0.13.1 – 2026-11-21
 - Taskleiste zeigt jetzt das Programm-Icon: Fenster-Icon wird direkt gesetzt, eigene AppUserModelID für Programm und Verknüpfungen (vorher erschien teils das Standard-Icon).
 - README komplett überarbeitet: Installation und erste Schritte mit dem Programmfenster; Browser/Quellcode nur noch im Entwickler-Abschnitt.

@@ -74,11 +74,21 @@ def _icon_setzen(title):
         if not hwnd:
             return
         WM_SETICON, ICON_SMALL, ICON_BIG, IMAGE_ICON, LR_LOADFROMFILE = 0x80, 0, 1, 1, 0x10
-        for art, metrik in ((ICON_BIG, (11, 12)), (ICON_SMALL, (49, 50))):   # SM_CXICON / SM_CXSMICON
-            cx, cy = u32.GetSystemMetrics(metrik[0]), u32.GetSystemMetrics(metrik[1])
-            h = u32.LoadImageW(None, ico, IMAGE_ICON, cx, cy, LR_LOADFROMFILE)
-            if h:
-                u32.SendMessageW(hwnd, WM_SETICON, art, h)
+        GCLP_HICON, GCLP_HICONSM = -14, -34
+        setclass = getattr(u32, "SetClassLongPtrW", None) or u32.SetClassLongW
+        setclass.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_void_p]
+        import time
+        for durchgang in range(3):          # nochmals, falls der Unterbau sein Icon spaeter setzt
+            for art, klasse, metrik in ((ICON_BIG, GCLP_HICON, (11, 12)),        # SM_CXICON
+                                        (ICON_SMALL, GCLP_HICONSM, (49, 50))):   # SM_CXSMICON
+                cx, cy = u32.GetSystemMetrics(metrik[0]), u32.GetSystemMetrics(metrik[1])
+                if art == ICON_BIG:
+                    cx, cy = max(cx, 48), max(cy, 48)      # Taskleiste bei hoher Skalierung
+                h = u32.LoadImageW(None, ico, IMAGE_ICON, cx, cy, LR_LOADFROMFILE)
+                if h:
+                    u32.SendMessageW(hwnd, WM_SETICON, art, h)
+                    setclass(hwnd, klasse, h)
+            time.sleep(1.0)
     except Exception:
         pass
 

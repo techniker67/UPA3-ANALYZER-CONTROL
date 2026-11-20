@@ -5,7 +5,7 @@
 Windows program for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV files and a printable test report (PDF + DOCX).
 
-> **Status:** pre-release (v0.13.1). All measurement programs marked *GETESTET* (tested) have been verified on real hardware.
+> **Status:** pre-release (v0.13.2). All measurement programs marked *GETESTET* (tested) have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -102,6 +102,17 @@ Start options:
 
 The Windows setup is built and tested automatically by GitHub Actions on every change — see [docs/release.md](docs/release.md).
 
+## Related projects & thanks
+
+This software stands on the shoulders of the open GPIB adapter projects:
+
+- [AR488](https://github.com/Twilight-Logic/AR488) by Twilight-Logic — the original Arduino GPIB adapter firmware with Prologix-compatible `++` commands.
+- [AR488-ESP32](https://github.com/WilheJo/AR488-ESP32) — port of AR488 to the ESP32.
+- [Astralix/AR488-ESP32](https://github.com/Astralix/AR488-ESP32) — further development with ESP32-S2 support, `++spoll` for addresses 0–30 and WiFi; background in the article [AR488 on ESP32 at dc3ax.de](https://dc3ax.de/blog/ar488-esp32-gpib/). Not yet tested with this software.
+- [mikrocontroller.net forum thread](https://www.mikrocontroller.net/topic/574123) (German) — ESP32-S2 GPIB adapter hardware and firmware.
+
+Tested so far with firmware **0.53.26 (JW)**. Feedback with other adapters and firmware versions is welcome — please open an issue.
+
 ## Roadmap
 
 - English user interface
@@ -127,7 +138,7 @@ Windows-Programm zur Steuerung des **R&S UPA Audioanalysators** über einen **AR
 - **▤ PROTOKOLL** erstellt das Prüfprotokoll als PDF und DOCX; Drucken direkt aus dem Programm.
 - **Daten:** `Dokumente\UPA-Analyzer-Control` (Einstellungen, Kalibrierung, Messungen, Protokoll); der Ablageordner für Messungen ist frei wählbar, z. B. ein NAS.
 
-Getestet mit UPA3 und AR488 (ESP32-S2, Firmware 0.53.26 (JW)). Die Oberfläche ist derzeit deutsch. Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.
+Getestet mit UPA3 und AR488 (ESP32-S2, Firmware 0.53.26 (JW)); Links zu AR488, den ESP32-Varianten und dem Forumsthread unter „Related projects & thanks". Die Oberfläche ist derzeit deutsch. Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.
 
 ---
 
