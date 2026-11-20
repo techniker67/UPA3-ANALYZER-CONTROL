@@ -2,6 +2,10 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.8.2 – 2026-11-20
+- Schaltfläche **⏻ QUIT** oben rechts: beendet die Software nach Rückfrage, das Konsolenfenster schließt sich. Während einer Messung gesperrt (erst Stop). Der Browser-Tab zeigt „SYSTEM SHUTDOWN" und schließt sich, soweit der Browser das erlaubt.
+- `UPA_Software_starten.bat`: Fenster bleibt nur noch bei einem Fehler offen.
+
 ## 0.8.1 – 2026-11-20
 - Hinweistexte unter den Messprogrammen für Anwender umformuliert (praktische Tipps statt Entwicklungsnotizen); Symbol ℹ statt ✓. Gesperrte Programme nennen nur noch, was fehlt.
 

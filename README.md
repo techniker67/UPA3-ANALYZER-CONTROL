@@ -3,7 +3,7 @@
 Local web GUI for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV export and a log of every bus command.
 
-> **Status:** pre-release (v0.8.1). All measurement programs marked *GETESTET* have been verified on real hardware.
+> **Status:** pre-release (v0.8.2). All measurement programs marked *GETESTET* have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -46,7 +46,7 @@ python upa_server.py --port COM4 --addr 7      # Windows
 ./upa_software_starten.sh --port /dev/ttyACM0   # Linux/macOS
 ```
 
-On Windows you can simply double-click `UPA_Software_starten.bat`.
+On Windows you can simply double-click `UPA_Software_starten.bat`. To exit, use **⏻ QUIT** in the top right corner — the console window closes as well.
 The GUI opens at <http://127.0.0.1:8488>. Port and address can also be entered in the start screen.
 
 Options: `--http <port>` (GUI port, default 8488), `--listen 0.0.0.0` (reachable from the network — only in a trusted LAN), `--no-browser`.
