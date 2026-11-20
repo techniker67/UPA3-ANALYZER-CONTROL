@@ -2,6 +2,11 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.11.2 – 2026-11-20
+- Prüfprotokoll im Hausstil der Reparaturberichte: Calibri, Akzentfarbe #2E5A88, Kopfzeilen der Tabellen weiß auf Blau, Zebrastreifen, feine Rahmen, Kopfzeile mit Gerät und Linie, Fußzeile „Seite x von y | Firma | …", nummerierte Abschnitte (1. Prüfling und Messsystem, 2. Ergebnisübersicht, 3.x Messergebnisse, 4. Bemerkung), 2 cm Rand.
+- DOCX mit echten Überschrift-Formaten (Navigation in Word), festen Spaltenbreiten und wiederholter Tabellenkopfzeile.
+- Diagramme in den Hausfarben (Kanal L blau, R rot) und in Calibri.
+
 ## 0.11.1 – 2026-11-20
 - Prüfprotokoll (PDF und DOCX): jede Messung beginnt auf einer neuen Seite.
 

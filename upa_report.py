@@ -25,12 +25,16 @@ try:
     import matplotlib
     matplotlib.use("Agg")                     # ohne Bildschirm/Tk
     import matplotlib.pyplot as plt
+    import logging
+    logging.getLogger("matplotlib.font_manager").setLevel(logging.ERROR)
+    # Hausschrift Calibri (Windows), sonst Carlito / DejaVu Sans
+    plt.rcParams["font.family"] = ["Calibri", "Carlito", "DejaVu Sans"]
     from matplotlib.ticker import FuncFormatter, NullFormatter, LogLocator
 except Exception:
     plt = None
 
 FELDER = (("hersteller", "Hersteller"), ("typ", "Typ"), ("seriennr", "Seriennummer"))
-FARBE = {"L": "#1f5fbf", "R": "#c8323c", "L→R": "#1f5fbf", "R→L": "#c8323c"}
+FARBE = {"L": "#2E5A88", "R": "#C0504D", "L→R": "#2E5A88", "R→L": "#C0504D"}   # Hausfarben
 
 
 # ---------------------------------------------------------------------------
@@ -247,7 +251,7 @@ def diagramm(prog_id, titel, points, pfad):
             ax.yaxis.set_major_formatter(FuncFormatter(_zahl))
         ax.grid(True, which="major", color="#c9ced6", lw=0.7)
         ax.grid(True, which="minor", color="#e6e9ee", lw=0.5)
-        ax.set_title(titel, fontsize=10, loc="left")
+        ax.set_title(titel, fontsize=10.5, loc="left", color="#2E5A88", fontweight="bold")
         ax.tick_params(labelsize=8)
         ax.legend(fontsize=8, frameon=False)
         fig.tight_layout()
