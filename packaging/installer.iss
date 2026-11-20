@@ -57,10 +57,10 @@ Source: "..\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE";      DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
 
 [Icons]
-Name: "{group}\{#AppName}";               Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"
+Name: "{group}\{#AppName}";               Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExe}"; AppUserModelID: "VintageAudioRepair.UPAAnalyzerControl"
 Name: "{group}\Messdaten-Ordner";          Filename: "{userdocs}\{#AppName}"
 Name: "{group}\{#AppName} deinstallieren"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#AppName}";          Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{autodesktop}\{#AppName}";          Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExe}"; AppUserModelID: "VintageAudioRepair.UPAAnalyzerControl"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#AppExe}"; Description: "{cm:LaunchProgram,{#AppName}}"; Flags: nowait postinstall skipifsilent

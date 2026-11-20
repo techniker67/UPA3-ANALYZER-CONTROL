@@ -35,12 +35,61 @@ def message_box(text, title="UPA-Analyzer-Control"):
     print(text)
 
 
+APP_ID = "VintageAudioRepair.UPAAnalyzerControl"   # gleich wie in packaging/installer.iss
+
+
+def _app_id():
+    """Windows: eigene AppUserModelID - die Taskleiste ordnet das Fenster dann der
+    Startmenue-Verknuepfung (mit unserem Icon) zu statt python.exe/pythonw.exe."""
+    if os.name == "nt":
+        try:
+            import ctypes
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(APP_ID)
+        except Exception:
+            pass
+
+
+def _icon_setzen(title):
+    """Windows: Fenster-Icon (Titelleiste, Taskleiste, Alt+Tab) direkt aus
+    assets/icon.ico setzen - pywebview setzt sonst sein eigenes/Standard-Icon."""
+    if os.name != "nt":
+        return
+    try:
+        import ctypes
+        import upa_paths as paths
+        ico = os.path.join(paths.RES_DIR, "assets", "icon.ico")
+        if not os.path.exists(ico):
+            return
+        u32 = ctypes.windll.user32
+        u32.FindWindowW.restype = ctypes.c_void_p
+        u32.LoadImageW.restype = ctypes.c_void_p
+        u32.SendMessageW.argtypes = [ctypes.c_void_p, ctypes.c_uint, ctypes.c_void_p, ctypes.c_void_p]
+        hwnd = None
+        for _ in range(50):                 # Fenster kann einen Moment brauchen
+            hwnd = u32.FindWindowW(None, title)
+            if hwnd:
+                break
+            import time
+            time.sleep(0.1)
+        if not hwnd:
+            return
+        WM_SETICON, ICON_SMALL, ICON_BIG, IMAGE_ICON, LR_LOADFROMFILE = 0x80, 0, 1, 1, 0x10
+        for art, metrik in ((ICON_BIG, (11, 12)), (ICON_SMALL, (49, 50))):   # SM_CXICON / SM_CXSMICON
+            cx, cy = u32.GetSystemMetrics(metrik[0]), u32.GetSystemMetrics(metrik[1])
+            h = u32.LoadImageW(None, ico, IMAGE_ICON, cx, cy, LR_LOADFROMFILE)
+            if h:
+                u32.SendMessageW(hwnd, WM_SETICON, art, h)
+    except Exception:
+        pass
+
+
 def run(app, url, title, storage_dir):
     """Fenster oeffnen und blockieren, bis es geschlossen ist.
     Liefert True, wenn das Fenster lief; False, wenn es nicht startete
     (dann soll der Aufrufer auf den Browser ausweichen)."""
     if webview is None:
         return False
+    _app_id()
     win = webview.create_window(
         title, url,
         width=1600, height=900, min_size=(1100, 700),
@@ -56,6 +105,7 @@ def run(app, url, title, storage_dir):
         return True
 
     win.events.closing += on_closing
+    win.events.shown += lambda: threading.Thread(target=_icon_setzen, args=(title,), daemon=True).start()
     app.on_quit = win.destroy     # QUIT in der Oberflaeche schliesst das Fenster
 
     gui = "edgechromium" if os.name == "nt" else None   # unter Windows nie den alten IE-Unterbau
