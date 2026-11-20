@@ -2,11 +2,17 @@
 #  - bei jedem Pull Request: Bau + Starttest, Setup.exe als Download unter "Actions"
 #  - bei einem Versions-Tag (z. B. v0.8.3): zusaetzlich Release mit der Setup.exe
 #  - von Hand: Actions -> Windows-Installer -> "Run workflow"
+#    mit Haken "Release veroeffentlichen": legt Tag v<Version> + Release an
 name: Windows-Installer
 
 on:
   pull_request:
   workflow_dispatch:
+    inputs:
+      release:
+        description: "Release mit Setup.exe veroeffentlichen (Version aus upa_version.py)"
+        type: boolean
+        default: false
   push:
     tags: ["v*"]
 
@@ -80,9 +86,11 @@ jobs:
           path: dist-installer/*.exe
 
       - name: Release veroeffentlichen
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: startsWith(github.ref, 'refs/tags/v') || (github.event_name == 'workflow_dispatch' && inputs.release)
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: v${{ steps.ver.outputs.version }}
+          target_commitish: ${{ github.sha }}
           name: UPA-Analyzer-Control v${{ steps.ver.outputs.version }}
           files: dist-installer/*.exe
           prerelease: true
