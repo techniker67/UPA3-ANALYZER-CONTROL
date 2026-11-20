@@ -3,7 +3,7 @@
 Local web GUI for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV export and a log of every bus command.
 
-> **Status:** pre-release (v0.7.0). All measurement programs marked *GETESTET* have been verified on real hardware.
+> **Status:** pre-release (v0.8.0). All measurement programs marked *GETESTET* have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -51,18 +51,31 @@ The GUI opens at <http://127.0.0.1:8488>. Port and address can also be entered i
 
 Options: `--http <port>` (GUI port, default 8488), `--listen 0.0.0.0` (reachable from the network — only in a trusted LAN), `--no-browser`.
 
+## Data folder
+
+Program and user data are kept apart, so updates never overwrite your settings, calibration or measurements.
+All user data lives in **`Documents/UPA-Analyzer-Control`** (shown in the console window at start):
+
+| File / folder | Content |
+|---|---|
+| `upa_einstellungen.json` | company name, last working COM port and GPIB address |
+| `p78_kalibrierung.json` | attenuator calibration (optional, see docs) |
+| `Messungen/` | one CSV per run |
+| `upa_log.txt` | log of every bus command |
+
+Other locations: start option `--data <folder>`, environment variable `UPA_DATA`, or an empty file named `portable` in the program folder (everything stays in the program folder, e.g. on a USB stick).
+On first start, settings and calibration found in the program folder are **copied** to the data folder; the originals are left untouched.
+
 ## Configuration (optional)
 
-Copy `upa_einstellungen.beispiel.json` to `upa_einstellungen.json` and enter your company name — it is shown in the GUI and written into every CSV.
-An MP3 file with “ready” in its name placed in the program folder is played when the system is ready; otherwise speech synthesis is used.
-
-Measurements are stored in the `Messungen/` subfolder, the bus log in `upa_log.txt`.
+Copy `upa_einstellungen.beispiel.json` to `upa_einstellungen.json` in the data folder and enter your company name — it is shown in the GUI and written into every CSV.
+An MP3 file with “ready” in its name placed in the data folder (or the program folder) is played when the system is ready; otherwise speech synthesis is used.
 
 More details: [docs/hardware-setup.md](docs/hardware-setup.md) · [docs/measurements.md](docs/measurements.md) · [docs/attenuator-calibration.md](docs/attenuator-calibration.md)
 
 ## Roadmap
 
-- **0.8** – installable Windows program (installer built automatically on GitHub)
+- **0.8** – separate data folder ✔, installable Windows program (installer built automatically on GitHub)
 - **0.9** – job field (repair order number / device), before/after measurements, central storage on a network share
 - **1.0** – DOCX test report, first public release
 
@@ -80,7 +93,7 @@ Lokale Web-Oberfläche zur Steuerung des **R&S UPA Audioanalysators** über eine
 
 **Start:** `pip install -r requirements.txt`, dann `UPA_Software_starten.bat` doppelklicken (oder `python upa_server.py --port COM4 --addr 7`). Die Oberfläche öffnet sich unter <http://127.0.0.1:8488>; COM-Port und GPIB-Adresse lassen sich auch im Startfenster einstellen.
 
-Die Oberfläche ist derzeit deutsch. Getestet mit UPA3 und AR488 (ESP32-S2, Firmware 0.53.26 (JW)). Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.
+Einstellungen, Kalibrierung, Messungen und Protokoll liegen im Ordner `Dokumente/UPA-Analyzer-Control`. Die Oberfläche ist derzeit deutsch. Getestet mit UPA3 und AR488 (ESP32-S2, Firmware 0.53.26 (JW)). Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.
 
 ---
 

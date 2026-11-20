@@ -27,4 +27,4 @@ These values show the limits of the measuring system itself:
 
 ## CSV files
 
-Each run writes a CSV to `Messungen/` with a header containing software version, company name (if set), adapter firmware and all run parameters, followed by one row per point (raw and corrected values, number of read attempts, attenuator factor used).
+Each run writes a CSV to `Messungen/` in the data folder with a header containing software version, company name (if set), adapter firmware and all run parameters, followed by one row per point (raw and corrected values, number of read attempts, attenuator factor used).
