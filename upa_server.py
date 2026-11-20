@@ -430,6 +430,14 @@ def make_handler(app):
                 if not app.run_prog(prog, p):
                     return self._send(409, {"error": "beschaeftigt"})
                 return self._send(200, {"ok": True})
+            if u.path == "/api/quit":
+                if app.busy:
+                    return self._send(409, {"error": "Bitte erst die laufende Messung stoppen"})
+                app.log("Beenden ueber QUIT - Software wird geschlossen.")
+                self._send(200, {"ok": True})
+                # Serverschleife aus einem eigenen Thread beenden (nicht aus dem Handler)
+                threading.Timer(0.5, self.server.shutdown).start()
+                return None
             if u.path == "/api/stop":
                 app.stop_flag = True
                 app.log("Stop angefordert - Abbruch nach dem laufenden Punkt.")
@@ -474,7 +482,7 @@ def main():
     print(f"  Datenordner:  {paths.DATA_DIR}")
     for m in meldungen:
         print(f"  {m}")
-    print("  Beenden: dieses Fenster schliessen oder Strg+C")
+    print("  Beenden: QUIT in der Oberflaeche, dieses Fenster schliessen oder Strg+C")
     print("=" * 60)
     if not a.no_browser:
         threading.Timer(0.8, lambda: webbrowser.open(url)).start()
@@ -482,6 +490,8 @@ def main():
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
+    srv.server_close()
+    print("  UPA-Software beendet.")
 
 
 if __name__ == "__main__":

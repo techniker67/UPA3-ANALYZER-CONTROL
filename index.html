@@ -43,6 +43,13 @@ body.tick .pill.run::before{opacity:.2}
 .hdr-ctl{display:flex;gap:10px}
 .iconbtn{background:none;border:1px solid var(--cyd);color:var(--cy);font:12px var(--m);padding:7px 10px;cursor:pointer}
 .iconbtn:hover{border-color:var(--cy);box-shadow:0 0 10px var(--cydim)}
+.iconbtn.quit{color:var(--red);border-color:rgba(255,59,78,.45)}
+.iconbtn.quit:hover:not(:disabled){border-color:var(--red);box-shadow:0 0 10px rgba(255,59,78,.5)}
+.iconbtn:disabled{opacity:.3;cursor:not-allowed}
+#bye{position:fixed;inset:0;background:rgba(1,5,10,.97);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:20}
+#bye.on{display:flex}
+#bye h1{font:600 26px var(--f);letter-spacing:.45em;color:var(--red);text-shadow:0 0 14px var(--red);margin:0}
+#bye p{font:13px var(--m);color:var(--mut);letter-spacing:.08em;margin:0}
 
 /* Messprogramm-Menue */
 .menu{display:grid;grid-template-columns:120px repeat(10,minmax(0,1fr));gap:8px;align-items:stretch}
@@ -179,7 +186,7 @@ tr.new td{animation:flash 1s}
   <header>
     <div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
     <div class="pills"><span class="pill" id="pAd">ADAPTER</span><span class="pill" id="pUp">UPA</span><span class="pill" id="pMe">MESSUNG</span></div>
-    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="reboot">⟲ INIT</button></div>
+    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn quit" id="quit" title="UPA freigeben, Software beenden und Fenster schliessen">⏻ QUIT</button></div>
   </header>
 
   <nav class="menu" id="menu"><div class="mt">MESS-<br>PROGRAMM<small>KATALOG 19.11.</small></div></nav>
@@ -281,6 +288,8 @@ tr.new td{animation:flash 1s}
     <div class="bootfoot"><b id="bFirma"></b><span id="bSep"></span>UPA-SOFTWARE <span id="bVer">v–</span></div>
   </div>
 </div>
+
+<div id="bye"><h1>SYSTEM SHUTDOWN</h1><p id="byeTxt">UPA-Software beendet · UPA freigegeben</p><p>Dieses Browserfenster kann geschlossen werden.</p></div>
 
 <script>
 "use strict";
@@ -486,7 +495,7 @@ function render(){
   $("ringTxt").textContent=`${S.steps.filter(s=>s.status==="ok").length}/${S.steps.length}`;
   S.steps.forEach(s=>{if(prevStatus[s.id]!==s.status){if(bootActive&&s.status==="ok")Snd.blip();prevStatus[s.id]=s.status;}});
   $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
-  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; $("reboot").disabled=S.busy;
+  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; $("reboot").disabled=S.busy; $("quit").disabled=S.busy;
   const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
   if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
   else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
@@ -543,6 +552,15 @@ $("go").onclick=async()=>{
 };
 $("stop").onclick=()=>api("/api/stop",{});
 $("csv").onclick=()=>{location.href="/api/csv";};
+let quitting=false;
+$("quit").onclick=async()=>{
+  if(S&&S.busy){ alert("Bitte erst die laufende Messung stoppen."); return; }
+  if(!confirm("UPA-Software beenden?\n\nDas Konsolenfenster schliesst sich, der UPA bleibt freigegeben.")) return;
+  const r=await api("/api/quit",{});
+  if(!r.ok){ alert(r.error||"Beenden nicht möglich"); return; }
+  quitting=true; $("bye").classList.add("on");
+  try{ window.close(); }catch(e){}   // klappt nur, wenn der Browser es zulaesst
+};
 
 /* ---------------- Netzwerk ---------------- */
 async function api(url,body){try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -562,7 +580,7 @@ async function poll(){
     if(wasMeasuring&&j.phase!=="measuring")(j.points.some(p=>p.abbruch)?Snd.denied():Snd.tone(660,990,.12,"sine",.05));
     wasMeasuring=j.phase==="measuring"; render();
   }catch(e){$("pgt").textContent="Server getrennt …";}
-  setTimeout(poll,400);
+  if(!quitting) setTimeout(poll,400);
 }
 fetch("/api/ports").then(r=>r.json()).then(ps=>{$("portlist").innerHTML=ps.map(p=>`<option value="${esc(p.device)}">${esc(p.desc)}</option>`).join("");}).catch(()=>{});
 fetch("/api/programs").then(r=>r.json()).then(ps=>{PROGS=ps;buildMenu();let last="fr";try{last=localStorage.getItem("upa_prog")||"fr";}catch(e){}
