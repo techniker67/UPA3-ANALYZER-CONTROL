@@ -1,0 +1,92 @@
+# Baut die Windows-Installation (PyInstaller + Inno Setup).
+#  - bei jedem Pull Request: Bau + Starttest, Setup.exe als Download unter "Actions"
+#  - bei einem Versions-Tag (z. B. v0.8.3): zusaetzlich Release mit der Setup.exe
+#  - von Hand: Actions -> Windows-Installer -> "Run workflow"
+name: Windows-Installer
+
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Abhaengigkeiten
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Version lesen
+        id: ver
+        shell: pwsh
+        run: |
+          $v = python -c "import upa_version; print(upa_version.__version__)"
+          "version=$v" >> $env:GITHUB_OUTPUT
+          Write-Host "Version $v"
+          if ($env:GITHUB_REF -like "refs/tags/v*" -and $env:GITHUB_REF_NAME -ne "v$v") {
+            throw "Tag $env:GITHUB_REF_NAME passt nicht zu upa_version.py ($v)"
+          }
+
+      - name: Programm bauen (PyInstaller)
+        run: >
+          pyinstaller --noconfirm --clean --onedir --console
+          --name UPA-Analyzer-Control
+          --add-data "index.html;."
+          --hidden-import serial.tools.list_ports
+          upa_server.py
+
+      - name: Starttest (ohne Adapter)
+        shell: pwsh
+        run: |
+          $exe = "dist\UPA-Analyzer-Control\UPA-Analyzer-Control.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList "--no-browser","--http","8499" -PassThru -NoNewWindow
+          $null = $p.Handle
+          Start-Sleep -Seconds 6
+          $html = (Invoke-WebRequest -UseBasicParsing http://127.0.0.1:8499/).Content
+          if ($html -notmatch "ANALYZER CONTROL") { throw "Oberflaeche nicht geliefert" }
+          $st = Invoke-RestMethod http://127.0.0.1:8499/api/state
+          Write-Host "Oberflaeche OK, Version $($st.app_version)"
+          if ($st.app_version -ne "${{ steps.ver.outputs.version }}") { throw "falsche Version" }
+          Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8499/api/quit -Body "{}" -ContentType "application/json" | Out-Null
+          if (-not $p.WaitForExit(20000)) { $p.Kill(); throw "QUIT beendet das Programm nicht" }
+          if ($p.ExitCode -ne 0) { throw "Exit-Code $($p.ExitCode)" }
+          Write-Host "QUIT OK"
+
+      - name: Installer bauen (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress }
+          & $iscc "/DAppVersion=${{ steps.ver.outputs.version }}" packaging\installer.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC fehlgeschlagen" }
+          Get-ChildItem dist-installer
+
+      - name: Setup.exe als Download (Actions)
+        uses: actions/upload-artifact@v4
+        with:
+          name: UPA-Analyzer-Control-${{ steps.ver.outputs.version }}-Setup
+          path: dist-installer/*.exe
+
+      - name: Release veroeffentlichen
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: UPA-Analyzer-Control v${{ steps.ver.outputs.version }}
+          files: dist-installer/*.exe
+          prerelease: true
+          body: |
+            Windows-Installation: Setup.exe herunterladen und starten (keine Python-Installation noetig).
+            Aenderungen: siehe CHANGELOG.md.
+            Hinweis: Die Datei ist (noch) nicht signiert - Windows SmartScreen: "Weitere Informationen" -> "Trotzdem ausfuehren".

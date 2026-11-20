@@ -3,7 +3,7 @@
 Local web GUI for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV export and a log of every bus command.
 
-> **Status:** pre-release (v0.8.2). All measurement programs marked *GETESTET* have been verified on real hardware.
+> **Status:** pre-release (v0.8.3). All measurement programs marked *GETESTET* have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -38,7 +38,15 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 - Python 3.9 or newer and `pyserial`
 - Windows, Linux or macOS with a current browser
 
-## Quick start
+## Installation (Windows)
+
+Download `UPA-Analyzer-Control-<version>-Setup.exe` from [Releases](../../releases) and run it — no Python needed, no administrator rights required.
+The setup creates a Start-menu entry, an optional desktop shortcut and a shortcut to the data folder. Uninstalling keeps your data.
+
+The installer is not code-signed yet: Windows SmartScreen may warn — click *More info* → *Run anyway*.
+
+## Run from source
+
 
 ```bash
 pip install -r requirements.txt
@@ -75,7 +83,7 @@ More details: [docs/hardware-setup.md](docs/hardware-setup.md) · [docs/measurem
 
 ## Roadmap
 
-- **0.8** – separate data folder ✔, installable Windows program (installer built automatically on GitHub)
+- **0.8** – separate data folder ✔, Windows installer built automatically on GitHub ✔, own program window instead of browser
 - **0.9** – job field (repair order number / device), before/after measurements, central storage on a network share
 - **1.0** – DOCX test report, first public release
 
@@ -91,7 +99,7 @@ Service manuals and other R&S documents are not included and must be obtained se
 
 Lokale Web-Oberfläche zur Steuerung des **R&S UPA Audioanalysators** über einen **AR488-GPIB-Adapter**. Gedacht für den Reparaturtisch: Frequenzgang, Verstärkung, THD+N, Störabstand und Kanaltrennung mit Diagrammen, CSV-Export und Protokoll.
 
-**Start:** `pip install -r requirements.txt`, dann `UPA_Software_starten.bat` doppelklicken (oder `python upa_server.py --port COM4 --addr 7`). Die Oberfläche öffnet sich unter <http://127.0.0.1:8488>; COM-Port und GPIB-Adresse lassen sich auch im Startfenster einstellen.
+**Installation:** `Setup.exe` unter [Releases](../../releases) herunterladen und starten (ohne Python, ohne Administratorrechte). **Aus dem Quellcode:** `pip install -r requirements.txt`, dann `UPA_Software_starten.bat` doppelklicken (oder `python upa_server.py --port COM4 --addr 7`). Die Oberfläche öffnet sich unter <http://127.0.0.1:8488>; COM-Port und GPIB-Adresse lassen sich auch im Startfenster einstellen.
 
 Einstellungen, Kalibrierung, Messungen und Protokoll liegen im Ordner `Dokumente/UPA-Analyzer-Control`. Die Oberfläche ist derzeit deutsch. Getestet mit UPA3 und AR488 (ESP32-S2, Firmware 0.53.26 (JW)). Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.
 

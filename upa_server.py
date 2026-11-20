@@ -12,6 +12,7 @@ Nur Python-Standardbibliothek + pyserial.
 import argparse
 import json
 import os
+import sys
 import threading
 import time
 import webbrowser
@@ -446,6 +447,13 @@ def make_handler(app):
     return H
 
 
+class Server(ThreadingHTTPServer):
+    # Unter Windows wuerde SO_REUSEADDR einen zweiten Start auf demselben Port
+    # stillschweigend zulassen - dort deshalb aus, damit "Port belegt" erkannt wird.
+    allow_reuse_address = os.name != "nt"
+    daemon_threads = True
+
+
 def main():
     # Datenordner zuerst bestimmen - die Vorgaben fuer Port/Adresse kommen daraus
     vor = argparse.ArgumentParser(add_help=False)
@@ -474,8 +482,17 @@ def main():
         app.log(m)
     if core.serial is None:
         app.log("pyserial fehlt -> in der Konsole: pip install pyserial")
-    srv = ThreadingHTTPServer((a.listen, a.http), make_handler(app))
     url = f"http://127.0.0.1:{a.http}/"
+    try:
+        srv = Server((a.listen, a.http), make_handler(app))
+    except OSError:
+        # meist: Software laeuft schon -> deren Oberflaeche zeigen statt abzubrechen
+        print(f"  Port {a.http} ist belegt - die UPA-Software laeuft vermutlich schon.")
+        print(f"  Oeffne {url}")
+        if not a.no_browser:
+            webbrowser.open(url)
+        time.sleep(4)
+        return 0
     print("=" * 60)
     print(f"  UPA-Software v{__version__} ({DATUM}) laeuft:  {url}")
     print(f"  Adapter-Port: {a.port}   GPIB-Adresse: {a.addr}")
@@ -495,4 +512,15 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    if getattr(sys, "frozen", False):
+        # installierte Version: bei einem Startfehler das Fenster nicht sofort schliessen
+        try:
+            sys.exit(main() or 0)
+        except SystemExit:
+            raise
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            input("\nFehler beim Start - Enter druecken zum Schliessen ...")
+            sys.exit(1)
+    sys.exit(main() or 0)

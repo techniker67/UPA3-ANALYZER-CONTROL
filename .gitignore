@@ -5,6 +5,7 @@ __pycache__/
 venv/
 build/
 dist/
+dist-installer/
 *.spec
 
 # Local settings and device-specific calibration (never commit)

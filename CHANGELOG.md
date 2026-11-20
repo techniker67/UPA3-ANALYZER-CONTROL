@@ -2,6 +2,12 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.8.3 – 2026-11-20
+- **Windows-Installation:** GitHub baut automatisch eine `Setup.exe` (PyInstaller + Inno Setup) – keine Python-Installation nötig. Startmenü-Eintrag, optionale Desktop-Verknüpfung, Verknüpfung „Messdaten-Ordner", Deinstallation. Installierbar ohne Administratorrechte. Der Datenordner bleibt beim Deinstallieren erhalten.
+- Jeder Bau wird automatisch getestet (Programmstart, Oberfläche, Version, QUIT).
+- Zweiter Start, während die Software schon läuft: öffnet die vorhandene Oberfläche statt eines Fehlers.
+- Installierte Version: Startfehler bleiben im Fenster lesbar.
+
 ## 0.8.2 – 2026-11-20
 - Schaltfläche **⏻ QUIT** oben rechts: beendet die Software nach Rückfrage, das Konsolenfenster schließt sich. Während einer Messung gesperrt (erst Stop). Der Browser-Tab zeigt „SYSTEM SHUTDOWN" und schließt sich, soweit der Browser das erlaubt.
 - `UPA_Software_starten.bat`: Fenster bleibt nur noch bei einem Fehler offen.
