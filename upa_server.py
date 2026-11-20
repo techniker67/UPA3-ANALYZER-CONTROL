@@ -20,11 +20,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
 import upa_core as core
+import upa_paths as paths
 import upa_programs as progs
 from upa_version import __version__, DATUM, GETESTETE_FIRMWARE
 
-HERE = os.path.dirname(os.path.abspath(__file__))
-MESS_DIR = os.path.join(HERE, "Messungen")
+# Speicherorte: siehe upa_paths.py (Programm- und Datenordner getrennt)
 
 FREQ_MIN, FREQ_MAX = 10.0, 50000.0
 LEVEL_MIN, LEVEL_MAX = 0.001, 5.0
@@ -61,7 +61,7 @@ class App:
             self.log_lines.append(f"{ts}  {msg}")
             self.log_lines = self.log_lines[-500:]
         try:   # Protokolldatei (fuer Ferndiagnose ueber die Desktop-Bruecke)
-            with open(os.path.join(HERE, "upa_log.txt"), "a", encoding="utf-8") as fh:
+            with open(paths.data("upa_log.txt"), "a", encoding="utf-8") as fh:
                 fh.write(datetime.now().strftime("%Y-%m-%d ") + f"{ts}  {msg}\n")
         except Exception:
             pass
@@ -199,10 +199,10 @@ CSV_COLS = ["i", "ch", "x", "f_soll", "f", "u_soll", "u", "u_true", "p_w", "gain
 
 
 def write_csv(points, meta):
-    os.makedirs(MESS_DIR, exist_ok=True)
+    os.makedirs(paths.mess_dir(), exist_ok=True)
     name = ("upa_" + str(meta.get("prog", "messung")) + "_"
             + datetime.now().strftime("%Y%m%d_%H%M%S") + ".csv")
-    path = os.path.join(MESS_DIR, name)
+    path = os.path.join(paths.mess_dir(), name)
     with open(path, "w", encoding="utf-8") as fh:
         firma = load_settings().get("firma", "")
         fh.write(f"# UPA-Software v{__version__}" + (f" · {firma}" if firma else "") + "\n")
@@ -221,8 +221,8 @@ def write_csv(points, meta):
 
 
 def find_sound():
-    """Erste MP3 mit 'ready' im Namen (Programmordner, dann Desktop)."""
-    for d in (HERE, os.path.dirname(HERE)):
+    """Erste MP3 mit 'ready' im Namen (Datenordner, Programmordner, dessen Elternordner)."""
+    for d in (paths.DATA_DIR, paths.PROG_DIR, os.path.dirname(paths.PROG_DIR)):
         try:
             for n in sorted(os.listdir(d)):
                 if n.lower().endswith(".mp3") and "ready" in n.lower():
@@ -235,7 +235,7 @@ def find_sound():
 def load_settings():
     """Einstellungen (Firmenname ...) aus upa_einstellungen.json - optional."""
     try:
-        with open(os.path.join(HERE, "upa_einstellungen.json"), encoding="utf-8") as fh:
+        with open(paths.data("upa_einstellungen.json"), encoding="utf-8") as fh:
             return json.load(fh)
     except Exception:
         return {}
@@ -246,7 +246,7 @@ def save_settings(neu):
     try:
         d = load_settings()
         d.update(neu)
-        with open(os.path.join(HERE, "upa_einstellungen.json"), "w", encoding="utf-8") as fh:
+        with open(paths.data("upa_einstellungen.json"), "w", encoding="utf-8") as fh:
             json.dump(d, fh, ensure_ascii=False, indent=1)
     except Exception:
         pass
@@ -255,7 +255,7 @@ def save_settings(neu):
 def load_p78():
     """Kalibriertabelle des P78 (Programmordner)."""
     try:
-        with open(os.path.join(HERE, "p78_kalibrierung.json"), encoding="utf-8") as fh:
+        with open(paths.data("p78_kalibrierung.json"), encoding="utf-8") as fh:
             d = json.load(fh)
         d["punkte"] = sorted([float(f), float(k)] for f, k in d["punkte"])
         kan = d.get("kanaele") or {"L": d["punkte"]}
@@ -289,7 +289,7 @@ def validate_run(body):
     if body.get("atten") == "p78":
         kal = load_p78()
         if not kal:
-            raise ValueError("p78_kalibrierung.json fehlt im Programmordner")
+            raise ValueError(f"p78_kalibrierung.json fehlt im Datenordner {paths.DATA_DIR}")
         atten_tab = kal["punkte"]
         atten_tabs = kal["kanaele"]
         fehlt = [c for c in channels if c not in atten_tabs]
@@ -376,7 +376,7 @@ def make_handler(app):
         def do_GET(self):
             u = urlparse(self.path)
             if u.path in ("/", "/index.html"):
-                with open(os.path.join(HERE, "index.html"), "rb") as fh:
+                with open(os.path.join(paths.RES_DIR, "index.html"), "rb") as fh:
                     return self._send(200, fh.read(), "text/html; charset=utf-8")
             if u.path == "/api/state":
                 since = 0
@@ -439,7 +439,16 @@ def make_handler(app):
 
 
 def main():
-    ap = argparse.ArgumentParser()
+    # Datenordner zuerst bestimmen - die Vorgaben fuer Port/Adresse kommen daraus
+    vor = argparse.ArgumentParser(add_help=False)
+    vor.add_argument("--data", help="Datenordner (Einstellungen, Kalibrierung, Messungen, Protokoll); "
+                                     "Vorgabe: Dokumente/UPA-Analyzer-Control")
+    va, _ = vor.parse_known_args()
+    if va.data:
+        paths.set_data_dir(va.data)
+    meldungen = paths.prepare()
+
+    ap = argparse.ArgumentParser(parents=[vor])
     ein = load_settings()
     ap.add_argument("--port", default=ein.get("port", "COM4"),
                     help="serieller Port des AR488 (COM4 / /dev/ttyACM0); Vorgabe: zuletzt erfolgreich")
@@ -452,6 +461,9 @@ def main():
     a = ap.parse_args()
 
     app = App(a.port, a.addr)
+    app.log(f"UPA-Software v{__version__} - Datenordner: {paths.DATA_DIR}")
+    for m in meldungen:
+        app.log(m)
     if core.serial is None:
         app.log("pyserial fehlt -> in der Konsole: pip install pyserial")
     srv = ThreadingHTTPServer((a.listen, a.http), make_handler(app))
@@ -459,6 +471,9 @@ def main():
     print("=" * 60)
     print(f"  UPA-Software v{__version__} ({DATUM}) laeuft:  {url}")
     print(f"  Adapter-Port: {a.port}   GPIB-Adresse: {a.addr}")
+    print(f"  Datenordner:  {paths.DATA_DIR}")
+    for m in meldungen:
+        print(f"  {m}")
     print("  Beenden: dieses Fenster schliessen oder Strg+C")
     print("=" * 60)
     if not a.no_browser:

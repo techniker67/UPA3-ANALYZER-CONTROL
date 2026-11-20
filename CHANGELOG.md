@@ -2,6 +2,12 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.8.0 – 2026-11-20
+- Eigener Datenordner, getrennt vom Programm: `Dokumente/UPA-Analyzer-Control` mit `upa_einstellungen.json`, `p78_kalibrierung.json`, `upa_log.txt` und `Messungen/`. Ein Update oder eine Neuinstallation überschreibt nichts mehr.
+- Beim ersten Start werden Einstellungen und P78-Kalibrierung aus dem bisherigen Programmordner in den Datenordner **kopiert**; die Originale bleiben liegen. Alte Messungen bleiben im bisherigen Ordner `Messungen/`.
+- Datenordner wählbar: Startoption `--data <Ordner>`, Umgebungsvariable `UPA_DATA` oder Datei `portable` im Programmordner (dann bleibt alles im Programmordner, z. B. für USB-Stick).
+- Der Datenordner wird beim Start im Konsolenfenster und im Protokoll angezeigt. Die Messkette ist unverändert.
+
 ## 0.7.0 – 2026-11-20
 - P78-Kalibrierung für Kanal R (Terzen 20 Hz–20 kHz); `p78_kalibrierung.json` enthält jetzt je Kanal eine Tabelle (`kanaele.L`, `kanaele.R`), die Software wählt automatisch die passende. R weicht von L höchstens 0,03 dB ab.
 

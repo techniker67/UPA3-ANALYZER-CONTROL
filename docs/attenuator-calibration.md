@@ -6,7 +6,7 @@ When the calibrated attenuator is selected, the range is forced to AUTO (4 digit
 
 ## File format
 
-The table is read from `p78_kalibrierung.json` in the program folder. It is device-specific and therefore **not part of this repository** (see `.gitignore`). Structure (values below are placeholders, not real data):
+The table is read from `p78_kalibrierung.json` in the data folder (`Documents/UPA-Analyzer-Control`). It is device-specific and therefore **not part of this repository** (see `.gitignore`). Structure (values below are placeholders, not real data):
 
 ```json
 {
