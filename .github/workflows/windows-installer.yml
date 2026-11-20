@@ -32,7 +32,7 @@ jobs:
       - name: Abhaengigkeiten
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt "pywebview>=5,<7" pyinstaller
+          pip install -r requirements.txt "pywebview>=5,<7" matplotlib pyinstaller
 
       - name: Version lesen
         id: ver
@@ -52,7 +52,18 @@ jobs:
           --add-data "index.html;."
           --hidden-import serial.tools.list_ports
           --hidden-import webview.platforms.edgechromium
+          --exclude-module tkinter
           upa_server.py
+
+      - name: Selbsttest Diagramm (matplotlib in der .exe)
+        shell: pwsh
+        run: |
+          $exe = "dist\UPA-Analyzer-Control\UPA-Analyzer-Control.exe"
+          $p = Start-Process -FilePath $exe -ArgumentList "--selbsttest" -PassThru -Wait
+          if ($p.ExitCode -ne 0) { throw "Selbsttest Exit-Code $($p.ExitCode)" }
+          $png = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "UPA-Analyzer-Control\selbsttest\selbsttest_frequenzgang.png"
+          if (-not (Test-Path $png)) { throw "Diagramm fehlt" }
+          Write-Host "Diagramm OK: $((Get-Item $png).Length) Bytes"
 
       - name: Starttest Server (ohne Adapter, ohne Fenster)
         shell: pwsh

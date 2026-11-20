@@ -3,7 +3,7 @@
 Local web GUI for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV export and a log of every bus command.
 
-> **Status:** pre-release (v0.9.0). All measurement programs marked *GETESTET* have been verified on real hardware.
+> **Status:** pre-release (v0.10.0). All measurement programs marked *GETESTET* have been verified on real hardware.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -68,7 +68,7 @@ All user data lives in **`Documents/UPA-Analyzer-Control`** (shown in the consol
 |---|---|
 | `upa_einstellungen.json` | company name, last working COM port and GPIB address |
 | `p78_kalibrierung.json` | attenuator calibration (optional, see docs) |
-| `Messungen/` | one CSV per run |
+| `Messungen/` | one CSV per run; with a *device under test* set (manufacturer, type, serial no. — top bar), everything goes into `Messungen/<Manufacturer>_<Type>_<Serial>/` together with a PNG chart per run and `messungen.json` (key results) |
 | `upa_log.txt` | log of every bus command |
 
 Other locations: start option `--data <folder>`, environment variable `UPA_DATA`, or an empty file named `portable` in the program folder (everything stays in the program folder, e.g. on a USB stick).
@@ -85,7 +85,9 @@ More details: [docs/hardware-setup.md](docs/hardware-setup.md) · [docs/measurem
 
 - **0.8** – separate data folder ✔, Windows installer built automatically on GitHub ✔
 - **0.9** – own program window instead of browser ✔
-- **later** – optional job field and storage on a network share, before/after measurements
+- **0.10** – device under test + device folder with charts ✔
+- **0.11** – test report as PDF and DOCX, print
+- **later** – optional storage on a network share, before/after measurements
 - **1.0** – DOCX test report, first public release
 
 ## Disclaimer

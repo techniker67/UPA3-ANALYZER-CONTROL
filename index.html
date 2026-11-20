@@ -46,6 +46,25 @@ body.tick .pill.run::before{opacity:.2}
 .iconbtn.quit{color:var(--red);border-color:rgba(255,59,78,.45)}
 .iconbtn.quit:hover:not(:disabled){border-color:var(--red);box-shadow:0 0 10px rgba(255,59,78,.5)}
 .iconbtn:disabled{opacity:.3;cursor:not-allowed}
+/* Pruefling */
+.dut{display:flex;align-items:center;gap:12px;margin-left:28px;padding:6px 14px;border:1px solid var(--cyd);background:rgba(3,16,26,.8);cursor:pointer;min-width:0;max-width:520px;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)}
+.dut:hover{border-color:var(--cy);box-shadow:0 0 12px var(--cydim)}
+.dut .k{font:600 10px var(--f);letter-spacing:.3em;color:var(--mut)}
+.dut .v{font:600 14px var(--f);letter-spacing:.06em;color:var(--cy2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dut .v.leer{color:var(--or);font-weight:400;letter-spacing:.14em;font-size:12px}
+.dut .e{font:12px var(--m);color:var(--mut)}
+.dut.dis{opacity:.45;pointer-events:none}
+.iconbtn{white-space:nowrap}
+@media (max-width:1600px){.dut{margin-left:12px;max-width:330px;gap:8px}.dut .k{display:none}.pills{gap:6px}}
+#dutdlg{position:fixed;inset:0;background:rgba(1,5,10,.9);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(3px)}
+#dutdlg.on{display:flex}
+#dutdlg .box{width:min(760px,92vw);border:1px solid var(--cy);background:rgba(2,11,18,.97);padding:26px 30px;box-shadow:0 0 40px -10px var(--cy)}
+#dutdlg h2{font:600 20px var(--f);letter-spacing:.4em;color:var(--cy);margin:0 0 6px;text-shadow:0 0 10px var(--cy)}
+#dutdlg .sub{font:12px var(--m);color:var(--mut);margin-bottom:20px;letter-spacing:.04em}
+#dutdlg .f3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+#dutdlg .ctl{display:flex;gap:12px;justify-content:flex-end;margin-top:22px}
+#dutdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:10px}
 #bye{position:fixed;inset:0;background:rgba(1,5,10,.97);display:none;align-items:center;justify-content:center;flex-direction:column;gap:18px;z-index:20}
 #bye.on{display:flex}
 #bye h1{font:600 26px var(--f);letter-spacing:.45em;color:var(--red);text-shadow:0 0 14px var(--red);margin:0}
@@ -185,6 +204,7 @@ tr.new td{animation:flash 1s}
 <div class="app">
   <header>
     <div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
+    <div class="dut" id="dut" title="Prüfling festlegen – Messungen werden im Geräteordner gesammelt"><span class="k">PRÜFLING</span><span class="v leer" id="dutTxt">KEINER – FESTLEGEN</span><span class="e">✎</span></div>
     <div class="pills"><span class="pill" id="pAd">ADAPTER</span><span class="pill" id="pUp">UPA</span><span class="pill" id="pMe">MESSUNG</span></div>
     <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn quit" id="quit" title="UPA freigeben, Software beenden und Fenster schliessen">⏻ QUIT</button></div>
   </header>
@@ -289,6 +309,17 @@ tr.new td{animation:flash 1s}
   </div>
 </div>
 
+<div id="dutdlg"><div class="box">
+  <h2>PRÜFLING</h2>
+  <div class="sub">Alle folgenden Messungen werden im Geräteordner gesammelt (CSV, Diagramm, Zusammenfassung) – Grundlage für das Prüfprotokoll.</div>
+  <div class="f3">
+    <div><label>Hersteller</label><input id="dHer" maxlength="60" placeholder="z. B. Yamaha"></div>
+    <div><label>Typ / Modell</label><input id="dTyp" maxlength="60" placeholder="z. B. CA-V1"></div>
+    <div><label>Seriennummer</label><input id="dSn" maxlength="60" placeholder="z. B. 116339"></div>
+  </div>
+  <div class="err" id="dErr"></div>
+  <div class="ctl"><button class="btn ghost" id="dNone">Kein Prüfling</button><button class="btn ghost" id="dCancel">Abbrechen</button><button class="btn" id="dOk">Übernehmen</button></div>
+</div></div>
 <div id="bye"><h1>SYSTEM SHUTDOWN</h1><p id="byeTxt">UPA-Software beendet · UPA freigegeben</p><p>Dieses Browserfenster kann geschlossen werden.</p></div>
 
 <script>
@@ -495,7 +526,7 @@ function render(){
   $("ringTxt").textContent=`${S.steps.filter(s=>s.status==="ok").length}/${S.steps.length}`;
   S.steps.forEach(s=>{if(prevStatus[s.id]!==s.status){if(bootActive&&s.status==="ok")Snd.blip();prevStatus[s.id]=s.status;}});
   $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
-  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; $("reboot").disabled=S.busy; $("quit").disabled=S.busy;
+  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; $("reboot").disabled=S.busy; $("quit").disabled=S.busy; $("dut").classList.toggle("dis",!!S.busy);
   const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
   if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
   else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
@@ -552,6 +583,16 @@ $("go").onclick=async()=>{
 };
 $("stop").onclick=()=>api("/api/stop",{});
 $("csv").onclick=()=>{location.href="/api/csv";};
+function dutOpen(){ if(S&&S.busy) return; const pr=(S&&S.pruefling)||{};
+  $("dHer").value=pr.hersteller||""; $("dTyp").value=pr.typ||""; $("dSn").value=pr.seriennr||""; $("dErr").textContent="";
+  $("dutdlg").classList.add("on"); setTimeout(()=>$("dHer").focus(),50); }
+async function dutSet(body){ const r=await api("/api/pruefling",body);
+  if(!r.ok){ $("dErr").textContent=r.error||"Fehler"; return; } $("dutdlg").classList.remove("on"); }
+$("dut").onclick=dutOpen;
+$("dOk").onclick=()=>dutSet({hersteller:$("dHer").value,typ:$("dTyp").value,seriennr:$("dSn").value});
+$("dNone").onclick=()=>dutSet({});
+$("dCancel").onclick=()=>$("dutdlg").classList.remove("on");
+$("dutdlg").addEventListener("keydown",e=>{ if(e.key==="Enter")$("dOk").click(); if(e.key==="Escape")$("dCancel").click(); });
 let quitting=false;
 $("quit").onclick=async()=>{
   if(S&&S.busy){ alert("Bitte erst die laufende Messung stoppen."); return; }
@@ -578,6 +619,9 @@ async function poll(){
       document.title="UPA·3 // Analyzer Control v"+j.app_version; }
     {const o=$("att").querySelector('option[value="p78"]'); if(o){o.disabled=!j.p78; o.textContent=j.p78?"P78 - kalibriert":"P78 - Kalibrierdatei fehlt";}}
     if(wasMeasuring&&j.phase!=="measuring")(j.points.some(p=>p.abbruch)?Snd.denied():Snd.tone(660,990,.12,"sine",.05));
+    { const pr=j.pruefling, t=$("dutTxt");
+      if(pr){ t.textContent=`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr}`; t.className="v"; $("dut").title="Geräteordner: Messungen/"+j.pruefling_ordner+" – klicken zum Ändern"; }
+      else { t.textContent="KEINER – FESTLEGEN"; t.className="v leer"; } }
     wasMeasuring=j.phase==="measuring"; render();
   }catch(e){$("pgt").textContent="Server getrennt …";}
   if(!quitting) setTimeout(poll,400);

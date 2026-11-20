@@ -23,6 +23,7 @@ from urllib.parse import urlparse
 import upa_core as core
 import upa_paths as paths
 import upa_programs as progs
+import upa_report as report
 import upa_window as window
 from upa_version import __version__, DATUM, GETESTETE_FIRMWARE
 
@@ -49,6 +50,10 @@ class App:
         self.last_csv = None
         self.version = ""
         self.on_quit = None          # vom Programmfenster gesetzt: Fenster schliessen
+        try:                         # zuletzt festgelegter Pruefling
+            self.pruefling = report.pruefling_pruefen(load_settings().get("pruefling"))
+        except ValueError:
+            self.pruefling = None
         self._reset_steps()
 
     # ---- Zustand --------------------------------------------------------
@@ -90,6 +95,9 @@ class App:
                 "app_version": __version__, "app_datum": DATUM,
                 "fw_getestet": bool(self.version) and any(g in self.version for g in GETESTETE_FIRMWARE),
                 "firma": load_settings().get("firma", ""),
+                "pruefling": self.pruefling,
+                "pruefling_ordner": report.ordnername(self.pruefling) if self.pruefling else None,
+                "diagramme": report.plt is not None,
                 "limits": {"fmin": FREQ_MIN, "fmax": FREQ_MAX, "umin": LEVEL_MIN,
                            "umax": LEVEL_MAX, "nmax": MAX_POINTS},
             }
@@ -156,6 +164,7 @@ class App:
                 self.points = []
                 self.sweep_meta = {"start": datetime.now().isoformat(timespec="seconds"),
                                    "prog": prog["id"], "name": prog["name"], "label": p["label"],
+                                   "pruefling": self.pruefling,
                                    "adapter": self.version,
                                    "n": p["n"], "params": {k: v for k, v in p.items() if k != "label"}}
             self.log(f"=== {prog['name']}: Kanaele {'+'.join(p['channels'])}, {p['n']} Messungen, "
@@ -189,11 +198,55 @@ class App:
             finally:
                 u.close()
                 self.log("Freigabe: REM/LLD aus.")
-                self.last_csv = write_csv(self.points, self.sweep_meta)
-                self.log(f"CSV gespeichert: Messungen/{os.path.basename(self.last_csv)}")
+                self.ablegen()
                 with self.lock:
                     self.phase = "ready"
         return self._start(job, "measuring")
+
+    def ablegen(self):
+        """CSV, Diagramm und Eintrag in messungen.json schreiben (Geraeteordner,
+        wenn ein Pruefling festgelegt ist). Fehler beim Diagramm/Eintrag
+        verhindern nie das Speichern der CSV."""
+        meta, pts = self.sweep_meta, list(self.points)
+        pr = meta.get("pruefling")
+        ziel = report.ordner(pr)
+        self.last_csv = write_csv(pts, meta, ziel)
+        rel = os.path.relpath(self.last_csv, paths.DATA_DIR)
+        self.log(f"CSV gespeichert: {rel}")
+        if not pr:
+            return
+        basis = os.path.splitext(self.last_csv)[0]
+        png = None
+        try:
+            titel = f"{meta.get('name')} – {report.bezeichnung(pr)}"
+            if report.diagramm(meta.get("prog"), titel, pts, basis + ".png"):
+                png = os.path.basename(basis + ".png")
+                self.log(f"Diagramm gespeichert: {png}")
+        except Exception as e:
+            self.log(f"Diagramm nicht erstellt: {e}")
+        try:
+            report.eintrag_speichern(ziel, {
+                "programm": meta.get("prog"), "name": meta.get("name"),
+                "start": meta.get("start"), "ende": datetime.now().isoformat(timespec="seconds"),
+                "bezeichnung": meta.get("label", ""), "csv": os.path.basename(self.last_csv),
+                "png": png, "adapter": meta.get("adapter"), "software": __version__,
+                "parameter": {k: v for k, v in meta.get("params", {}).items()
+                              if k not in ("atten_tab", "atten_tabs")},
+                "ergebnis": report.zusammenfassung(meta.get("prog"), pts),
+                "abgebrochen": any(p.get("abbruch") for p in pts) or bool(self.stop_flag)})
+        except Exception as e:
+            self.log(f"messungen.json nicht aktualisiert: {e}")
+
+    def set_pruefling(self, d):
+        pr = report.pruefling_pruefen(d)     # ValueError bei unvollstaendiger Eingabe
+        with self.lock:
+            self.pruefling = pr
+        save_settings({"pruefling": pr or {}})
+        if pr:
+            report.ordner(pr)
+            self.log(f"Prüfling: {report.bezeichnung(pr)} -> Messungen/{report.ordnername(pr)}")
+        else:
+            self.log("Kein Prüfling - Messungen landen direkt in Messungen/.")
 
 
 CSV_COLS = ["i", "ch", "x", "f_soll", "f", "u_soll", "u", "u_true", "p_w", "gain", "gain_db",
@@ -201,15 +254,18 @@ CSV_COLS = ["i", "ch", "x", "f_soll", "f", "u_soll", "u", "u_true", "p_w", "gain
             "abbruch", "raw"]
 
 
-def write_csv(points, meta):
-    os.makedirs(paths.mess_dir(), exist_ok=True)
+def write_csv(points, meta, ziel=None):
+    ziel = ziel or paths.mess_dir()
+    os.makedirs(ziel, exist_ok=True)
     name = ("upa_" + str(meta.get("prog", "messung")) + "_"
             + datetime.now().strftime("%Y%m%d_%H%M%S") + ".csv")
-    path = os.path.join(paths.mess_dir(), name)
+    path = os.path.join(ziel, name)
     with open(path, "w", encoding="utf-8") as fh:
         firma = load_settings().get("firma", "")
         fh.write(f"# UPA-Software v{__version__}" + (f" · {firma}" if firma else "") + "\n")
         fh.write(f"# Adapter: {meta.get('adapter') or 'unbekannt'}\n")
+        if meta.get("pruefling"):
+            fh.write(f"# Prüfling: {report.bezeichnung(meta['pruefling'])}\n")
         fh.write(f"# {meta.get('name')}  {meta.get('start')}  {meta.get('label', '')}  "
                  f"Parameter: {json.dumps(meta.get('params', {}), ensure_ascii=False)}\n")
         fh.write(";".join(CSV_COLS) + "\n")
@@ -433,6 +489,14 @@ def make_handler(app):
                 if not app.run_prog(prog, p):
                     return self._send(409, {"error": "beschaeftigt"})
                 return self._send(200, {"ok": True})
+            if u.path == "/api/pruefling":
+                if app.busy:
+                    return self._send(409, {"error": "Während einer Messung nicht änderbar"})
+                try:
+                    app.set_pruefling(body)
+                except ValueError as e:
+                    return self._send(400, {"error": str(e)})
+                return self._send(200, {"ok": True, "pruefling": app.pruefling})
             if u.path == "/api/quit":
                 if app.busy:
                     return self._send(409, {"error": "Bitte erst die laufende Messung stoppen"})
@@ -486,7 +550,11 @@ def main():
                     help="Oberflaeche im Browser statt im eigenen Programmfenster")
     ap.add_argument("--no-browser", action="store_true",
                     help="weder Fenster noch Browser oeffnen (nur Server, z. B. Mini-PC/Test)")
+    ap.add_argument("--selbsttest", action="store_true", help=argparse.SUPPRESS)
     a = ap.parse_args()
+    if a.selbsttest:              # Build-Pruefung: Diagramm-Erzeugung ohne Geraet
+        print("Selbsttest:", report.selbsttest(paths.data("selbsttest")))
+        return 0
     fenster = window.available() and not a.browser and not a.no_browser
 
     app = App(a.port, a.addr)
