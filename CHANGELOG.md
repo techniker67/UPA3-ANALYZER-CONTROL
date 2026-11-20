@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.8.1 – 2026-11-20
+- Hinweistexte unter den Messprogrammen für Anwender umformuliert (praktische Tipps statt Entwicklungsnotizen); Symbol ℹ statt ✓. Gesperrte Programme nennen nur noch, was fehlt.
+
 ## 0.8.0 – 2026-11-20
 - Eigener Datenordner, getrennt vom Programm: `Dokumente/UPA-Analyzer-Control` mit `upa_einstellungen.json`, `p78_kalibrierung.json`, `upa_log.txt` und `Messungen/`. Ein Update oder eine Neuinstallation überschreibt nichts mehr.
 - Beim ersten Start werden Einstellungen und P78-Kalibrierung aus dem bisherigen Programmordner in den Datenordner **kopiert**; die Originale bleiben liegen. Alte Messungen bleiben im bisherigen Ordner `Messungen/`.

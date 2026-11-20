@@ -352,7 +352,7 @@ function select(id,user){
   document.querySelectorAll("#chSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===(d.ch||"L")));
   if(d.preset) $("preset").value=d.preset; if(d.level!=null) $("lev").value=d.level; if(d.fixfreq) $("fix").value=d.fixfreq;
   if(d.lstart){ $("ls").value=d.lstart; $("le").value=d.lstop; $("ln").value=d.ln; }
-  const n=$("note"); n.className="note "+(p.status==="test"?"test":""); n.textContent=(p.status==="test"?"⚠ ":"✓ ")+p.note;
+  const n=$("note"); n.className="note "+(p.status==="test"?"test":""); n.textContent=(p.status==="test"?"⚠ ":"ℹ ")+p.note;
   try{localStorage.setItem("upa_prog",id);}catch(e){}
   paintFields();
 }
