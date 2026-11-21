@@ -66,6 +66,8 @@ body.tick .pill.run::before{opacity:.2}
 #setdlg .sub{font:12px var(--m);color:var(--mut);margin-bottom:18px;letter-spacing:.04em;word-break:break-all}
 #setdlg .g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
 #setdlg .w2{grid-column:span 2}#setdlg .w3{grid-column:span 3}
+.pfadwahl{display:flex;gap:8px}.pfadwahl input{flex:1;min-width:0}
+.pfadwahl .btn{padding:6px 12px;font-size:11px;letter-spacing:.18em;white-space:nowrap}
 #setdlg .chk{display:flex;gap:10px;align-items:center;font:12px var(--m);color:var(--txt);text-transform:none;letter-spacing:.04em}
 #setdlg .chk input{width:auto}
 #setdlg .ctl{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
@@ -504,7 +506,7 @@ tr.new td{animation:flash 1s}
   <div class="sub" id="sDaten"></div>
   <div class="g">
     <div class="w3"><label>Prüfer / Firma (Protokoll und Fußzeile)</label><input id="sFirma" maxlength="80" placeholder="z. B. Name oder Werkstatt – leer = ohne"></div>
-    <div class="w3"><label>Ablageordner für Messungen</label><input id="sAbl" maxlength="260" placeholder="leer = Dokumente\UPA-Analyzer-Control\Messungen"></div>
+    <div class="w3"><label>Ablageordner für Messungen</label><div class="pfadwahl"><input id="sAbl" maxlength="260" placeholder="leer = Dokumente\UPA-Analyzer-Control\Messungen"><button class="btn ghost owahl" data-ziel="sAbl" title="Ordner im Explorer auswählen (Desktop, Netzwerk …)">DURCHSUCHEN</button></div></div>
     <div><label>UPA: Adapter-Port (AR488)</label><input id="sPort" maxlength="40" list="portlist"></div>
     <div><label>UPA: GPIB-Adresse (0–30)</label><input id="sAddr" type="number" min="0" max="30" step="1"></div>
     <div><label>Multimeter: Fluke-Port</label><input id="sFl" maxlength="40" list="portlist" placeholder="leer = beim Start suchen"></div>
@@ -523,7 +525,7 @@ tr.new td{animation:flash 1s}
   </div>
   <div class="f3 r2">
     <div><label>Auftragsnummer (optional)</label><input id="dAuf" maxlength="40" placeholder="z. B. R-20246281650-003"></div>
-    <div class="w2"><label>Ablageordner für Messungen</label><input id="dAbl" maxlength="260" placeholder="leer = Dokumente\UPA-Analyzer-Control\Messungen"></div>
+    <div class="w2"><label>Ablageordner für Messungen</label><div class="pfadwahl"><input id="dAbl" maxlength="260" placeholder="leer = Dokumente\UPA-Analyzer-Control\Messungen"><button class="btn ghost owahl" data-ziel="dAbl" title="Ordner im Explorer auswählen (Desktop, Netzwerk …)">DURCHSUCHEN</button></div></div>
   </div>
   <div class="sub2" id="dZiel"></div>
   <div class="err" id="dErr"></div>
@@ -844,7 +846,7 @@ $("stop").onclick=()=>api("/api/stop",{});
 $("csv").onclick=()=>{location.href="/api/csv";};
 function dutOpen(){ if(S&&(S.busy||(S.fluke&&S.fluke.busy))) return; const pr=(S&&S.pruefling)||{};
   $("dHer").value=pr.hersteller||""; $("dTyp").value=pr.typ||""; $("dSn").value=pr.seriennr||""; $("dErr").textContent="";
-  $("dAuf").value=pr.auftrag||""; $("dAbl").value=(S&&S.ablage)||""; dZiel();
+  $("dAuf").value=pr.auftrag||""; $("dAbl").value=(S&&S.ablage)||""; dZiel(); owahlZeigen();
   $("dutdlg").classList.add("on"); setTimeout(()=>$("dHer").focus(),50); }
 function dZiel(){ const basis=$("dAbl").value.trim()||(S&&S.ablage_lokal)||"";
   const name=$("dAuf").value.trim()||[$("dHer").value,$("dTyp").value,$("dSn").value].map(v=>v.trim()).filter(Boolean).join("_");
@@ -1067,8 +1069,17 @@ function setOpen(){ if(!S) return; if(S.busy||(S.fluke&&S.fluke.busy)){ alert("W
   $("sFirma").value=S.firma||""; $("sAbl").value=S.ablage||""; $("sPort").value=S.port||""; $("sAddr").value=S.addr;
   $("sFl").value=(S.fluke&&S.fluke.port)||""; $("sUpd").checked=S.update_pruefen!==false; $("sErr").textContent="";
   $("sDaten").textContent="Datenordner: "+(S.datenordner||"")+" · Einstellungen werden dort in upa_einstellungen.json gespeichert.";
-  portsHolen(); $("setdlg").classList.add("on"); setTimeout(()=>$("sFirma").focus(),50); }
+  portsHolen(); owahlZeigen(); $("setdlg").classList.add("on"); setTimeout(()=>$("sFirma").focus(),50); }
 $("sCancel").onclick=()=>$("setdlg").classList.remove("on");
+// Ordnerauswahl im Windows-Dialog (nur im Programmfenster verfuegbar)
+document.querySelectorAll(".owahl").forEach(b=>b.onclick=async()=>{
+  const ziel=$(b.dataset.ziel); b.disabled=true;
+  const r=await api("/api/ordnerwahl",{start:ziel.value.trim()||(S&&(S.ablage||S.ablage_lokal))||""});
+  b.disabled=false;
+  if(!r.ok){ alert(r.error||"Ordnerauswahl nicht möglich"); return; }
+  if(r.pfad){ ziel.value=r.pfad; ziel.dispatchEvent(new Event("input")); }
+});
+function owahlZeigen(){ document.querySelectorAll(".owahl").forEach(b=>b.style.display=(S&&S.ordnerwahl)?"":"none"); }
 $("sOk").onclick=async()=>{
   const a=parseInt($("sAddr").value,10); if(!(a>=0&&a<=30)){ $("sErr").textContent="GPIB-Adresse 0 bis 30"; return; }
   $("sErr").style.color=""; $("sErr").textContent="Speichere …";
