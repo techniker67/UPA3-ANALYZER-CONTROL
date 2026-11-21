@@ -2,6 +2,15 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.1.3 – 2026-11-21
+- **Ruhestrom/Offset – Auswertung:**
+  - Diagramm: Spannungsachse richtet sich nach Sollband und den Werten ab der ersten Zeitmarke; Anklemm-/Abgleichspitzen davor werden abgeschnitten (mit Hinweis unter dem Diagramm). Das Toleranzband ist damit sichtbar.
+  - „Min / Max" wird ab der ersten Zeitmarke gerechnet und so benannt („Min / Max ab 3 min"). Ohne Zeitmarke wie bisher über den ganzen Lauf.
+  - Überlauf des Multimeters an einer Zeitmarke oder am Ende erscheint als „OL ✗ Überlauf" statt „–".
+  - Endwert im Protokoll mit Laufzeit m:ss wie in der Ergebnisübersicht.
+  - Zeitmarken-Text am rechten Rand läuft nicht mehr aus dem Diagramm.
+- Ältere Einträge werden unverändert wie bisher ausgegeben.
+
 ## 1.1.2 – 2026-11-21
 - **Diagramme: fehlende Achsenzahlen, Legende und Zeitmarken-Texte unter Windows behoben.** Die Calibri enthält eingebettete Pixelschriften für kleine Größen, die matplotlib (ab 3.11) leer zeichnet – bei 150 dpi trafen 7,5–9 pt genau diese Größen. Diagramme werden jetzt mit 300 dpi gespeichert (dazu schärfer im Druck). Der Selbsttest der Windows-Version prüft das künftig.
 - Hinweis: Bereits gespeicherte Diagramme bleiben unverändert.

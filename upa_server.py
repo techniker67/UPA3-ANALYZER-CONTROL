@@ -245,13 +245,17 @@ class App:
                 self.log(f"Diagramm gespeichert: {png}")
         except Exception as e:
             self.log(f"Diagramm nicht erstellt: {e}")
-        stat, ende = lg.statistik(), lg.punkte[-1]
+        ab_t = lg.marken[0]["t"] if lg.marken else 0.0      # Min/Max ab erster Zeitmarke
+        stat, ende = lg.statistik(ab_t), lg.punkte[-1]
+        ende_ol = ende[1] is None and lg.ist_ol(ende[2])
+        ende_ok = False if ende_ol and p.get("soll") is not None else lg.ok(ende[1])
         werte = []
         for m in lg.marken:
-            werte.append((f"nach {m['minute']:g} min", report.ruhe_wert(m["wert"], m["ok"])))
-        werte.append((f"Endwert ({fluke.zeit_txt(ende[0])})", report.ruhe_wert(ende[1], lg.ok(ende[1]))))
+            werte.append((f"nach {m['minute']:g} min", report.ruhe_wert(m["wert"], m["ok"], m.get("ol"))))
+        werte.append((f"Endwert ({fluke.zeit_txt(ende[0])})", report.ruhe_wert(ende[1], ende_ok, ende_ol)))
         if stat:
-            werte.append(("Min / Max", report._komma(f"{stat['min']:.3f} / {stat['max']:.3f} mV")))
+            werte.append((f"Min / Max ab {lg.marken[0]['minute']:g} min" if lg.marken else "Min / Max",
+                          report._komma(f"{stat['min']:.3f} / {stat['max']:.3f} mV")))
         if p.get("soll") is not None:
             werte.append(("Sollwert", report._komma(f"{p['soll']:g} ± {p['tol']:g} mV")))
         try:
@@ -261,7 +265,7 @@ class App:
                 "bezeichnung": p.get("bezeichnung", ""), "csv": os.path.basename(pfad), "png": png,
                 "adapter": self.fl_ident, "software": __version__,
                 "parameter": {k: p.get(k) for k in ("soll", "tol", "dauer_s", "intervall", "marken_min")},
-                "marken": lg.marken, "ende_wert": ende[1], "ende_t": ende[0], "statistik": stat,
+                "marken": lg.marken, "ende_wert": ende[1], "ende_t": ende[0], "ende_ol": ende_ol, "statistik": stat,
                 "ergebnis": [{"kanal": p.get("bezeichnung") or "–", "werte": werte}],
                 "abgebrochen": bool(p.get("dauer_s")) and ende[0] < p["dauer_s"] - 2})
         except Exception as e:

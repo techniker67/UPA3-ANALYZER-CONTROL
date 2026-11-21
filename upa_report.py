@@ -303,10 +303,10 @@ def diagramm(prog_id, titel, points, pfad):
         plt.close(fig)
 
 
-def ruhe_wert(v, ok):
+def ruhe_wert(v, ok, ol=False):
     """Text fuer einen Ruhestrom-/Offsetwert mit Bewertung."""
     if v is None:
-        return "–"
+        return "OL" + (" ✗ Überlauf" if ok is False else "") if ol else "–"
     t = _komma(f"{v:.3f} mV")
     return t + ("" if ok is None else (" ✓" if ok else " ✗ außerhalb Toleranz"))
 
@@ -325,17 +325,29 @@ def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
             ax.axhspan(soll - tol, soll + tol, color="#2E8B57", alpha=0.12, lw=0, label="Toleranzband")
             ax.axhline(soll, color="#2E8B57", lw=1.0, ls="--", label=_komma(f"Soll {soll:g} mV"))
         ax.plot(xs, ys, color=FARBE["L"], lw=1.4, label="Messwert")
+        x_max = max(xs[-1], 0.5)
         for m in marken or []:
             ax.axvline(m["t"] / 60.0, color="#7F7F7F", lw=0.8, ls=":")
             if m.get("wert") is not None:
+                rechts = m["t"] / 60.0 > 0.85 * x_max          # am rechten Rand nach links schreiben
                 ax.annotate(_komma(f"{m['minute']:g} min: {m['wert']:.2f} mV"), (m["t"] / 60.0, m["wert"]),
-                            textcoords="offset points", xytext=(4, 6), fontsize=7.5, color="#333333")
-        lo, hi = min(ys), max(ys)
+                            textcoords="offset points", xytext=(-4 if rechts else 4, 6),
+                            ha="right" if rechts else "left", fontsize=7.5, color="#333333")
+        # Spannungsachse auf Sollband und Werte ab der ersten Zeitmarke ausrichten;
+        # Anklemm-/Abgleichspitzen davor duerfen die Skalierung nicht bestimmen.
+        ab_t = marken[0]["t"] if marken else 0.0
+        fokus = [v for t, v, _ in punkte if v is not None and t >= ab_t] or ys
+        lo, hi = min(fokus), max(fokus)
         if soll is not None and tol:
             lo, hi = min(lo, soll - tol), max(hi, soll + tol)
-        rand = max((hi - lo) * 0.15, 0.05)
-        ax.set_ylim(lo - rand, hi + rand)
-        ax.set_xlim(0, max(xs[-1], 0.5))
+        rand = max((hi - lo) * 0.3, 0.05)
+        y_lo, y_hi = lo - rand, hi + rand
+        ax.set_ylim(y_lo, y_hi)
+        ax.set_xlim(0, x_max)
+        if min(ys) < y_lo or max(ys) > y_hi:
+            fig.text(0.01, 0.015, _komma(f"Spannungsachse ab {marken[0]['minute']:g} min skaliert – "
+                                         "Spitzen davor (Anklemmen/Abgleich) abgeschnitten"),
+                     fontsize=7.5, color="#7F7F7F")
         ax.set_xlabel("Zeit (min)")
         ax.set_ylabel("Spannung (mV)")
         ax.xaxis.set_major_formatter(FuncFormatter(_zahl))

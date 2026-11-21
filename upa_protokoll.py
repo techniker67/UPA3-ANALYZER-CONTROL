@@ -148,22 +148,40 @@ def _dauer(s):
     return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d} h" if s >= 3600 else f"{s // 60} min"
 
 
+def _mmss(s):
+    """Laufzeit wie in der Ergebnisuebersicht: m:ss bzw. h:mm:ss."""
+    s = int(round(s or 0))
+    return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d}" if s >= 3600 else f"{s // 60}:{s % 60:02d}"
+
+
 def ruhe_tabelle(e):
     """Zeitmarken + Endwert eines Ruhestrom-/Offset-Laufs."""
     p = e.get("parameter", {})
     soll = p.get("soll")
     soll_txt = f"{k(soll, '{:g}')} ± {k(p.get('tol'), '{:g}')}" if soll is not None else "–"
 
-    def bew(ok):
+    def bew(ok, ol=False):
+        if ol and ok is False:
+            return "✗ Überlauf"
         return "–" if ok is None else ("✓ i. O." if ok else "✗ außerhalb")
-    z = [[f"nach {k(m['minute'], '{:g}')} min", k(m.get("wert"), "{:.3f}"), soll_txt, bew(m.get("ok"))]
-         for m in e.get("marken", [])]
-    ende = e.get("ende_wert")
-    ok = None if ende is None or soll is None else abs(ende - soll) <= p.get("tol", 0)
-    z.append([f"Endwert ({_dauer(e.get('ende_t'))})", k(ende, "{:.3f}"), soll_txt, bew(ok)])
+
+    def wert(v, ol):
+        return "OL" if v is None and ol else k(v, "{:.3f}")
+    z = [[f"nach {k(m['minute'], '{:g}')} min", wert(m.get("wert"), m.get("ol")), soll_txt,
+          bew(m.get("ok"), m.get("ol"))] for m in e.get("marken", [])]
+    ende, ende_ol = e.get("ende_wert"), e.get("ende_ol", False)
+    if ende is None:
+        ok = False if ende_ol and soll is not None else None
+    else:
+        ok = None if soll is None else abs(ende - soll) <= p.get("tol", 0)
+    z.append([f"Endwert ({_mmss(e.get('ende_t'))})", wert(ende, ende_ol), soll_txt, bew(ok, ende_ol)])
     st = e.get("statistik") or {}
     if st:
-        z.append(["Minimum / Maximum", f"{k(st['min'], '{:.3f}')} / {k(st['max'], '{:.3f}')}", "", ""])
+        ab = st.get("ab_t")
+        mk = e.get("marken") or []
+        name = (f"Min / Max ab {k(mk[0]['minute'], '{:g}')} min" if ab and mk else
+                "Minimum / Maximum")
+        z.append([name, f"{k(st['min'], '{:.3f}')} / {k(st['max'], '{:.3f}')}", "", ""])
     return ["Zeitpunkt", "Wert (mV)", "Soll (mV)", "Bewertung"], z, [2.2, 1.6, 1.6, 1.8]
 
 
