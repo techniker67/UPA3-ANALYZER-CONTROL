@@ -840,7 +840,8 @@ $("fSuch").onclick=async()=>{ $("fSt").textContent="Suche Fluke …"; $("fSt").s
   const r=await api("/api/fluke/suchen",{}); if(r.ok){ $("fPort").value=r.port; $("fSt").textContent="Gefunden: "+r.ident; } else { $("fSt").textContent=r.error||"nicht gefunden"; $("fSt").style.color="var(--red)"; } };
 let quitting=false;
 $("quit").onclick=async()=>{
-  if(S&&(S.busy||(S.fluke&&S.fluke.busy))){ alert("Bitte erst die laufende Messung stoppen."); return; }
+  if(S&&S.busy){ alert("Bitte erst die laufende Messung stoppen."); return; }
+  if(S&&S.fluke&&S.fluke.busy&&S.fluke.modus==="rec"){ alert("Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."); return; }
   if(!confirm("UPA-Software beenden?\n\nDas Konsolenfenster schliesst sich, der UPA bleibt freigegeben.")) return;
   const r=await api("/api/quit",{});
   if(!r.ok){ alert(r.error||"Beenden nicht möglich"); return; }
