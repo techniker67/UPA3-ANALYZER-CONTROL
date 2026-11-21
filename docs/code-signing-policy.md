@@ -29,7 +29,7 @@ All team members use multi-factor authentication for GitHub and SignPath.
 
 This program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it.
 
-- It communicates only with the locally connected GPIB adapter (serial port) and with its own user interface via `127.0.0.1`.
+- It communicates only with locally connected instruments via serial ports (GPIB adapter, optionally a Fluke multimeter via its IR-USB cable) and with its own user interface via `127.0.0.1`.
 - Measurement data is written to the local data folder or to a storage folder chosen by the user (which may be a network share).
 - The option `--listen 0.0.0.0` makes the user interface reachable from the local network; it is off by default and only used when the user starts the program with it.
 - The program window uses Microsoft Edge WebView2, a component of Windows; its handling of diagnostic data follows the [Microsoft Privacy Statement](https://privacy.microsoft.com/privacystatement) and the user's Windows settings.

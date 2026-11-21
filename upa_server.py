@@ -24,6 +24,7 @@ import upa_core as core
 import upa_paths as paths
 import upa_programs as progs
 import upa_report as report
+import upa_fluke as fluke
 import upa_protokoll as protokoll
 import upa_window as window
 from upa_version import __version__, DATUM, GETESTETE_FIRMWARE
@@ -51,6 +52,14 @@ class App:
         self.last_csv = None
         self.version = ""
         self.on_quit = None          # vom Programmfenster gesetzt: Fenster schliessen
+        # Fluke 287 (Ruhestrom/Offset) - unabhaengig vom UPA, eigener Port und Thread
+        self.fl_busy = False
+        self.fl_stop = False
+        self.fl = None               # laufender/letzter fluke.Logger
+        self.fl_p = {}
+        self.fl_ident = ""
+        self.fl_port = load_settings().get("fluke_port", "")
+        self.fl_csv = None
         paths.set_ablage(load_settings().get("ablage", ""))
         try:                         # zuletzt festgelegter Pruefling
             self.pruefling = report.pruefling_pruefen(load_settings().get("pruefling"))
@@ -101,6 +110,7 @@ class App:
                 "pruefling_ordner": report.ordnername(self.pruefling) if self.pruefling else None,
                 "ablage": paths.ABLAGE, "ablage_lokal": paths.mess_dir_lokal(),
                 "diagramme": report.plt is not None,
+                "fluke": self.fluke_state(),
                 "limits": {"fmin": FREQ_MIN, "fmax": FREQ_MAX, "umin": LEVEL_MIN,
                            "umax": LEVEL_MAX, "nmax": MAX_POINTS},
             }
@@ -126,6 +136,136 @@ class App:
         finally:
             with self.lock:
                 self.busy = False
+
+    # ---- Fluke 287 -------------------------------------------------------
+    @property
+    def beschaeftigt(self):
+        return self.busy or self.fl_busy
+
+    def fluke_state(self):
+        lg, p = self.fl, self.fl_p
+        st = {"busy": self.fl_busy, "port": self.fl_port, "ident": self.fl_ident,
+              "modus": p.get("modus"), "bezeichnung": p.get("bezeichnung", ""),
+              "soll": p.get("soll"), "tol": p.get("tol"), "dauer_s": p.get("dauer_s"),
+              "csv": os.path.basename(self.fl_csv) if self.fl_csv else None}
+        if lg:
+            pk = lg.punkte
+            st.update({"t": pk[-1][0] if pk else 0.0, "wert": lg.letzter, "hinweis": lg.hinweis,
+                       "trend": lg.trend(), "ok": lg.ok(lg.letzter), "stat": lg.statistik(),
+                       "verlauf": lg.verlauf(), "marken": list(lg.marken), "n": len(pk)})
+        return st
+
+    def fluke_suchen(self):
+        if self.fl_busy:
+            raise ValueError("Fluke-Messung läuft")
+        port, info = fluke.suchen(ausser=[self.port])
+        if not port:
+            raise ValueError(info)
+        self.fl_port, self.fl_ident = port, info
+        save_settings({"fluke_port": port})
+        self.log(f"Fluke gefunden an {port}: {info}")
+        return port, info
+
+    def fluke_start(self, p):
+        with self.lock:
+            if self.fl_busy:
+                return False
+            self.fl_busy, self.fl_stop = True, False
+            self.fl_p, self.fl, self.fl_csv = p, None, None
+
+        def job():
+            f = None
+            try:
+                port = p.get("port") or self.fl_port
+                if not port:
+                    port, _ = self.fluke_suchen()
+                f = fluke.Fluke(port)
+                self.fl_ident = f.oeffnen()
+                if port != self.fl_port:
+                    self.fl_port = port
+                    save_settings({"fluke_port": port})
+                art = "Live-Anzeige (Abgleich)" if p["modus"] == "live" else \
+                    "Aufzeichnung " + (fluke.zeit_txt(p["dauer_s"]) if p["dauer_s"] else "bis Stop")
+                soll = f", Soll {p['soll']:g} ± {p['tol']:g} mV" if p.get("soll") is not None else ""
+                self.log(f"=== Fluke {port} ({self.fl_ident}): {art}{soll}"
+                         + (f" – {p['bezeichnung']}" if p.get("bezeichnung") else "") + " ===")
+                self.fl = fluke.Logger(f, p, self.log, lambda: self.fl_stop)
+                self.fl.meta = {"start": fluke.jetzt_iso(), "pruefling": self.pruefling}
+                self.fl.laufen(lambda: None)
+                if p["modus"] == "rec":
+                    self.fluke_ablegen()
+            except fluke.FlukeFehler as e:
+                self.log(f"FEHLER Fluke: {e}")
+            except Exception as e:
+                self.log(f"FEHLER Fluke: {e}")
+            finally:
+                if f:
+                    f.schliessen()
+                with self.lock:
+                    self.fl_busy = False
+                self.log("Fluke-Messung beendet.")
+        threading.Thread(target=job, daemon=True).start()
+        return True
+
+    def fluke_ablegen(self):
+        """Aufzeichnung speichern: CSV, Diagramm, Eintrag in messungen.json."""
+        lg, p = self.fl, self.fl_p
+        if not lg or not lg.punkte:
+            self.log("Fluke: keine Messwerte – nichts gespeichert.")
+            return
+        pr = lg.meta.get("pruefling")
+        ziel = report.ordner(pr)
+        if report.WARNUNG:
+            self.log("ACHTUNG: " + report.WARNUNG)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        pfad = os.path.join(ziel, f"upa_ruhe_{stamp}.csv")
+        firma = load_settings().get("firma", "")
+        with open(pfad, "w", encoding="utf-8", newline="") as fh:
+            fh.write(f"# UPA-Software v{__version__}" + (f" · {firma}" if firma else "") + "\n")
+            fh.write(f"# Multimeter: {self.fl_ident} an {self.fl_port}\n")
+            if pr:
+                fh.write(f"# Prüfling: {report.bezeichnung(pr)}\n")
+            fh.write(f"# Bezeichnung: {p.get('bezeichnung', '')} · Soll: {p.get('soll')} mV ± {p.get('tol')} mV"
+                     f" · Dauer: {p.get('dauer_s') or 'bis Stop'} s · Intervall: {p.get('intervall')} s\n")
+            fh.write("t_s;zeit;wert_mV;im_toleranzband;hinweis\n")
+            for t, v, h in lg.punkte:
+                ok = lg.ok(v)
+                fh.write(f"{t};{fluke.zeit_txt(t)};{'' if v is None else f'{v:.4f}'};"
+                         f"{'' if ok is None else ('ja' if ok else 'nein')};{h}\n")
+        self.fl_csv = pfad
+        self.log(f"CSV gespeichert: {pfad}")
+        if not pr:
+            return
+        basis = os.path.splitext(pfad)[0]
+        png = None
+        try:
+            titel = f"{p.get('bezeichnung') or 'Ruhestrom / Offset'} – {report.bezeichnung(pr)}"
+            if report.diagramm_ruhe(titel, lg.punkte, p.get("soll"), p.get("tol"), lg.marken, basis + ".png"):
+                png = os.path.basename(basis + ".png")
+                self.log(f"Diagramm gespeichert: {png}")
+        except Exception as e:
+            self.log(f"Diagramm nicht erstellt: {e}")
+        stat, ende = lg.statistik(), lg.punkte[-1]
+        werte = []
+        for m in lg.marken:
+            werte.append((f"nach {m['minute']:g} min", report.ruhe_wert(m["wert"], m["ok"])))
+        werte.append((f"Endwert ({fluke.zeit_txt(ende[0])})", report.ruhe_wert(ende[1], lg.ok(ende[1]))))
+        if stat:
+            werte.append(("Min / Max", report._komma(f"{stat['min']:.3f} / {stat['max']:.3f} mV")))
+        if p.get("soll") is not None:
+            werte.append(("Sollwert", report._komma(f"{p['soll']:g} ± {p['tol']:g} mV")))
+        try:
+            report.eintrag_speichern(ziel, {
+                "programm": "ruhe", "name": "Ruhestrom / Offset",
+                "start": lg.meta.get("start"), "ende": fluke.jetzt_iso(),
+                "bezeichnung": p.get("bezeichnung", ""), "csv": os.path.basename(pfad), "png": png,
+                "adapter": self.fl_ident, "software": __version__,
+                "parameter": {k: p.get(k) for k in ("soll", "tol", "dauer_s", "intervall", "marken_min")},
+                "marken": lg.marken, "ende_wert": ende[1], "ende_t": ende[0], "statistik": stat,
+                "ergebnis": [{"kanal": p.get("bezeichnung") or "–", "werte": werte}],
+                "abgebrochen": bool(p.get("dauer_s")) and ende[0] < p["dauer_s"] - 2})
+        except Exception as e:
+            self.log(f"messungen.json nicht aktualisiert: {e}")
 
     def boot(self, port, addr):
         def job():
@@ -274,6 +414,39 @@ class App:
 CSV_COLS = ["i", "ch", "x", "f_soll", "f", "u_soll", "u", "u_true", "p_w", "gain", "gain_db",
             "att_k", "fnct", "fnct_line", "versuche", "step", "ref_u", "ref_raw", "noise_u", "sn_db", "xt_u", "xt_db", "dir",
             "abbruch", "raw"]
+
+
+def validate_fluke(b):
+    """Parameter fuer Ruhestrom/Offset pruefen."""
+    modus = b.get("modus")
+    if modus not in ("live", "rec"):
+        raise ValueError("Modus live oder rec")
+    def zahl(k):
+        v = b.get(k)
+        return None if v in (None, "") else float(v)
+    soll, tol = zahl("soll"), zahl("tol")
+    if soll is not None and (tol is None or tol <= 0):
+        raise ValueError("Zum Sollwert bitte eine Toleranz > 0 angeben")
+    if soll is None:
+        tol = None
+    dauer_min = zahl("dauer_min") or 0
+    if dauer_min < 0 or dauer_min > 24 * 60:
+        raise ValueError("Dauer 0 (bis Stop) bis 1440 min")
+    intervall = zahl("intervall") or 1.0
+    if not 0.5 <= intervall <= 60:
+        raise ValueError("Intervall 0,5 bis 60 s")
+    marken = []
+    for teil in str(b.get("marken", "") or "").replace(";", ",").split(","):
+        teil = teil.strip().replace(",", ".")
+        if teil:
+            m = float(teil)
+            if m <= 0:
+                raise ValueError("Zeitmarken in Minuten > 0")
+            marken.append(m)
+    port = str(b.get("port", "") or "").strip()
+    return {"modus": modus, "soll": soll, "tol": tol, "dauer_s": dauer_min * 60 if modus == "rec" and dauer_min else None,
+            "intervall": intervall, "marken_min": sorted(set(marken)) if modus == "rec" else [],
+            "bezeichnung": str(b.get("bezeichnung", "") or "").strip()[:60], "port": port}
 
 
 def write_csv(points, meta, ziel=None):
@@ -545,7 +718,7 @@ def make_handler(app):
                     return self._send(409, {"error": "beschaeftigt"})
                 return self._send(200, {"ok": True})
             if u.path == "/api/ablage":
-                if app.busy:
+                if app.beschaeftigt:
                     return self._send(409, {"error": "Während einer Messung nicht änderbar"})
                 try:
                     app.set_ablage(body.get("pfad", ""))
@@ -553,7 +726,7 @@ def make_handler(app):
                     return self._send(400, {"error": str(e)})
                 return self._send(200, {"ok": True, "ablage": paths.ABLAGE})
             if u.path == "/api/pruefling":
-                if app.busy:
+                if app.beschaeftigt:
                     return self._send(409, {"error": "Während einer Messung nicht änderbar"})
                 try:
                     app.set_pruefling(body)
@@ -586,7 +759,7 @@ def make_handler(app):
                 ok, hinweis = oeffnen(ziel, drucken=bool(body.get("drucken")))
                 return self._send(200 if ok else 400, {"ok": ok, "hinweis": hinweis, "error": None if ok else hinweis})
             if u.path == "/api/quit":
-                if app.busy:
+                if app.beschaeftigt:
                     return self._send(409, {"error": "Bitte erst die laufende Messung stoppen"})
                 app.log("Beenden ueber QUIT - Software wird geschlossen.")
                 self._send(200, {"ok": True})
@@ -600,6 +773,23 @@ def make_handler(app):
                         app.on_quit()
                 threading.Timer(0.5, beenden).start()
                 return None
+            if u.path == "/api/fluke/suchen":
+                try:
+                    port, info = app.fluke_suchen()
+                except ValueError as e:
+                    return self._send(400, {"error": str(e)})
+                return self._send(200, {"ok": True, "port": port, "ident": info})
+            if u.path == "/api/fluke/start":
+                try:
+                    p = validate_fluke(body)
+                except (ValueError, TypeError) as e:
+                    return self._send(400, {"error": str(e)})
+                if not app.fluke_start(p):
+                    return self._send(409, {"error": "Fluke-Messung läuft bereits"})
+                return self._send(200, {"ok": True})
+            if u.path == "/api/fluke/stop":
+                app.fl_stop = True
+                return self._send(200, {"ok": True})
             if u.path == "/api/stop":
                 app.stop_flag = True
                 app.log("Stop angefordert - Abbruch nach dem laufenden Punkt.")

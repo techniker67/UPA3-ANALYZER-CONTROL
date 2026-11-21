@@ -92,8 +92,40 @@ body.tick .pill.run::before{opacity:.2}
 #bye h1{font:600 26px var(--f);letter-spacing:.45em;color:var(--red);text-shadow:0 0 14px var(--red);margin:0}
 #bye p{font:13px var(--m);color:var(--mut);letter-spacing:.08em;margin:0}
 
+
+/* ---- Fluke 287: Ruhestrom / Offset ---- */
+.flukeview{display:none;grid-row:3/5;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);grid-template-rows:auto minmax(0,1fr);gap:14px;min-height:0}
+.app.mode-fluke .row1,.app.mode-fluke .row2{display:none}
+.app.mode-fluke .flukeview{display:grid}
+.tile.fluke{border-color:rgba(255,155,47,.45)}
+.tile.fluke .o{color:var(--or)}
+.tile.fluke.sel{border-color:var(--or);background:rgba(255,155,47,.10);box-shadow:inset 0 0 22px rgba(255,155,47,.16)}
+.fv-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px 14px;align-items:end}
+.fv-grid .w2{grid-column:span 2}
+.fv-port{display:flex;gap:6px}.fv-port input{flex:1}
+.fv-port .btn{padding:6px 12px;font-size:11px;white-space:nowrap}
+.fv-ident{font:11px var(--m);color:var(--mut);margin-top:6px;min-height:14px}
+.fv-act{display:flex;gap:10px;margin-top:14px;align-items:center;flex-wrap:wrap}
+.fv-act .st{font:12px var(--m);color:var(--mut);margin-left:auto}
+.fv-big{display:flex;flex-direction:column;justify-content:center;height:calc(100% - 26px)}
+.fv-bez{font:600 13px var(--f);letter-spacing:.3em;color:var(--mut);text-transform:uppercase}
+.fv-wert{font:700 96px var(--m);line-height:1;color:var(--cy2);text-shadow:0 0 18px rgba(0,229,255,.55);letter-spacing:.02em;margin:8px 0 4px;display:flex;align-items:baseline;gap:14px}
+.fv-wert small{font-size:30px;color:var(--mut);text-shadow:none}
+.fv-wert.ok{color:var(--grn);text-shadow:0 0 22px rgba(61,255,181,.6)}
+.fv-wert.bad{color:var(--red);text-shadow:0 0 22px rgba(255,59,78,.6)}
+.fv-trend{font:600 22px var(--m);color:var(--cy2);display:flex;gap:14px;align-items:center}
+.fv-trend .pf{font-size:34px;line-height:1}
+.fv-info{display:flex;gap:26px;flex-wrap:wrap;margin-top:14px;font:12.5px var(--m);color:var(--mut)}
+.fv-info b{color:var(--cy2);font-weight:600}
+.fv-mode{display:inline-block;font:600 10px var(--f);letter-spacing:.3em;padding:3px 8px;border:1px solid var(--cyd);color:var(--mut);margin-left:12px;vertical-align:middle}
+.fv-mode.live{color:var(--cy);border-color:var(--cy)}
+.fv-mode.rec{color:var(--red);border-color:var(--red)}
+body.tick .fv-mode.rec{opacity:.35}
+.fv-chartp{grid-column:1/3;display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:16px;min-height:0}
+.fv-chartp svg{width:100%;height:100%;min-height:200px}
+.fv-marks table{width:100%}
 /* Messprogramm-Menue */
-.menu{display:grid;grid-template-columns:120px repeat(10,minmax(0,1fr));gap:8px;align-items:stretch}
+.menu{display:grid;grid-template-columns:120px repeat(11,minmax(0,1fr));gap:8px;align-items:stretch}
 .menu .mt{font:600 11px var(--f);letter-spacing:.32em;color:var(--cy);display:flex;flex-direction:column;justify-content:center;
   border-left:2px solid var(--cy);padding-left:12px;line-height:1.7}
 .menu .mt small{color:var(--mut);letter-spacing:.2em;font-weight:400}
@@ -310,6 +342,43 @@ tr.new td{animation:flash 1s}
     </section>
   </div>
 
+
+  <!-- FLUKE 287: RUHESTROM / OFFSET (ersetzt die UPA-Bereiche, solange ausgewählt) -->
+  <div class="flukeview" id="fv">
+    <section class="panel">
+      <h3 class="ptitle">FLUKE 287 <span class="tag">// RUHESTROM · OFFSET · mV DC</span></h3>
+      <div class="fv-grid">
+        <div class="w2"><label>Fluke-Port (IR-Kabel)</label><div class="fv-port"><input id="fPort" list="portlist" placeholder="automatisch suchen"><button class="btn ghost" id="fSuch">Suchen</button></div></div>
+        <div><label>Intervall</label><select id="fInt"><option value="1">1 s</option><option value="2">2 s</option><option value="5">5 s</option><option value="10">10 s</option></select></div>
+        <div class="w2"><label>Bezeichnung</label><input id="fBez" list="fBezL" maxlength="60" placeholder="z. B. Ruhestrom L"><datalist id="fBezL"><option>Ruhestrom L</option><option>Ruhestrom R</option><option>Offset L</option><option>Offset R</option></datalist></div>
+        <div><label>Dauer</label><select id="fDau"><option value="10">10 min</option><option value="30">30 min</option><option value="60">1 h</option><option value="120" selected>2 h</option><option value="0">bis Stop</option></select></div>
+        <div><label>Sollwert (mV)</label><input id="fSoll" type="number" step="0.1" placeholder="z. B. 11"></div>
+        <div><label>Toleranz ± (mV)</label><input id="fTol" type="number" step="0.1" min="0" placeholder="z. B. 1"></div>
+        <div><label>Zeitmarken (min)</label><input id="fMark" value="10, 120"></div>
+      </div>
+      <div class="fv-ident" id="fIdent"></div>
+      <div class="fv-act">
+        <button class="btn" id="fLive" title="Nur anzeigen, nichts speichern – zum Einstellen am Trimmer">▶ Live-Abgleich</button>
+        <button class="btn" id="fRec" title="Verlauf aufzeichnen und im Prüflingsordner speichern">● Aufzeichnen</button>
+        <button class="btn warn" id="fStop" disabled>■ Stop</button>
+        <span class="st" id="fSt">Fluke einschalten, auf mV DC stellen, IR-Kopf aufsetzen</span>
+      </div>
+      <div class="note" id="fNote">ℹ Die Software fragt das Fluke nur ab und verstellt nichts. FlukeView Forms vorher schließen. Läuft auch ohne UPA.</div>
+    </section>
+    <section class="panel">
+      <h3 class="ptitle">ANZEIGE <span class="tag" id="fTag">// Fluke 287</span><span class="fv-mode" id="fMode">BEREIT</span></h3>
+      <div class="fv-big">
+        <div class="fv-bez" id="fBezA">–</div>
+        <div class="fv-wert" id="fWert">--.---<small>mV</small></div>
+        <div class="fv-trend"><span class="pf" id="fPf">·</span><span id="fTr">Trend –</span></div>
+        <div class="fv-info"><span>Soll <b id="fSollA">–</b></span><span>Zeit <b id="fZeit">–</b></span><span>Min <b id="fMin">–</b></span><span>Max <b id="fMax">–</b></span><span>Mittel <b id="fMit">–</b></span></div>
+      </div>
+    </section>
+    <section class="panel fv-chartp">
+      <div style="min-height:0;display:flex;flex-direction:column"><h3 class="ptitle">VERLAUF <span class="tag">// mV über Zeit</span></h3><svg id="fCh"></svg></div>
+      <div class="fv-marks"><h3 class="ptitle">ZEITMARKEN</h3><table><thead><tr><th>ZEIT</th><th>WERT MV</th><th>SOLL</th></tr></thead><tbody id="fMk"></tbody></table></div>
+    </section>
+  </div>
   <section class="panel logp"><pre id="log"></pre></section>
 </div>
 
@@ -325,6 +394,7 @@ tr.new td{animation:flash 1s}
       <div class="pf" style="width:150px"><label>GPIB-Adresse (0–30)</label><input id="gaddr" type="number" min="0" max="30" step="1" value="7"></div>
       <button class="btn" id="start">System starten</button>
       <button class="btn ghost hide" id="close">Schliessen</button>
+      <button class="btn ghost" id="ohneUpa" title="Nur Fluke-Messungen (Ruhestrom/Offset) – UPA später über ⟲ INIT">Ohne UPA fortfahren</button>
     </div>
     <div class="hint">Voraussetzung: UPA eingeschaltet, am Gerät eingestellte IEC-Adresse eintragen · für den Verbindungstest Loopback (Ausgang → Eingang) gesteckt</div>
     <div class="bootfoot"><b id="bFirma"></b><span id="bSep"></span>UPA-SOFTWARE <span id="bVer">v–</span></div>
@@ -419,9 +489,17 @@ function buildMenu(){
   PROGS.forEach(p=>{ const b=document.createElement("button"); b.className="tile "+(p.status==="locked"?"locked":""); b.dataset.id=p.id;
     b.title=p.lock||p.note||""; b.innerHTML=`<span class="o">${p.opt}</span><span class="n">${esc(p.name)}</span><span class="s">${esc(p.sub)}</span><span class="b ${p.status}">${BADGE[p.status]}</span>`;
     b.onclick=()=>select(p.id,true); m.appendChild(b); });
+  const f=document.createElement("button"); f.className="tile fluke"; f.dataset.id="ruhe";
+  f.title="Ruhestrom / DC-Offset mit dem Fluke 287 über das IR-USB-Kabel – läuft auch ohne UPA";
+  f.innerHTML=`<span class="o">FLUKE</span><span class="n">Ruhestrom</span><span class="s">Offset · Fluke 287 · mV</span><span class="b test">VERIFIKATION</span>`;
+  f.onclick=()=>select("ruhe",true); m.appendChild(f);
 }
 function select(id,user){
+  if(id==="ruhe"){ document.querySelector(".app").classList.add("mode-fluke");
+    document.querySelectorAll(".tile").forEach(t=>t.classList.toggle("sel",t.dataset.id==="ruhe"));
+    if(user){Snd.init();Snd.click();} try{localStorage.setItem("upa_prog",id);}catch(e){} fRender(); return; }
   const p=PROGS.find(x=>x.id===id); if(!p) return;
+  document.querySelector(".app").classList.remove("mode-fluke");
   if(p.status==="locked"){ const n=$("note"); n.className="note locked"; n.textContent="⊘ "+p.name+" gesperrt: "+p.lock; if(user){Snd.init();Snd.denied();} return; }
   SEL=p; if(user){Snd.init();Snd.click();}
   document.querySelectorAll(".tile").forEach(t=>t.classList.toggle("sel",t.dataset.id===id));
@@ -564,7 +642,7 @@ function render(){
   $("ringTxt").textContent=`${S.steps.filter(s=>s.status==="ok").length}/${S.steps.length}`;
   S.steps.forEach(s=>{if(prevStatus[s.id]!==s.status){if(bootActive&&s.status==="ok")Snd.blip();prevStatus[s.id]=s.status;}});
   $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
-  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; $("reboot").disabled=S.busy; $("quit").disabled=S.busy; $("dut").classList.toggle("dis",!!S.busy); $("prot").disabled=S.busy||!S.pruefling;
+  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; const FB=!!(S.fluke&&S.fluke.busy); $("reboot").disabled=S.busy; $("quit").disabled=S.busy||FB; $("dut").classList.toggle("dis",!!S.busy||FB); $("prot").disabled=S.busy||FB||!S.pruefling; fRender();
   const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
   if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
   else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
@@ -607,6 +685,7 @@ async function startBoot(){
   },300);
 }
 $("start").onclick=startBoot; $("close").onclick=()=>$("boot").classList.add("gone");
+$("ohneUpa").onclick=()=>{ $("boot").classList.add("gone"); select("ruhe",true); };
 $("reboot").onclick=()=>{$("boot").classList.remove("gone");$("start").disabled=false;$("start").textContent="System starten";$("bmsg").textContent="";$("bmsg").className="bootmsg";};
 
 /* ---------------- Messung ---------------- */
@@ -621,7 +700,7 @@ $("go").onclick=async()=>{
 };
 $("stop").onclick=()=>api("/api/stop",{});
 $("csv").onclick=()=>{location.href="/api/csv";};
-function dutOpen(){ if(S&&S.busy) return; const pr=(S&&S.pruefling)||{};
+function dutOpen(){ if(S&&(S.busy||(S.fluke&&S.fluke.busy))) return; const pr=(S&&S.pruefling)||{};
   $("dHer").value=pr.hersteller||""; $("dTyp").value=pr.typ||""; $("dSn").value=pr.seriennr||""; $("dErr").textContent="";
   $("dAuf").value=pr.auftrag||""; $("dAbl").value=(S&&S.ablage)||""; dZiel();
   $("dutdlg").classList.add("on"); setTimeout(()=>$("dHer").focus(),50); }
@@ -688,9 +767,73 @@ $("pMake").onclick=async()=>{
   $("pErr").textContent=""; zeigeDateien(r.dateien, "✓ Erstellt:");
 };
 $("protdlg").addEventListener("keydown",e=>{ if(e.key==="Escape")$("pClose").click(); });
+
+/* ---------------- Fluke 287: Ruhestrom / Offset ---------------- */
+const fx3=v=>v==null||!isFinite(v)?"--.---":(+v).toFixed(3).replace(".",",");
+const zt=s=>{s=Math.round(s||0);const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+":"+String(m).padStart(2,"0"):m)+":"+String(x).padStart(2,"0");};
+let fSig="";
+function fRender(){
+  if(!S||!S.fluke) return; const F=S.fluke, busy=!!F.busy;
+  $("fLive").disabled=busy; $("fRec").disabled=busy; $("fStop").disabled=!busy; $("fSuch").disabled=busy;
+  ["fPort","fInt","fBez","fDau","fSoll","fTol","fMark"].forEach(id=>$(id).disabled=busy);
+  if(!$("fPort").value&&F.port&&!busy) $("fPort").placeholder=F.port+" (zuletzt)";
+  $("fIdent").textContent=F.ident?("Gerät: "+F.ident+(F.port?" an "+F.port:"")):"";
+  const mode=$("fMode"); mode.className="fv-mode"+(busy?(F.modus==="live"?" live":" rec"):"");
+  mode.textContent=busy?(F.modus==="live"?"LIVE":"AUFZEICHNUNG"):(F.csv?"GESPEICHERT":"BEREIT");
+  $("fBezA").textContent=F.bezeichnung||($("fBez").value||"–");
+  const w=$("fWert"); w.className="fv-wert"+(F.ok===true?" ok":F.ok===false?" bad":"");
+  w.innerHTML=fx3(F.wert)+"<small>mV</small>";
+  const tr=F.trend; $("fPf").textContent=tr==null?"·":Math.abs(tr)<0.02?"→":tr>0?"↑":"↓";
+  $("fTr").textContent=tr==null?"Trend –":(tr>=0?"+":"")+tr.toFixed(2).replace(".",",")+" mV/min";
+  $("fSollA").textContent=F.soll!=null?(String(F.soll).replace(".",",")+" ± "+String(F.tol).replace(".",",")+" mV"):"–";
+  $("fZeit").textContent=F.t!=null&&F.n?(zt(F.t)+(F.dauer_s?" / "+zt(F.dauer_s):"")):"–";
+  const st=F.stat||{}; $("fMin").textContent=fx3(st.min); $("fMax").textContent=fx3(st.max); $("fMit").textContent=fx3(st.mittel);
+  $("fSt").textContent=busy?(F.hinweis||(F.modus==="live"?"Live – nichts wird gespeichert":"Aufzeichnung läuft")):(F.csv?"Gespeichert: "+F.csv:(F.hinweis||"bereit"));
+  $("fSt").style.color=F.hinweis?"var(--or)":"";
+  $("fMk").innerHTML=(F.marken||[]).map(m=>`<tr><td>${String(m.minute).replace(".",",")} min</td><td class="${m.ok===false?"bad":""}">${fx3(m.wert)}</td><td>${m.ok==null?"–":m.ok?"✓":"✗"}</td></tr>`).join("")||`<tr><td colspan="3" style="color:var(--mut)">—</td></tr>`;
+  const sig=(F.n||0)+"|"+(F.verlauf||[]).length+"|"+document.querySelector(".app").classList.contains("mode-fluke");
+  if(sig!==fSig){ fSig=sig; fChart(); }
+}
+function fChart(){
+  const svg=$("fCh"); if(!svg||!S||!S.fluke) return; const F=S.fluke, pts=F.verlauf||[];
+  svg.innerHTML=""; const W=svg.clientWidth||800,H=svg.clientHeight||260; if(W<50) return; svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
+  const L=62,R=16,T=14,B=26,pw=W-L-R,ph=H-T-B, g=el("g",{});
+  const tmax=Math.max(F.dauer_s||0,(pts.length?pts[pts.length-1][0]:0),60)/60;
+  let ys=pts.map(p=>p[1]); if(F.soll!=null){ys.push(F.soll-F.tol,F.soll+F.tol);}
+  let lo=ys.length?Math.min(...ys):0, hi=ys.length?Math.max(...ys):10; const pad=Math.max((hi-lo)*0.15,0.05); lo-=pad; hi+=pad;
+  const fx=t=>L+t/tmax*pw, fy=v=>T+(1-(v-lo)/(hi-lo))*ph;
+  niceTicks(lo,hi,5).forEach(v=>{g.appendChild(el("line",{x1:L,x2:L+pw,y1:fy(v),y2:fy(v),stroke:"rgba(0,229,255,.12)"}));
+    g.appendChild(el("text",{x:L-8,y:fy(v)+4,"text-anchor":"end",fill:"#5d8a98","font-size":11,"font-family":"JetBrains Mono,monospace"},String(+v.toFixed(3)).replace(".",",")));});
+  niceTicks(0,tmax,8).forEach(t=>{g.appendChild(el("line",{x1:fx(t),x2:fx(t),y1:T,y2:T+ph,stroke:"rgba(0,229,255,.10)"}));
+    g.appendChild(el("text",{x:fx(t),y:H-8,"text-anchor":"middle",fill:"#5d8a98","font-size":11,"font-family":"JetBrains Mono,monospace"},String(+t.toFixed(2)).replace(".",",")+(t===0?" min":"")));});
+  if(F.soll!=null){ g.appendChild(el("rect",{x:L,y:fy(F.soll+F.tol),width:pw,height:Math.max(1,fy(F.soll-F.tol)-fy(F.soll+F.tol)),fill:"rgba(61,255,181,.08)",stroke:"rgba(61,255,181,.35)","stroke-dasharray":"4 4"}));
+    g.appendChild(el("line",{x1:L,x2:L+pw,y1:fy(F.soll),y2:fy(F.soll),stroke:"rgba(61,255,181,.6)","stroke-dasharray":"6 4"})); }
+  (F.marken||[]).forEach(m=>{const x=fx(m.t/60); g.appendChild(el("line",{x1:x,x2:x,y1:T,y2:T+ph,stroke:"rgba(255,155,47,.6)","stroke-dasharray":"3 3"}));
+    g.appendChild(el("text",{x:x+4,y:T+12,fill:"#ff9b2f","font-size":11,"font-family":"JetBrains Mono,monospace"},String(m.minute).replace(".",",")+" min"));});
+  if(pts.length){ const d=pts.map((p,i)=>(i?"L":"M")+fx(p[0]/60).toFixed(1)+","+fy(p[1]).toFixed(1)).join(" ");
+    g.appendChild(el("path",{d,fill:"none",stroke:"#00e5ff","stroke-width":2,filter:"drop-shadow(0 0 4px rgba(0,229,255,.7))"}));
+    const lp=pts[pts.length-1]; g.appendChild(el("circle",{cx:fx(lp[0]/60),cy:fy(lp[1]),r:4,fill:"#00e5ff"})); }
+  g.appendChild(el("rect",{x:L,y:T,width:pw,height:ph,fill:"none",stroke:"rgba(0,229,255,.35)"}));
+  svg.appendChild(g);
+}
+window.addEventListener("resize",()=>{fSig="";fRender();});
+async function fStart(modus){
+  Snd.init();
+  const body={modus,port:$("fPort").value.trim(),bezeichnung:$("fBez").value,soll:$("fSoll").value,tol:$("fTol").value,
+    dauer_min:$("fDau").value,marken:$("fMark").value,intervall:$("fInt").value};
+  if(modus==="rec"&&!(S&&S.pruefling)&&!confirm("Kein Prüfling festgelegt – die Aufzeichnung wird nur als CSV in Messungen gespeichert (ohne Diagramm/Protokoll). Trotzdem starten?")) return;
+  const r=await api("/api/fluke/start",body);
+  if(!r.ok){ $("fSt").textContent=r.error||"Start abgelehnt"; $("fSt").style.color="var(--red)"; Snd.denied(); return; }
+  Snd.blip();
+}
+$("fLive").onclick=()=>fStart("live");
+$("fRec").onclick=()=>fStart("rec");
+$("fStop").onclick=()=>api("/api/fluke/stop",{});
+$("fSuch").onclick=async()=>{ $("fSt").textContent="Suche Fluke …"; $("fSt").style.color="";
+  const r=await api("/api/fluke/suchen",{}); if(r.ok){ $("fPort").value=r.port; $("fSt").textContent="Gefunden: "+r.ident; } else { $("fSt").textContent=r.error||"nicht gefunden"; $("fSt").style.color="var(--red)"; } };
 let quitting=false;
 $("quit").onclick=async()=>{
-  if(S&&S.busy){ alert("Bitte erst die laufende Messung stoppen."); return; }
+  if(S&&(S.busy||(S.fluke&&S.fluke.busy))){ alert("Bitte erst die laufende Messung stoppen."); return; }
   if(!confirm("UPA-Software beenden?\n\nDas Konsolenfenster schliesst sich, der UPA bleibt freigegeben.")) return;
   const r=await api("/api/quit",{});
   if(!r.ok){ alert(r.error||"Beenden nicht möglich"); return; }
@@ -723,7 +866,7 @@ async function poll(){
 }
 fetch("/api/ports").then(r=>r.json()).then(ps=>{$("portlist").innerHTML=ps.map(p=>`<option value="${esc(p.device)}">${esc(p.desc)}</option>`).join("");}).catch(()=>{});
 fetch("/api/programs").then(r=>r.json()).then(ps=>{PROGS=ps;buildMenu();let last="fr";try{last=localStorage.getItem("upa_prog")||"fr";}catch(e){}
-  select(PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();});
+  select(last==="ruhe"?"ruhe":PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();});
 poll();
 </script>
 </body>
