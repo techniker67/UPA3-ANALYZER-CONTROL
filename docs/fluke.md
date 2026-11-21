@@ -1,6 +1,6 @@
 # Quiescent current / DC offset with a Fluke 287/289
 
-The program can log a Fluke 287 or 289 multimeter via the Fluke IR-USB cable (e.g. IR189USB) — typically the voltage across an emitter resistor (quiescent current) or the DC offset at the speaker output, in **mV DC**. It works **without the UPA**: in the start screen choose *Ohne UPA fortfahren*, or select the tile **Ruhestrom** at any time.
+The program can log a Fluke 287 or 289 multimeter via the Fluke IR-USB cable (e.g. IR189USB) — typically the voltage across an emitter resistor (quiescent current) or the DC offset at the speaker output, in **mV DC**. It works **without the UPA**: in the start screen choose *Ohne UPA fortfahren*, or select the tile **Ruhestrom** at any time. Both open a separate **multimeter window** (only the meter view, freely resizable) that can sit next to the main window. *✕ SCHLIESSEN* closes only this window (a live display is stopped; closing is blocked while recording); QUIT in the main window closes both.
 
 ## Setup
 

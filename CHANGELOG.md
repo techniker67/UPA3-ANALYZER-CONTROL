@@ -2,6 +2,14 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.2.0 – 2026-11-21
+- **Eigenes Multimeter-Fenster** für Ruhestrom/Offset: Die Kachel „Ruhestrom" (und „Ohne UPA fortfahren") öffnet ein zweites, frei skalierbares Fenster nur mit dem Fluke-Bereich – ohne UPA-Kacheln und Start-Check. Es lässt sich neben das Hauptfenster legen; ist es schon offen, wird es nach vorne geholt.
+  - Aufteilung: links Einstellungen, rechts Anzeige und Verlauf; schmale Fenster stapeln alles untereinander.
+  - „✕ SCHLIESSEN" schließt nur das Multimeter-Fenster (Live-Anzeige wird gestoppt); während einer Aufzeichnung gesperrt, auch das X.
+  - QUIT im Hauptfenster schließt beide Fenster.
+  - Ohne Programmfenster (Browser-Betrieb) öffnet sich das Multimeter als eigenes Browserfenster.
+- Build-Prüfung: Multimeter-Fenster öffnen und mit QUIT schließen.
+
 ## 1.1.5 – 2026-11-21
 - **Sicheres Beenden und Starten:**
   - Programm beendet sich nach X oder QUIT zuverlässig (vorher konnte ein Prozess ohne Fenster im Hintergrund bleiben – danach „Port belegt").

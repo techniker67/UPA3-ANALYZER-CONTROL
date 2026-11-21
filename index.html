@@ -97,6 +97,32 @@ body.tick .pill.run::before{opacity:.2}
 .flukeview{display:none;grid-row:3/5;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);grid-template-rows:auto minmax(0,1fr);gap:14px;min-height:0}
 .app.mode-fluke .row1,.app.mode-fluke .row2{display:none}
 .app.mode-fluke .flukeview{display:grid}
+/* Multimeter-Fenster (?ansicht=multimeter): nur Fluke-Bereich, ohne UPA */
+body.mm{overflow:auto}
+.app.mm{grid-template-rows:58px minmax(0,1fr) 78px}
+.app.mm .menu,.app.mm .row1,.app.mm .row2,.app.mm .pills,.app.mm #prot,.app.mm #reboot{display:none}
+.app.mm .logo small{display:none}
+.app.mm header{gap:14px}
+.app.mm .dut{max-width:none;flex:1;min-width:0}
+/* links Einstellungen, rechts oben Anzeige, rechts unten Verlauf */
+.app.mm .flukeview{display:grid;grid-row:auto;grid-template-columns:minmax(330px,400px) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr)}
+.app.mm .flukeview>section:first-child{grid-row:1/3;overflow:auto}
+.app.mm .fv-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+.app.mm .fv-grid .w2{grid-column:span 2}
+.app.mm .fv-big{height:auto;padding:4px 0 6px}
+.app.mm .fv-wert{font-size:72px}
+.app.mm .fv-info{gap:16px}
+.app.mm .fv-chartp{grid-column:2}
+@media (max-width:1350px){ .app.mm .fv-chartp{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+  .app.mm .fv-marks{max-height:130px;overflow:auto} }
+@media (max-width:900px){
+  .app.mm{height:auto;min-height:100vh;grid-template-rows:auto auto 96px}
+  .app.mm .flukeview{grid-template-columns:minmax(0,1fr);grid-template-rows:none}
+  .app.mm .flukeview>section:first-child{grid-row:auto}
+  .app.mm .fv-chartp{grid-column:auto}
+  .app.mm .fv-chartp svg{height:260px}
+}
+@media (max-width:760px){ .app.mm .fv-wert{font-size:60px} .app.mm .logo{font-size:15px;letter-spacing:.18em} }
 .tile.fluke{border-color:rgba(255,155,47,.45)}
 .tile.fluke .o{color:var(--or)}
 .tile.fluke.sel{border-color:var(--or);background:rgba(255,155,47,.10);box-shadow:inset 0 0 22px rgba(255,155,47,.16)}
@@ -434,6 +460,13 @@ tr.new td{animation:flash 1s}
 "use strict";
 const $=id=>document.getElementById(id);
 let S=null, PROGS=[], SEL=null, logLen=0, prevStatus={}, unit="V", bootActive=false, lastSig="";
+// Multimeter-Fenster: dieselbe Oberflaeche, nur Fluke-Bereich (ohne UPA-Kacheln und Start-Check)
+const MM=new URLSearchParams(location.search).get("ansicht")==="multimeter";
+if(MM){ document.body.classList.add("mm"); document.querySelector(".app").classList.add("mm","mode-fluke");
+  const b=$("boot"); b.style.transition="none"; b.classList.add("gone"); b.style.display="none";
+  document.title="UPA·3 // Multimeter";
+  const lg=document.querySelector(".logo"); if(lg&&lg.firstChild) lg.firstChild.nodeValue="UPA·3 // MULTIMETER";
+  $("quit").textContent="✕ SCHLIESSEN"; $("quit").title="Nur dieses Multimeter-Fenster schließen (Live-Anzeige wird gestoppt)"; }
 
 /* ---------------- Sound ---------------- */
 const Snd={ctx:null,on:true,ready:null,
@@ -490,11 +523,18 @@ function buildMenu(){
     b.title=p.lock||p.note||""; b.innerHTML=`<span class="o">${p.opt}</span><span class="n">${esc(p.name)}</span><span class="s">${esc(p.sub)}</span><span class="b ${p.status}">${BADGE[p.status]}</span>`;
     b.onclick=()=>select(p.id,true); m.appendChild(b); });
   const f=document.createElement("button"); f.className="tile fluke"; f.dataset.id="ruhe";
-  f.title="Ruhestrom / DC-Offset mit dem Fluke 287 über das IR-USB-Kabel – läuft auch ohne UPA";
+  f.title="Ruhestrom / DC-Offset mit dem Fluke 287 über das IR-USB-Kabel – öffnet ein eigenes Multimeter-Fenster, läuft auch ohne UPA";
   f.innerHTML=`<span class="o">FLUKE</span><span class="n">Ruhestrom</span><span class="s">Offset · Fluke 287 · mV</span><span class="b ok">GETESTET</span>`;
   f.onclick=()=>select("ruhe",true); m.appendChild(f);
 }
+async function mmOeffnen(user){
+  if(user){Snd.init();Snd.click();}
+  const r=await api("/api/fenster",{art:"multimeter"});
+  if(!r.ok||r.browser){ const w=window.open("/?ansicht=multimeter","upa_multimeter","width=1100,height=820");
+    if(!w) alert("Das Multimeter-Fenster wurde vom Browser blockiert – Pop-ups für diese Seite erlauben."); else w.focus(); }
+}
 function select(id,user){
+  if(id==="ruhe"&&!MM){ if(user) mmOeffnen(true); return; }   // Hauptfenster: eigenes Multimeter-Fenster
   if(id==="ruhe"){ document.querySelector(".app").classList.add("mode-fluke");
     document.querySelectorAll(".tile").forEach(t=>t.classList.toggle("sel",t.dataset.id==="ruhe"));
     if(user){Snd.init();Snd.click();} try{localStorage.setItem("upa_prog",id);}catch(e){} fRender(); return; }
@@ -642,7 +682,7 @@ function render(){
   $("ringTxt").textContent=`${S.steps.filter(s=>s.status==="ok").length}/${S.steps.length}`;
   S.steps.forEach(s=>{if(prevStatus[s.id]!==s.status){if(bootActive&&s.status==="ok")Snd.blip();prevStatus[s.id]=s.status;}});
   $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
-  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; const FB=!!(S.fluke&&S.fluke.busy); $("reboot").disabled=S.busy; $("quit").disabled=S.busy||FB; $("dut").classList.toggle("dis",!!S.busy||FB); $("prot").disabled=S.busy||FB||!S.pruefling; fRender();
+  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; const FB=!!(S.fluke&&S.fluke.busy), FREC=FB&&S.fluke.modus==="rec"; $("reboot").disabled=S.busy; $("quit").disabled=(S.busy&&!MM)||FREC; $("dut").classList.toggle("dis",!!S.busy||FB); $("prot").disabled=S.busy||FB||!S.pruefling; fRender();
   const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
   if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
   else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
@@ -685,7 +725,7 @@ async function startBoot(){
   },300);
 }
 $("start").onclick=startBoot; $("close").onclick=()=>$("boot").classList.add("gone");
-$("ohneUpa").onclick=()=>{ $("boot").classList.add("gone"); select("ruhe",true); };
+$("ohneUpa").onclick=()=>{ $("boot").classList.add("gone"); mmOeffnen(true); };
 $("reboot").onclick=()=>{$("boot").classList.remove("gone");$("start").disabled=false;$("start").textContent="System starten";$("bmsg").textContent="";$("bmsg").className="bootmsg";};
 
 /* ---------------- Messung ---------------- */
@@ -840,6 +880,12 @@ $("fSuch").onclick=async()=>{ $("fSt").textContent="Suche Fluke …"; $("fSt").s
   const r=await api("/api/fluke/suchen",{}); if(r.ok){ $("fPort").value=r.port; $("fSt").textContent="Gefunden: "+r.ident; } else { $("fSt").textContent=r.error||"nicht gefunden"; $("fSt").style.color="var(--red)"; } };
 let quitting=false;
 $("quit").onclick=async()=>{
+  if(MM){                                  // Multimeter-Fenster: nur dieses Fenster schliessen
+    const r=await api("/api/fenster/schliessen",{art:"multimeter"});
+    if(!r.ok){ alert(r.error||"Schließen nicht möglich"); return; }
+    if(r.browser){ try{ window.close(); }catch(e){} }
+    return;
+  }
   if(S&&S.busy){ alert("Bitte erst die laufende Messung stoppen."); return; }
   if(S&&S.fluke&&S.fluke.busy&&S.fluke.modus==="rec"){ alert("Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."); return; }
   if(!confirm("UPA-Software beenden?\n\nDas Konsolenfenster schliesst sich, der UPA bleibt freigegeben.")) return;
@@ -862,7 +908,7 @@ async function poll(){
       $("ver").textContent="v"+j.app_version; $("ver").title="UPA-Software "+j.app_version+" vom "+j.app_datum;
       $("bVer").textContent="v"+j.app_version+" · "+j.app_datum;
       if(j.firma){ $("firma").textContent=j.firma.toUpperCase(); $("firmaSep").textContent=" · "; $("bFirma").textContent=j.firma.toUpperCase(); $("bSep").textContent="  //  "; }
-      document.title="UPA·3 // Analyzer Control v"+j.app_version; }
+      document.title=(MM?"UPA·3 // Multimeter v":"UPA·3 // Analyzer Control v")+j.app_version; }
     {const o=$("att").querySelector('option[value="p78"]'); if(o){o.disabled=!j.p78; o.textContent=j.p78?"P78 - kalibriert":"P78 - Kalibrierdatei fehlt";}}
     if(wasMeasuring&&j.phase!=="measuring")(j.points.some(p=>p.abbruch)?Snd.denied():Snd.tone(660,990,.12,"sine",.05));
     { const pr=j.pruefling, t=$("dutTxt");
@@ -874,7 +920,7 @@ async function poll(){
 }
 fetch("/api/ports").then(r=>r.json()).then(ps=>{$("portlist").innerHTML=ps.map(p=>`<option value="${esc(p.device)}">${esc(p.desc)}</option>`).join("");}).catch(()=>{});
 fetch("/api/programs").then(r=>r.json()).then(ps=>{PROGS=ps;buildMenu();let last="fr";try{last=localStorage.getItem("upa_prog")||"fr";}catch(e){}
-  select(last==="ruhe"?"ruhe":PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();});
+  select(MM?"ruhe":PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();});
 poll();
 </script>
 </body>

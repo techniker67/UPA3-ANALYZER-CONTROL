@@ -48,9 +48,10 @@ def frage(text, title="UPA-Analyzer-Control"):
 
 
 TITEL_ANFANG = "UPA·3 // Analyzer Control"      # Fenstertitel ohne Versionsnummer
+MM_TITEL = "UPA·3 // Multimeter – Ruhestrom · Offset"
 
 
-def vorhandenes_fenster_zeigen():
+def vorhandenes_fenster_zeigen(titel_anfang=TITEL_ANFANG):
     """Laeuft die Software schon mit sichtbarem Fenster, dieses nach vorne holen.
     Liefert True, wenn ein Fenster gefunden wurde."""
     if os.name != "nt":
@@ -67,7 +68,7 @@ def vorhandenes_fenster_zeigen():
             if n and u32.IsWindowVisible(hwnd):
                 buf = ctypes.create_unicode_buffer(n + 1)
                 u32.GetWindowTextW(hwnd, buf, n + 1)
-                if buf.value.startswith(TITEL_ANFANG):
+                if buf.value.startswith(titel_anfang):
                     gefunden.append(hwnd)
                     return False
             return True
@@ -184,16 +185,69 @@ def run(app, url, title, storage_dir):
         app.log("Programmfenster angezeigt.")
         threading.Thread(target=_icon_setzen, args=(title,), daemon=True).start()
 
+    mm = {"win": None}               # Multimeter-Fenster (hoechstens eines)
+
+    def mm_oeffnen():
+        w = mm["win"]
+        if w is not None:            # schon offen -> nach vorne holen
+            try:
+                w.restore()
+            except Exception:
+                pass
+            vorhandenes_fenster_zeigen(MM_TITEL)
+            return
+        w = webview.create_window(
+            MM_TITEL, url.rstrip("/") + "/?ansicht=multimeter",
+            width=1100, height=820, min_size=(640, 560),
+            resizable=True, zoomable=True, text_select=True, background_color="#01050a")
+
+        def mm_closing():
+            grund = app.mm_schliessen_grund()
+            if grund:
+                import json
+                threading.Thread(target=lambda: w.evaluate_js(f"alert({json.dumps(grund)})"),
+                                 daemon=True).start()
+                return False
+            app.mm_beenden()
+            return True
+
+        def mm_closed():
+            mm["win"] = None
+            app.log("Multimeter-Fenster geschlossen.")
+
+        def mm_shown():
+            app.log("Multimeter-Fenster angezeigt.")
+            threading.Thread(target=_icon_setzen, args=(MM_TITEL,), daemon=True).start()
+        w.events.closing += mm_closing
+        w.events.closed += mm_closed
+        w.events.shown += mm_shown
+        mm["win"] = w
+
+    def mm_zu():
+        w = mm["win"]
+        if w is not None:
+            w.destroy()
+
+    def alles_zu():                  # QUIT: Multimeter-Fenster und Hauptfenster
+        mm_zu()
+        win.destroy()
+
+    def on_closed():                 # Hauptfenster zu -> Multimeter-Fenster mit schliessen
+        threading.Thread(target=mm_zu, daemon=True).start()
+
     win.events.closing += on_closing
+    win.events.closed += on_closed
     win.events.shown += on_shown
-    app.on_quit = win.destroy     # QUIT in der Oberflaeche schliesst das Fenster
+    app.on_quit = alles_zu        # QUIT in der Oberflaeche schliesst alle Fenster
+    app.fenster_oeffnen = mm_oeffnen
+    app.fenster_schliessen = mm_zu
 
     gui = "edgechromium" if os.name == "nt" else None   # unter Windows nie den alten IE-Unterbau
     try:
         os.makedirs(storage_dir, exist_ok=True)
         webview.start(gui=gui, private_mode=False, storage_path=storage_dir)
     except Exception as e:
-        app.on_quit = None
+        app.on_quit = app.fenster_oeffnen = app.fenster_schliessen = None
         app.log(f"Programmfenster nicht verfuegbar ({e}) - Oberflaeche im Browser.")
         return False
     return True
