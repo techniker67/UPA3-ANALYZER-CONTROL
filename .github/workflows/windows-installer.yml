@@ -135,6 +135,11 @@ jobs:
             if (Select-String -Path $log -Pattern "nach vorne geholt" -Quiet) { Write-Host "Zweiter Start: Fenster nach vorne geholt" }
             else { Write-Host "::warning::Zweiter Start beendet, aber Fenster nicht gefunden" }
           } else { $p2.Kill(); Write-Host "::warning::Zweiter Start wartet auf eine Rueckfrage (Fenster auf dem Build-Rechner nicht sichtbar)" }
+          # Multimeter-Fenster als zweites Fenster; QUIT muss beide schliessen
+          Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/fenster -Body '{"art":"multimeter"}' -ContentType "application/json" | Out-Null
+          Start-Sleep -Seconds 6
+          if (Select-String -Path $log -Pattern "Multimeter-Fenster angezeigt" -Quiet) { Write-Host "Multimeter-Fenster OK" }
+          else { Write-Host "::warning::Multimeter-Fenster nicht angezeigt" }
           Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/quit -Body "{}" -ContentType "application/json" | Out-Null
           if (-not $p.WaitForExit(20000)) { $p.Kill(); throw "QUIT schliesst das Programmfenster nicht" }
           if ($p.ExitCode -ne 0) { throw "Exit-Code $($p.ExitCode)" }

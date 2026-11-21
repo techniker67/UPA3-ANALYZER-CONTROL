@@ -52,6 +52,8 @@ class App:
         self.last_csv = None
         self.version = ""
         self.on_quit = None          # vom Programmfenster gesetzt: Fenster schliessen
+        self.fenster_oeffnen = None   # vom Programmfenster gesetzt: Multimeter-Fenster oeffnen
+        self.fenster_schliessen = None
         # Fluke 287 (Ruhestrom/Offset) - unabhaengig vom UPA, eigener Port und Thread
         self.fl_busy = False
         self.fl_stop = False
@@ -150,6 +152,17 @@ class App:
         if self.fl_busy and self.fl_p.get("modus") == "rec":
             return "Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."
         return None
+
+    def mm_schliessen_grund(self):
+        """Multimeter-Fenster: nicht schliessen, solange eine Aufzeichnung laeuft."""
+        if self.fl_busy and self.fl_p.get("modus") == "rec":
+            return "Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."
+        return None
+
+    def mm_beenden(self):
+        """Multimeter-Fenster wird geschlossen: Live-Anzeige stoppen."""
+        if self.fl_busy:
+            self.fl_stop = True
 
     def aufraeumen(self, warten=3.0):
         """Vor dem Beenden: Fluke-Lauf stoppen und Schnittstelle freigeben."""
@@ -796,6 +809,21 @@ def make_handler(app):
                         app.on_quit()
                 threading.Timer(0.5, beenden).start()
                 return None
+            if u.path == "/api/fenster":
+                # Multimeter-Fenster: im Programmfenster als zweites Fenster, sonst im Browser
+                if app.fenster_oeffnen:
+                    app.fenster_oeffnen()
+                    return self._send(200, {"ok": True})
+                return self._send(200, {"ok": True, "browser": True})
+            if u.path == "/api/fenster/schliessen":
+                grund = app.mm_schliessen_grund()
+                if grund:
+                    return self._send(409, {"error": grund})
+                app.mm_beenden()
+                if app.fenster_schliessen:
+                    threading.Timer(0.2, app.fenster_schliessen).start()
+                    return self._send(200, {"ok": True})
+                return self._send(200, {"ok": True, "browser": True})
             if u.path == "/api/fluke/suchen":
                 try:
                     port, info = app.fluke_suchen()
