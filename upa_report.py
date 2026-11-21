@@ -311,6 +311,14 @@ def ruhe_wert(v, ok, ol=False):
     return t + ("" if ok is None else (" ✓" if ok else " ✗ außerhalb Toleranz"))
 
 
+def _ol_luecken(punkte):
+    try:
+        from upa_fluke import luecken
+    except Exception:
+        return []
+    return luecken(punkte)
+
+
 def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
     """Verlauf Ruhestrom/Offset ueber der Zeit (mV ueber Minuten) mit Toleranzband."""
     if plt is None:
@@ -319,13 +327,20 @@ def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
     ys = [v for t, v, _ in punkte if v is not None]
     if not xs:
         return False
+    # Linie an Messluecken (OL, kein Wert) unterbrechen statt sie zu ueberbruecken
+    lx = [t / 60.0 for t, v, _ in punkte]
+    ly = [float("nan") if v is None else v for t, v, _ in punkte]
+    ol_ab = _ol_luecken(punkte)
     fig, ax = plt.subplots(figsize=(8, 3.6), dpi=DPI)
     try:
         if soll is not None and tol:
             ax.axhspan(soll - tol, soll + tol, color="#2E8B57", alpha=0.12, lw=0, label="Toleranzband")
             ax.axhline(soll, color="#2E8B57", lw=1.0, ls="--", label=_komma(f"Soll {soll:g} mV"))
-        ax.plot(xs, ys, color=FARBE["L"], lw=1.4, label="Messwert")
-        x_max = max(xs[-1], 0.5)
+        ax.plot(lx, ly, color=FARBE["L"], lw=1.4, label="Messwert")
+        for i, (a, b, art) in enumerate(ol_ab):
+            ax.axvspan(a / 60.0, b / 60.0, color="#C0504D", alpha=0.13, lw=0,
+                       label=("Überlauf (OL)" if art == "OL" else "kein Messwert") if i == 0 else None)
+        x_max = max(punkte[-1][0] / 60.0, 0.5)
         for m in marken or []:
             ax.axvline(m["t"] / 60.0, color="#7F7F7F", lw=0.8, ls=":")
             if m.get("wert") is not None:

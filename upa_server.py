@@ -152,7 +152,8 @@ class App:
             pk = lg.punkte
             st.update({"t": pk[-1][0] if pk else 0.0, "wert": lg.letzter, "hinweis": lg.hinweis,
                        "trend": lg.trend(), "ok": lg.ok(lg.letzter), "stat": lg.statistik(),
-                       "verlauf": lg.verlauf(), "marken": list(lg.marken), "n": len(pk)})
+                       "verlauf": lg.verlauf(), "luecken": lg.luecken(),
+                       "marken": list(lg.marken), "n": len(pk)})
         return st
 
     def fluke_suchen(self):
