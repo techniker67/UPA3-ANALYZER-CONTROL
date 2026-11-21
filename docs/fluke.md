@@ -19,4 +19,4 @@ The software only *reads* the meter (`ID`, `QM` at 115200 baud, 8N1); it never c
 
 Fields: designation (e.g. *Ruhestrom L*, *Offset R* — several runs per device are fine), set value and tolerance in mV, duration, time marks in minutes, interval.
 
-Tested with Fluke 287, firmware V1.41, Fluke USB-IR cable (FTDI).
+Tested with Fluke 287, firmware V1.41, Fluke USB-IR cable (FTDI): live display identical to the meter reading (97.12 mV), 10-minute recording with time marks at 3/5/10 min, storage on a network share.

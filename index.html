@@ -491,7 +491,7 @@ function buildMenu(){
     b.onclick=()=>select(p.id,true); m.appendChild(b); });
   const f=document.createElement("button"); f.className="tile fluke"; f.dataset.id="ruhe";
   f.title="Ruhestrom / DC-Offset mit dem Fluke 287 über das IR-USB-Kabel – läuft auch ohne UPA";
-  f.innerHTML=`<span class="o">FLUKE</span><span class="n">Ruhestrom</span><span class="s">Offset · Fluke 287 · mV</span><span class="b test">VERIFIKATION</span>`;
+  f.innerHTML=`<span class="o">FLUKE</span><span class="n">Ruhestrom</span><span class="s">Offset · Fluke 287 · mV</span><span class="b ok">GETESTET</span>`;
   f.onclick=()=>select("ruhe",true); m.appendChild(f);
 }
 function select(id,user){
