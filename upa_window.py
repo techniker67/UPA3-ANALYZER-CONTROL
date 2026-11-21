@@ -218,16 +218,29 @@ def run(app, url, title, storage_dir):
         zustand["ende"] = True
         win.destroy()
 
+    def ordner_waehlen(start=""):
+        """Windows-Dialog "Ordner auswaehlen" (Desktop, Dokumente, Netzwerk ...).
+        Liefert den Pfad oder "" bei Abbrechen. Nicht aus dem GUI-Thread aufrufen."""
+        art = getattr(getattr(webview, "FileDialog", None), "FOLDER", None)
+        if art is None:
+            art = getattr(webview, "FOLDER_DIALOG", 20)
+        start = start if start and os.path.isdir(start) else ""
+        r = win.create_file_dialog(art, directory=start)
+        if not r:
+            return ""
+        return r[0] if isinstance(r, (list, tuple)) else str(r)
+
     win.events.closing += on_closing
     win.events.shown += on_shown
     app.on_quit = beenden
+    app.ordner_waehlen = ordner_waehlen
 
     gui = "edgechromium" if os.name == "nt" else None   # unter Windows nie den alten IE-Unterbau
     try:
         os.makedirs(storage_dir, exist_ok=True)
         webview.start(gui=gui, private_mode=False, storage_path=storage_dir)
     except Exception as e:
-        app.on_quit = None
+        app.on_quit = app.ordner_waehlen = None
         app.log(f"Programmfenster nicht verfuegbar ({e}) - Oberflaeche im Browser.")
         return False
     return True

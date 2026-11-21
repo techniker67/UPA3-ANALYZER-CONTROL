@@ -127,6 +127,7 @@ jobs:
           if ($p.HasExited) { throw "Programm nach dem Start beendet (Exit $($p.ExitCode))" }
           $st = Invoke-RestMethod http://127.0.0.1:8498/api/state
           Write-Host "Server laeuft, Version $($st.app_version)"
+          if ($st.ordnerwahl) { Write-Host "Ordnerauswahl im Programmfenster verfuegbar" } else { Write-Host "::warning::Ordnerauswahl nicht verfuegbar" }
           $log = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "UPA-Analyzer-Control\upa_log.txt"
           # Zweiter Start auf demselben Port: vorhandenes Fenster nach vorne, sofort beenden
           $p2 = Start-Process -FilePath $exe -ArgumentList "--http","8498" -PassThru

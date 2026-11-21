@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.4.2 – 2026-11-21
+- Ablageordner: Schaltfläche **DURCHSUCHEN** rechts im Feld (Einstellungen und Prüfling-Dialog) öffnet den Windows-Dialog „Ordner auswählen" – Desktop, Dokumente, Netzwerk → NAS usw. Im Browser-Betrieb ausgeblendet.
+
 ## 1.4.1 – 2026-11-21
 - Ruhestrom-Diagramm im Protokoll: Die Spannungsachse reicht wieder über alle Messwerte (Minimum bis Maximum, Sollband immer enthalten) – der ganze Verlauf inkl. Anklemmen und Abgleich ist sichtbar, nichts wird mehr abgeschnitten. „Min / Max ab erster Zeitmarke" in der Tabelle bleibt.
 

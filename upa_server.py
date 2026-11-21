@@ -53,6 +53,7 @@ class App:
         self.version = ""
         self.on_quit = None          # vom Programmfenster gesetzt: Fenster schliessen
         self.update = None           # neuere Version auf GitHub: {"version", "url"}
+        self.ordner_waehlen = None   # vom Programmfenster gesetzt: Dialog "Ordner auswaehlen"
         # Fluke 287 (Ruhestrom/Offset) - unabhaengig vom UPA, eigener Port und Thread
         self.fl_busy = False
         self.fl_stop = False
@@ -113,6 +114,7 @@ class App:
                 "diagramme": report.plt is not None,
                 "fluke": self.fluke_state(),
                 "update": self.update, "datenordner": paths.DATA_DIR,
+                "ordnerwahl": self.ordner_waehlen is not None,
                 "update_pruefen": load_settings().get("update_pruefen", True) is not False,
                 "limits": {"fmin": FREQ_MIN, "fmax": FREQ_MAX, "umin": LEVEL_MIN,
                            "umax": LEVEL_MAX, "nmax": MAX_POINTS},
@@ -894,6 +896,16 @@ def make_handler(app):
                         app.fl_port = neu["fluke_port"]
                     app.log("Einstellungen gespeichert: " + ", ".join(sorted(neu)))
                 return self._send(200, {"ok": True})
+            if u.path == "/api/ordnerwahl":
+                # Ordner im Windows-Dialog auswaehlen (nur im Programmfenster)
+                if not app.ordner_waehlen:
+                    return self._send(501, {"error": "Ordnerauswahl nur im Programmfenster"})
+                start = str(body.get("start") or "") or paths.mess_dir()
+                try:
+                    pfad = app.ordner_waehlen(start)
+                except Exception as e:
+                    return self._send(500, {"error": f"Ordnerauswahl nicht möglich: {e}"})
+                return self._send(200, {"ok": True, "pfad": pfad or ""})
             if u.path == "/api/link":
                 # nur die Release-Seite des Projekts im Standardbrowser oeffnen
                 ziel = (app.update or {}).get("url") or (REPO_URL + "/releases")
