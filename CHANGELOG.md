@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 0.13.3 – 2026-11-21
+- README: getesteter Adapter mit Link zur DiyEMC-Seite, Dank an Hans W. (mit seiner Zustimmung), Verweis auf WilheJo/AR488-ESP32 (Pinout Rev. 4/5) ergänzt.
+
 ## 0.13.2 – 2026-11-21
 - Icon-Datei neu aufgebaut (16–128 px als klassische Bitmaps, 256 px als PNG) – manche Windows-Funktionen lesen PNG-Einträge in kleinen Größen nicht und fielen auf das Standard-Icon zurück.
 - Fenster-Icon zusätzlich als Fensterklassen-Icon und mehrfach gesetzt; großes Icon mindestens 48 px für die Taskleiste.
