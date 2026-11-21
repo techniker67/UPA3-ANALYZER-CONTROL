@@ -152,7 +152,7 @@ jobs:
           target_commitish: ${{ github.sha }}
           name: UPA-Analyzer-Control v${{ steps.ver.outputs.version }}
           files: dist-installer/*.exe
-          prerelease: true
+          prerelease: ${{ startsWith(steps.ver.outputs.version, '0.') }}   # ab 1.0.0 regulaere Version
           body: |
             Windows-Installation: Setup.exe herunterladen und starten (keine Python-Installation noetig).
             Aenderungen: siehe CHANGELOG.md.
