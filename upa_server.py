@@ -820,6 +820,8 @@ def make_handler(app):
                 return None
             if u.path == "/api/fenster":
                 # Multimeter-Fenster: im Programmfenster als zweites Fenster, sonst im Browser
+                if body.get("nur") and app.busy:
+                    return self._send(409, {"error": "Bitte erst die laufende UPA-Messung stoppen."})
                 if app.fenster_oeffnen:
                     app.fenster_oeffnen(haupt_verbergen=bool(body.get("nur")))
                     return self._send(200, {"ok": True})
