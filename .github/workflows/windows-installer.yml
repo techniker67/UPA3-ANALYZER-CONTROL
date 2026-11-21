@@ -137,9 +137,12 @@ jobs:
           } else { $p2.Kill(); Write-Host "::warning::Zweiter Start wartet auf eine Rueckfrage (Fenster auf dem Build-Rechner nicht sichtbar)" }
           # Nur Multimeter: Hauptfenster ausblenden, Multimeter-Fenster oeffnen
           Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/fenster -Body '{"art":"multimeter","nur":true}' -ContentType "application/json" | Out-Null
-          Start-Sleep -Seconds 6
-          if (Select-String -Path $log -Pattern "Multimeter-Fenster angezeigt" -Quiet) { Write-Host "Multimeter-Fenster OK" }
-          else { Write-Host "::warning::Multimeter-Fenster nicht angezeigt" }
+          $t0 = Get-Date; $ok = $false
+          while (((Get-Date) - $t0).TotalSeconds -lt 25) {
+            if (Select-String -Path $log -Pattern "Multimeter-Fenster angezeigt" -Quiet) { $ok = $true; break }
+            Start-Sleep -Milliseconds 500 }
+          if ($ok) { Write-Host ("Multimeter-Fenster OK nach {0:N1} s" -f ((Get-Date) - $t0).TotalSeconds) }
+          else { Write-Host "::warning::Multimeter-Fenster nach 25 s nicht angezeigt" }
           if (-not (Select-String -Path $log -Pattern "Hauptfenster ausgeblendet" -Quiet)) { throw "Nur-Multimeter: Hauptfenster nicht ausgeblendet" }
           # Zweiter Start bei ausgeblendetem Hauptfenster: Multimeter-Fenster muss gefunden werden
           $p3 = Start-Process -FilePath $exe -ArgumentList "--http","8498" -PassThru
@@ -160,7 +163,7 @@ jobs:
           Start-Sleep -Seconds 2
           if (Get-Process -Id $p.Id -ErrorAction SilentlyContinue) { throw "Prozess laeuft nach QUIT weiter" }
           if (-not (Select-String -Path $log -Pattern "Software beendet" -Quiet)) { throw "Beenden nicht protokolliert" }
-          Get-Content $log -Tail 8
+          Get-Content $log -Tail 30
           if (Select-String -Path $log -Pattern "Programmfenster nicht verfuegbar" -Quiet) {
             Write-Host "::warning::Programmfenster startete auf dem Build-Rechner nicht (Browser-Ersatz lief)"
           } else { Write-Host "Programmfenster OK, QUIT OK" }
