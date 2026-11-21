@@ -135,32 +135,13 @@ jobs:
             if (Select-String -Path $log -Pattern "nach vorne geholt" -Quiet) { Write-Host "Zweiter Start: Fenster nach vorne geholt" }
             else { Write-Host "::warning::Zweiter Start beendet, aber Fenster nicht gefunden" }
           } else { $p2.Kill(); Write-Host "::warning::Zweiter Start wartet auf eine Rueckfrage (Fenster auf dem Build-Rechner nicht sichtbar)" }
-          # Nur Multimeter: Hauptfenster ausblenden, Multimeter-Fenster oeffnen
-          Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/fenster -Body '{"art":"multimeter","nur":true}' -ContentType "application/json" | Out-Null
-          $t0 = Get-Date; $ok = $false
-          while (((Get-Date) - $t0).TotalSeconds -lt 25) {
-            if (Select-String -Path $log -Pattern "Multimeter-Fenster angezeigt" -Quiet) { $ok = $true; break }
-            Start-Sleep -Milliseconds 500 }
-          if ($ok) { Write-Host ("Multimeter-Fenster OK nach {0:N1} s" -f ((Get-Date) - $t0).TotalSeconds) }
-          else { Write-Host "::warning::Multimeter-Fenster nach 25 s nicht angezeigt" }
-          if (-not (Select-String -Path $log -Pattern "Hauptfenster ausgeblendet" -Quiet)) { throw "Nur-Multimeter: Hauptfenster nicht ausgeblendet" }
-          # Zweiter Start bei ausgeblendetem Hauptfenster: Multimeter-Fenster muss gefunden werden
-          $p3 = Start-Process -FilePath $exe -ArgumentList "--http","8498" -PassThru
-          $null = $p3.Handle
-          if ($p3.WaitForExit(15000)) { Write-Host "Zweiter Start bei Nur-Multimeter: beendet ohne Rueckfrage" }
-          else { $p3.Kill(); Write-Host "::warning::Zweiter Start bei Nur-Multimeter fragt nach (Multimeter-Fenster nicht gefunden)" }
-          # UEBERSICHT: Multimeter-Fenster zu, Hauptfenster wieder da
-          Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/fenster/uebersicht -Body "{}" -ContentType "application/json" | Out-Null
-          Start-Sleep -Seconds 4
-          if (-not (Select-String -Path $log -Pattern "Hauptfenster wieder angezeigt" -Quiet)) { throw "UEBERSICHT: Hauptfenster nicht zurueck" }
-          Write-Host "Nur-Multimeter und UEBERSICHT OK"
-          if (Select-String -Path $log -Pattern "NICHT maximiert" -Quiet) { throw "Ein Fenster war nicht maximiert" }
-          $mx = (Select-String -Path $log -Pattern ": maximiert" | Measure-Object).Count
-          Write-Host "Fenster maximiert (Log-Eintraege): $mx"
-          if ($mx -lt 3) { Write-Host "::warning::Maximiert-Zustand nicht fuer alle Fenster protokolliert" }
-          # Multimeter-Fenster nochmals oeffnen; QUIT muss beide schliessen
-          Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/fenster -Body '{"art":"multimeter"}' -ContentType "application/json" | Out-Null
-          Start-Sleep -Seconds 4
+          # Startmenue-Ansichten: Menue-Wechsel erlaubt, Einstellungen speicherbar
+          Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/menue -Body "{}" -ContentType "application/json" | Out-Null
+          Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/einstellungen -Body '{"update_pruefen":false}' -ContentType "application/json" | Out-Null
+          Start-Sleep -Seconds 2
+          if (Select-String -Path $log -Pattern "NICHT maximiert" -Quiet) { throw "Programmfenster war nicht maximiert" }
+          if (-not (Select-String -Path $log -Pattern "Hauptfenster: maximiert" -Quiet)) { Write-Host "::warning::Maximiert-Zustand nicht protokolliert" }
+          Write-Host "Menue und Einstellungen OK"
           Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/quit -Body "{}" -ContentType "application/json" | Out-Null
           if (-not $p.WaitForExit(20000)) { $p.Kill(); throw "QUIT schliesst das Programmfenster nicht" }
           if ($p.ExitCode -ne 0) { throw "Exit-Code $($p.ExitCode)" }

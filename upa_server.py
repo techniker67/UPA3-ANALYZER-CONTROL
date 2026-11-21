@@ -52,9 +52,7 @@ class App:
         self.last_csv = None
         self.version = ""
         self.on_quit = None          # vom Programmfenster gesetzt: Fenster schliessen
-        self.fenster_oeffnen = None   # vom Programmfenster gesetzt: Multimeter-Fenster oeffnen
-        self.fenster_schliessen = None
-        self.fenster_uebersicht = None
+        self.update = None           # neuere Version auf GitHub: {"version", "url"}
         # Fluke 287 (Ruhestrom/Offset) - unabhaengig vom UPA, eigener Port und Thread
         self.fl_busy = False
         self.fl_stop = False
@@ -114,6 +112,8 @@ class App:
                 "ablage": paths.ABLAGE, "ablage_lokal": paths.mess_dir_lokal(),
                 "diagramme": report.plt is not None,
                 "fluke": self.fluke_state(),
+                "update": self.update, "datenordner": paths.DATA_DIR,
+                "update_pruefen": load_settings().get("update_pruefen", True) is not False,
                 "limits": {"fmin": FREQ_MIN, "fmax": FREQ_MAX, "umin": LEVEL_MIN,
                            "umax": LEVEL_MAX, "nmax": MAX_POINTS},
             }
@@ -154,16 +154,34 @@ class App:
             return "Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."
         return None
 
-    def mm_schliessen_grund(self):
-        """Multimeter-Fenster: nicht schliessen, solange eine Aufzeichnung laeuft."""
-        if self.fl_busy and self.fl_p.get("modus") == "rec":
-            return "Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."
-        return None
-
-    def mm_beenden(self):
-        """Multimeter-Fenster wird geschlossen: Live-Anzeige stoppen."""
-        if self.fl_busy:
+    def menue_grund(self):
+        """Zurueck ins Menue: nicht waehrend einer UPA-Messung oder Fluke-Aufzeichnung.
+        Eine Fluke-Live-Anzeige wird dabei gestoppt."""
+        grund = self.beenden_grund()
+        if not grund and self.fl_busy:
             self.fl_stop = True
+        return grund
+
+    def update_pruefen(self):
+        """Im Hintergrund bei GitHub nachsehen, ob es ein neueres Release gibt."""
+        if load_settings().get("update_pruefen", True) is False:
+            return
+
+        def pruefen():
+            try:
+                import urllib.request
+                req = urllib.request.Request(RELEASE_API, headers={
+                    "Accept": "application/vnd.github+json", "User-Agent": "UPA-Analyzer-Control"})
+                with urllib.request.urlopen(req, timeout=6) as r:
+                    j = json.loads(r.read().decode("utf-8"))
+                tag = str(j.get("tag_name", "")).lstrip("vV")
+                url = str(j.get("html_url", ""))
+                if version_tupel(tag) > version_tupel(__version__) and url.startswith(REPO_URL):
+                    self.update = {"version": tag, "url": url}
+                    self.log(f"Neue Version {tag} auf GitHub verfügbar.")
+            except Exception:
+                pass                 # offline o. ae. - kein Hinweis
+        threading.Thread(target=pruefen, daemon=True).start()
 
     def aufraeumen(self, warten=3.0):
         """Vor dem Beenden: Fluke-Lauf stoppen und Schnittstelle freigeben."""
@@ -535,6 +553,39 @@ def find_sound():
     return None
 
 
+REPO_URL = "https://github.com/techniker67/UPA3-ANALYZER-CONTROL"
+RELEASE_API = "https://api.github.com/repos/techniker67/UPA3-ANALYZER-CONTROL/releases/latest"
+
+
+def version_tupel(v):
+    """'1.4.0' -> (1, 4, 0); Unlesbares -> ()."""
+    try:
+        return tuple(int(x) for x in str(v).split("-")[0].split("."))
+    except ValueError:
+        return ()
+
+
+def validate_einstellungen(b, app):
+    """Einstellungen aus dem Menue pruefen. Liefert die zu speichernden Werte."""
+    neu = {}
+    if "firma" in b:
+        neu["firma"] = " ".join(str(b.get("firma") or "").split())[:80]
+    for k in ("port", "fluke_port"):
+        if k in b:
+            v = str(b.get(k) or "").strip()
+            if len(v) > 40 or any(c in v for c in '"<>|*?;&'):
+                raise ValueError("Ungültiger Port: " + v)
+            neu[k] = v
+    if "addr" in b:
+        a = int(b.get("addr"))
+        if not 0 <= a <= 30:
+            raise ValueError("GPIB-Adresse 0 bis 30")
+        neu["addr"] = a
+    if "update_pruefen" in b:
+        neu["update_pruefen"] = bool(b.get("update_pruefen"))
+    return neu
+
+
 def load_settings():
     """Einstellungen (Firmenname ...) aus upa_einstellungen.json - optional."""
     try:
@@ -818,33 +869,38 @@ def make_handler(app):
                         app.on_quit()
                 threading.Timer(0.5, beenden).start()
                 return None
-            if u.path == "/api/fenster":
-                # Multimeter-Fenster: im Programmfenster als zweites Fenster, sonst im Browser
-                if body.get("nur") and app.busy:
-                    return self._send(409, {"error": "Bitte erst die laufende UPA-Messung stoppen."})
-                if app.fenster_oeffnen:
-                    app.fenster_oeffnen(haupt_verbergen=bool(body.get("nur")))
-                    return self._send(200, {"ok": True})
-                return self._send(200, {"ok": True, "browser": True})
-            if u.path == "/api/fenster/uebersicht":
-                # Multimeter -> Uebersicht: Hauptfenster zeigen, Multimeter-Fenster schliessen
-                # (waehrend einer Aufzeichnung bleibt es offen)
-                bleibt = bool(app.mm_schliessen_grund())
-                if app.fenster_uebersicht:
-                    threading.Thread(target=app.fenster_uebersicht, daemon=True).start()
-                    return self._send(200, {"ok": True, "bleibt": bleibt})
-                if not bleibt:
-                    app.mm_beenden()
-                return self._send(200, {"ok": True, "bleibt": bleibt, "browser": True})
-            if u.path == "/api/fenster/schliessen":
-                grund = app.mm_schliessen_grund()
+            if u.path == "/api/menue":
+                # Zurueck ins Menue (UPA-/Multimeter-Ansicht verlassen)
+                grund = app.menue_grund()
                 if grund:
                     return self._send(409, {"error": grund})
-                app.mm_beenden()
-                if app.fenster_schliessen:
-                    threading.Timer(0.2, app.fenster_schliessen).start()
-                    return self._send(200, {"ok": True})
-                return self._send(200, {"ok": True, "browser": True})
+                return self._send(200, {"ok": True})
+            if u.path == "/api/einstellungen":
+                if app.beschaeftigt:
+                    return self._send(409, {"error": "Während einer Messung nicht änderbar"})
+                try:
+                    neu = validate_einstellungen(body, app)
+                    if "ablage" in body:
+                        app.set_ablage(body.get("ablage") or "")
+                except (ValueError, TypeError) as e:
+                    return self._send(400, {"error": str(e)})
+                if neu:
+                    save_settings(neu)
+                    if "port" in neu:
+                        app.port = neu["port"]
+                    if "addr" in neu:
+                        app.addr = neu["addr"]
+                    if "fluke_port" in neu:
+                        app.fl_port = neu["fluke_port"]
+                    app.log("Einstellungen gespeichert: " + ", ".join(sorted(neu)))
+                return self._send(200, {"ok": True})
+            if u.path == "/api/link":
+                # nur die Release-Seite des Projekts im Standardbrowser oeffnen
+                ziel = (app.update or {}).get("url") or (REPO_URL + "/releases")
+                if not ziel.startswith(REPO_URL):
+                    return self._send(400, {"error": "Link nicht erlaubt"})
+                webbrowser.open(ziel)
+                return self._send(200, {"ok": True})
             if u.path == "/api/fluke/suchen":
                 try:
                     port, info = app.fluke_suchen()
@@ -922,7 +978,7 @@ def main():
         srv = None
         if fenster:
             app.log(f"Start: Port {a.http} belegt.")
-            if window.vorhandenes_fenster_zeigen() or window.vorhandenes_fenster_zeigen(window.MM_TITEL):
+            if window.vorhandenes_fenster_zeigen():
                 app.log("Laufendes Programmfenster nach vorne geholt - kein zweiter Start.")
                 return 0
             if window.frage("Die UPA-Software läuft noch im Hintergrund, aber ohne sichtbares Fenster.\n\n"
@@ -956,6 +1012,7 @@ def main():
         print(f"  {m}")
     print("  Beenden: QUIT in der Oberflaeche, dieses Fenster schliessen oder Strg+C")
     print("=" * 60)
+    app.update_pruefen()          # im Hintergrund, ohne Internet einfach kein Hinweis
     if fenster:
         # Server im Hintergrund, Programmfenster im Hauptthread (so verlangt es pywebview)
         t = threading.Thread(target=srv.serve_forever, daemon=True)

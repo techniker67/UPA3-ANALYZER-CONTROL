@@ -2,6 +2,16 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.4.0 – 2026-11-21
+- **Startmenü** im Stil des Programm-Icons: große Kacheln *UPA-Messung* und *Multimeter*, darunter *Protokolle*, *Einstellungen* und *Beenden*; Prüfling-Zeile oben (gilt für UPA und Multimeter).
+  - Status auf den Kacheln: „UPA initialisiert" / „Adapter an COM4" / „COM4 nicht gefunden", „IR-Kabel an COM3", laufende Aufzeichnung, Anzahl Messungen und Protokolle zum Prüfling.
+  - *UPA-Messung* → Start-Check (*System starten*, *Ohne UPA fortfahren*, *⌂ Menü*), nach erfolgreicher Initialisierung direkt in die Messansicht; in derselben Sitzung ohne erneuten Check.
+  - *Multimeter* → direkt in die Multimeter-Ansicht.
+- **⌂ MENÜ** in jeder Ansicht statt ÜBERSICHT/QUIT; gesperrt während einer Messung oder Aufzeichnung. Beendet wird nur im Menü; das X am Fenster fragt nach.
+- **Einstellungen** an einer Stelle: Prüfer/Firma, Ablageordner, UPA-Port und GPIB-Adresse, Fluke-Port, Versionshinweis.
+- **Hinweis auf neue Versionen:** beim Start eine Anfrage an GitHub (abschaltbar); im Menü „Neue Version … verfügbar" mit Link zur Release-Seite.
+- Ein Programmfenster mit umschaltbaren Ansichten statt mehrerer Fenster (kein Aus-/Einblenden mehr).
+
 ## 1.3.4 – 2026-11-21
 - Kachel **„Ruhestrom"** im UPA-Fenster wechselt jetzt ins Multimeter-Fenster wie *▣ Nur Multimeter*: Das UPA-Fenster wird ausgeblendet, zurück über *⌂ ÜBERSICHT* (UPA-Fenster unverändert, maximiert). Immer nur ein Fenster sichtbar.
 - Während einer laufenden UPA-Messung wird der Wechsel abgelehnt.
