@@ -331,7 +331,7 @@ def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
     lx = [t / 60.0 for t, v, _ in punkte]
     ly = [float("nan") if v is None else v for t, v, _ in punkte]
     ol_ab = _ol_luecken(punkte)
-    fig, ax = plt.subplots(figsize=(8, 3.6), dpi=DPI)
+    fig, ax = plt.subplots(figsize=(8, 3.9), dpi=DPI)
     try:
         if soll is not None and tol:
             ax.axhspan(soll - tol, soll + tol, color="#2E8B57", alpha=0.12, lw=0, label="Toleranzband")
@@ -360,8 +360,8 @@ def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
         ax.set_ylim(y_lo, y_hi)
         ax.set_xlim(0, x_max)
         if min(ys) < y_lo or max(ys) > y_hi:
-            fig.text(0.01, 0.015, _komma(f"Spannungsachse ab {marken[0]['minute']:g} min skaliert – "
-                                         "Spitzen davor (Anklemmen/Abgleich) abgeschnitten"),
+            fig.text(0.01, 0.02, _komma(f"Achse ab {marken[0]['minute']:g} min skaliert, "
+                                        "Spitzen davor abgeschnitten"),
                      fontsize=7.5, color="#7F7F7F")
         ax.set_xlabel("Zeit (min)")
         ax.set_ylabel("Spannung (mV)")
@@ -370,8 +370,12 @@ def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
         ax.grid(True, color="#c9ced6", lw=0.7)
         ax.set_title(titel, fontsize=10.5, loc="left", color="#2E5A88", fontweight="bold")
         ax.tick_params(labelsize=8)
-        ax.legend(fontsize=8, frameon=False, loc="lower right")
-        fig.tight_layout()
+        # Legende unter dem Diagramm (rechts), damit sie keine Messwerte verdeckt;
+        # links daneben ggf. der Hinweis zur abgeschnittenen Achse
+        h, l = ax.get_legend_handles_labels()
+        fig.legend(h, l, fontsize=8, frameon=False, loc="lower right", bbox_to_anchor=(0.995, 0.0),
+                   ncol=len(h), handlelength=1.8, columnspacing=1.4)
+        fig.tight_layout(rect=(0, 0.07, 1, 1))
         fig.savefig(pfad, facecolor="white")
         return True
     finally:

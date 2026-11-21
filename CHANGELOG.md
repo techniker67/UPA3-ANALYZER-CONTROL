@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.3.2 – 2026-11-21
+- Ruhestrom-Diagramm im Protokoll: Legende steht jetzt unter dem Diagramm (eine Zeile, rechts) und verdeckt keine Messwerte mehr; der Hinweis zur abgeschnittenen Achse steht links daneben (kürzer).
+
 ## 1.3.1 – 2026-11-21
 - Fenster immer maximiert: Das Multimeter-Fenster öffnet maximiert, und beim Wechsel (⌂ ÜBERSICHT, Kachel „Ruhestrom", zweiter Programmstart) wird das jeweilige Fenster maximiert nach vorne geholt.
 - Protokolldatei vermerkt, ob ein Fenster maximiert ist (zur Fehlersuche); die Build-Prüfung kontrolliert das.
