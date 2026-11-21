@@ -5,7 +5,7 @@
 Windows program for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV files and a printable test report (PDF + DOCX).
 
-> **Version 1.0.0** — first public release. All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
+> **Version 1.0.1** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -48,7 +48,7 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 2. The setup creates a Start-menu entry, an optional desktop shortcut and a shortcut **“Messdaten-Ordner”** (data folder).
 3. Updates: simply install the new version over the old one. Uninstalling keeps your data.
 
-The installer is not code-signed yet, so Windows SmartScreen may warn: click *More info* → *Run anyway*.
+The installer is not code-signed yet, so Windows SmartScreen may warn: click *More info* → *Run anyway*. Signing via the SignPath Foundation is being applied for — see the [Code signing policy](docs/code-signing-policy.md).
 
 ## First steps
 
@@ -121,7 +121,13 @@ Tested so far with firmware **0.53.26 (JW)**. Feedback with other adapters and f
 - English user interface
 - Weighted S/N (A/CCIR), SINAD, wow & flutter, azimuth/phase — once verified on a real device
 - Before/after measurements in the test report
-- Code-signed installer
+- Code-signed installer (SignPath Foundation)
+
+## Code signing policy
+
+Free code signing provided by SignPath.io, certificate by SignPath Foundation (application in preparation). Details, team roles and privacy statement: [Code signing policy](docs/code-signing-policy.md). Bundled open-source components: [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
+
+**Privacy:** this program will not transfer any information to other networked systems unless specifically requested by the user.
 
 ## Disclaimer
 
