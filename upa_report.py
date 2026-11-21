@@ -33,6 +33,13 @@ try:
 except Exception:
     plt = None
 
+# Aufloesung der Diagramme. Nicht unter 300 dpi gehen: Calibri enthaelt
+# eingebettete Pixelschriften fuer 12-19 Pixel Schrifthoehe, die matplotlib
+# leer zeichnet. Bei 150 dpi fielen Achsenzahlen, Legende und Zeitmarken-
+# Texte (7,5-8 pt) genau in diesen Bereich; ab 300 dpi liegt jede Schrift
+# ab 4,6 pt darueber.
+DPI = 300
+
 FELDER = (("hersteller", "Hersteller"), ("typ", "Typ"), ("seriennr", "Seriennummer"))
 FARBE = {"L": "#2E5A88", "R": "#C0504D", "L→R": "#2E5A88", "R→L": "#C0504D"}   # Hausfarben
 
@@ -230,7 +237,7 @@ def diagramm(prog_id, titel, points, pfad):
     """PNG fuer Programme mit Kurve. Liefert True, wenn geschrieben."""
     if plt is None or prog_id not in ("fr", "thdf", "thdl", "xt"):
         return False
-    fig, ax = plt.subplots(figsize=(8, 3.6), dpi=150)
+    fig, ax = plt.subplots(figsize=(8, 3.6), dpi=DPI)
     alle_x, alle_y = [], []
     try:
         for c in _kanaele(points):
@@ -312,7 +319,7 @@ def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
     ys = [v for t, v, _ in punkte if v is not None]
     if not xs:
         return False
-    fig, ax = plt.subplots(figsize=(8, 3.6), dpi=150)
+    fig, ax = plt.subplots(figsize=(8, 3.6), dpi=DPI)
     try:
         if soll is not None and tol:
             ax.axhspan(soll - tol, soll + tol, color="#2E8B57", alpha=0.12, lw=0, label="Toleranzband")
@@ -358,6 +365,20 @@ def eintrag_speichern(ordner_, eintrag):
         json.dump(liste, fh, ensure_ascii=False, indent=1)
 
 
+def _schrift_sichtbar(pt):
+    """Zeichnet Ziffern in der Diagrammschrift und prueft, ob Pixel gesetzt wurden
+    (Schutz gegen leere Pixelschrift-Groessen der Calibri, siehe DPI)."""
+    import io
+    fig = plt.figure(figsize=(2, 0.5), dpi=DPI)
+    try:
+        fig.text(0.05, 0.3, "0123456789 mV", fontsize=pt)
+        buf = io.BytesIO()
+        fig.savefig(buf, format="rgba", facecolor="white")
+    finally:
+        plt.close(fig)
+    return any(b < 128 for b in buf.getvalue()[0::4])
+
+
 def selbsttest(ziel_ordner):
     """Diagramm aus Beispieldaten erzeugen (Pruefung der installierten Version).
     Liefert den Pfad der PNG oder wirft eine Ausnahme."""
@@ -366,6 +387,9 @@ def selbsttest(ziel_ordner):
     fs = [20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000]
     pts = [{"ch": c, "x": f, "f": f, "u_true": 0.5 * (1 - 0.004 * (f / 20000) ** 2)}
            for c in ("L", "R") for f in fs]
+    for pt in (7.5, 8, 10.5):
+        if not _schrift_sichtbar(pt):
+            raise RuntimeError(f"Diagrammschrift {pt} pt wird bei {DPI} dpi nicht gezeichnet")
     os.makedirs(ziel_ordner, exist_ok=True)
     pfad = os.path.join(ziel_ordner, "selbsttest_frequenzgang.png")
     if not diagramm("fr", "Selbsttest Frequenzgang", pts, pfad) or os.path.getsize(pfad) < 5000:

@@ -2,6 +2,10 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.1.2 – 2026-11-21
+- **Diagramme: fehlende Achsenzahlen, Legende und Zeitmarken-Texte unter Windows behoben.** Die Calibri enthält eingebettete Pixelschriften für kleine Größen, die matplotlib (ab 3.11) leer zeichnet – bei 150 dpi trafen 7,5–9 pt genau diese Größen. Diagramme werden jetzt mit 300 dpi gespeichert (dazu schärfer im Druck). Der Selbsttest der Windows-Version prüft das künftig.
+- Hinweis: Bereits gespeicherte Diagramme bleiben unverändert.
+
 ## 1.1.1 – 2026-11-21
 - Ruhestrom/Offset am echten Fluke 287 getestet (Live-Anzeige deckungsgleich mit dem Messgerät, 10-min-Aufzeichnung mit Zeitmarken, Ablage auf dem NAS) – Kachel jetzt „GETESTET".
 
