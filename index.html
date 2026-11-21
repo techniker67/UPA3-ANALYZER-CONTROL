@@ -534,18 +534,22 @@ function buildMenu(){
     b.title=p.lock||p.note||""; b.innerHTML=`<span class="o">${p.opt}</span><span class="n">${esc(p.name)}</span><span class="s">${esc(p.sub)}</span><span class="b ${p.status}">${BADGE[p.status]}</span>`;
     b.onclick=()=>select(p.id,true); m.appendChild(b); });
   const f=document.createElement("button"); f.className="tile fluke"; f.dataset.id="ruhe";
-  f.title="Ruhestrom / DC-Offset mit dem Fluke 287 über das IR-USB-Kabel – öffnet ein eigenes Multimeter-Fenster, läuft auch ohne UPA";
+  f.title="Ruhestrom / DC-Offset mit dem Fluke 287 – wechselt ins Multimeter-Fenster (zurück über ⌂ ÜBERSICHT), läuft auch ohne UPA";
   f.innerHTML=`<span class="o">FLUKE</span><span class="n">Ruhestrom</span><span class="s">Offset · Fluke 287 · mV</span><span class="b ok">GETESTET</span>`;
   f.onclick=()=>select("ruhe",true); m.appendChild(f);
 }
 async function mmOeffnen(user,nur){
   if(user){Snd.init();Snd.click();}
   const r=await api("/api/fenster",{art:"multimeter",nur:!!nur});
-  if(!r.ok||r.browser){ const w=window.open("/?ansicht=multimeter","upa_multimeter","width=1100,height=820");
+  if(!r.ok){ Snd.denied(); alert(r.error||"Multimeter-Fenster nicht verfügbar"); return; }
+  if(r.browser){ const w=window.open("/?ansicht=multimeter","upa_multimeter","width=1100,height=820");
     if(!w) alert("Das Multimeter-Fenster wurde vom Browser blockiert – Pop-ups für diese Seite erlauben."); else w.focus(); }
 }
 function select(id,user){
-  if(id==="ruhe"&&!MM){ if(user) mmOeffnen(true); return; }   // Hauptfenster: eigenes Multimeter-Fenster
+  if(id==="ruhe"&&!MM){                    // Hauptfenster: zum Multimeter-Fenster wechseln (UPA-Fenster ausblenden)
+    if(!user) return;
+    if(S&&S.busy){ Snd.init(); Snd.denied(); alert("Bitte erst die laufende UPA-Messung stoppen."); return; }
+    mmOeffnen(true,true); return; }
   if(id==="ruhe"){ document.querySelector(".app").classList.add("mode-fluke");
     document.querySelectorAll(".tile").forEach(t=>t.classList.toggle("sel",t.dataset.id==="ruhe"));
     if(user){Snd.init();Snd.click();} try{localStorage.setItem("upa_prog",id);}catch(e){} fRender(); return; }

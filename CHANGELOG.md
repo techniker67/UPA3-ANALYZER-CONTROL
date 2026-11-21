@@ -2,6 +2,10 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.3.4 – 2026-11-21
+- Kachel **„Ruhestrom"** im UPA-Fenster wechselt jetzt ins Multimeter-Fenster wie *▣ Nur Multimeter*: Das UPA-Fenster wird ausgeblendet, zurück über *⌂ ÜBERSICHT* (UPA-Fenster unverändert, maximiert). Immer nur ein Fenster sichtbar.
+- Während einer laufenden UPA-Messung wird der Wechsel abgelehnt.
+
 ## 1.3.3 – 2026-11-21
 - Prüfprotokoll-Dialog: neues Feld **„Prüfer / Firma"** – steht im Protokoll (Zeile „Prüfer") und in der Fußzeile, wird gemerkt. Leer = ohne. Bisher ließ sich der Name nur in `upa_einstellungen.json` eintragen.
 
