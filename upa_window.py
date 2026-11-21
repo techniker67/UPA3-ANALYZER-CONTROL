@@ -48,19 +48,6 @@ def frage(text, title="UPA-Analyzer-Control"):
 
 
 TITEL_ANFANG = "UPA·3 // Analyzer Control"      # Fenstertitel ohne Versionsnummer
-MM_TITEL = "UPA·3 // Multimeter – Ruhestrom · Offset"
-
-
-def _maximieren(w):
-    """Fenster maximieren (pywebview >= 5: maximize(); sonst wenigstens wiederherstellen)."""
-    for name in ("maximize", "restore"):
-        f = getattr(w, name, None)
-        if f:
-            try:
-                f()
-                return
-            except Exception:
-                pass
 
 
 def ist_maximiert(titel):
@@ -209,128 +196,38 @@ def run(app, url, title, storage_dir):
         maximized=True, resizable=True, zoomable=True, text_select=True,
         background_color="#01050a")
 
+    zustand = {"ende": False}        # True: Beenden ist bestaetigt (QUIT im Menue)
+
     def on_closing():
+        if zustand["ende"]:
+            app.log("Programmfenster wird geschlossen.")
+            return True
+        import json
         grund = app.beenden_grund()
-        if grund:
-            # Hinweis im Fenster anzeigen (nicht aus dem GUI-Thread heraus warten)
-            import json
-            threading.Thread(target=lambda: win.evaluate_js(f"alert({json.dumps(grund)})"),
-                             daemon=True).start()
-            return False          # Schliessen abbrechen
-        app.log("Programmfenster wird geschlossen.")
-        return True
+        # Nicht aus dem GUI-Thread heraus warten: Hinweis bzw. Rueckfrage im Fenster
+        js = f"alert({json.dumps(grund)})" if grund else "xBeenden()"
+        threading.Thread(target=lambda: win.evaluate_js(js), daemon=True).start()
+        return False              # X schliesst nicht direkt - erst Rueckfrage im Fenster
 
     def on_shown():
         app.log("Programmfenster angezeigt.")
         threading.Thread(target=_icon_setzen, args=(title,), daemon=True).start()
         threading.Thread(target=_zustand_loggen, args=(app, "Hauptfenster", title), daemon=True).start()
 
-    # Multimeter-Fenster (hoechstens eines). "versteckt": Hauptfenster ist im
-    # Nur-Multimeter-Betrieb ausgeblendet; "ende": Software wird beendet.
-    mm = {"win": None, "versteckt": False, "ende": False}
-
-    def haupt_zeigen():
-        """Hauptfenster (wieder) anzeigen und nach vorne holen."""
-        if mm["ende"]:
-            return
-        if mm["versteckt"]:
-            mm["versteckt"] = False
-            try:
-                win.show()
-            except Exception:
-                pass
-            app.log("Hauptfenster wieder angezeigt.")
-        _maximieren(win)
-        _zustand_loggen(app, "Hauptfenster", title)
-        import time
-        time.sleep(0.2)
-        vorhandenes_fenster_zeigen(TITEL_ANFANG)
-
-    def mm_oeffnen(haupt_verbergen=False):
-        w = mm["win"]
-        if w is not None:            # schon offen -> maximiert nach vorne holen
-            _maximieren(w)
-            vorhandenes_fenster_zeigen(MM_TITEL)
-            if haupt_verbergen and not mm["versteckt"]:
-                mm["versteckt"] = True
-                win.hide()
-            return
-        w = webview.create_window(
-            MM_TITEL, url.rstrip("/") + "/?ansicht=multimeter",
-            width=1100, height=820, min_size=(640, 560), maximized=True,
-            resizable=True, zoomable=True, text_select=True, background_color="#01050a")
-
-        def mm_closing():
-            grund = app.mm_schliessen_grund()
-            if grund:
-                import json
-                threading.Thread(target=lambda: w.evaluate_js(f"alert({json.dumps(grund)})"),
-                                 daemon=True).start()
-                return False
-            app.mm_beenden()
-            return True
-
-        def mm_closed():
-            mm["win"] = None
-            app.log("Multimeter-Fenster geschlossen.")
-            # Sicherheitsnetz: ein ausgeblendetes Hauptfenster kommt immer zurueck,
-            # damit nie ein Prozess ohne sichtbares Fenster uebrig bleibt
-            threading.Thread(target=haupt_zeigen, daemon=True).start()
-
-        def mm_shown():
-            app.log("Multimeter-Fenster angezeigt.")
-            threading.Thread(target=_icon_setzen, args=(MM_TITEL,), daemon=True).start()
-            threading.Thread(target=_zustand_loggen, args=(app, "Multimeter-Fenster", MM_TITEL), daemon=True).start()
-        w.events.closing += mm_closing
-        w.events.closed += mm_closed
-        w.events.shown += mm_shown
-        mm["win"] = w
-        if haupt_verbergen:          # Nur-Multimeter-Betrieb: Hauptfenster ausblenden
-            mm["versteckt"] = True
-            app.log("Nur-Multimeter-Betrieb: Hauptfenster ausgeblendet.")
-            win.hide()
-
-    def uebersicht():
-        """ÜBERSICHT im Multimeter-Fenster: Hauptfenster zeigen; Multimeter-Fenster
-        schliessen, ausser waehrend einer Aufzeichnung (dann bleibt es offen)."""
-        if app.mm_schliessen_grund():
-            haupt_zeigen()
-            return False
-        app.mm_beenden()
-        if mm["win"] is not None:
-            mm["win"].destroy()      # mm_closed holt das Hauptfenster zurueck
-        else:
-            haupt_zeigen()
-        return True
-
-    def mm_zu():
-        w = mm["win"]
-        if w is not None:
-            w.destroy()
-
-    def alles_zu():                  # QUIT: Multimeter-Fenster und Hauptfenster
-        mm["ende"] = True
-        mm_zu()
+    def beenden():                   # QUIT (Menue oder bestaetigtes X)
+        zustand["ende"] = True
         win.destroy()
 
-    def on_closed():                 # Hauptfenster zu -> Multimeter-Fenster mit schliessen
-        mm["ende"] = True
-        threading.Thread(target=mm_zu, daemon=True).start()
-
     win.events.closing += on_closing
-    win.events.closed += on_closed
     win.events.shown += on_shown
-    app.on_quit = alles_zu        # QUIT in der Oberflaeche schliesst alle Fenster
-    app.fenster_oeffnen = mm_oeffnen
-    app.fenster_schliessen = mm_zu
-    app.fenster_uebersicht = uebersicht
+    app.on_quit = beenden
 
     gui = "edgechromium" if os.name == "nt" else None   # unter Windows nie den alten IE-Unterbau
     try:
         os.makedirs(storage_dir, exist_ok=True)
         webview.start(gui=gui, private_mode=False, storage_path=storage_dir)
     except Exception as e:
-        app.on_quit = app.fenster_oeffnen = app.fenster_schliessen = app.fenster_uebersicht = None
+        app.on_quit = None
         app.log(f"Programmfenster nicht verfuegbar ({e}) - Oberflaeche im Browser.")
         return False
     return True

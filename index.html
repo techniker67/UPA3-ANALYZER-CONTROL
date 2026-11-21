@@ -59,6 +59,17 @@ body.tick .pill.run::before{opacity:.2}
 .dut.dis{opacity:.45;pointer-events:none}
 .iconbtn{white-space:nowrap}
 @media (max-width:1600px){.dut{margin-left:12px;max-width:330px;gap:8px}.dut .k{display:none}.pills{gap:6px}}
+#setdlg{position:fixed;inset:0;background:rgba(1,5,10,.9);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(3px)}
+#setdlg.on{display:flex}
+#setdlg .box{width:min(820px,92vw);border:1px solid var(--cy);background:rgba(2,11,18,.97);padding:26px 30px;box-shadow:0 0 40px -10px var(--cy)}
+#setdlg h2{font:600 20px var(--f);letter-spacing:.4em;color:var(--cy);margin:0 0 6px;text-shadow:0 0 10px var(--cy)}
+#setdlg .sub{font:12px var(--m);color:var(--mut);margin-bottom:18px;letter-spacing:.04em;word-break:break-all}
+#setdlg .g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+#setdlg .w2{grid-column:span 2}#setdlg .w3{grid-column:span 3}
+#setdlg .chk{display:flex;gap:10px;align-items:center;font:12px var(--m);color:var(--txt);text-transform:none;letter-spacing:.04em}
+#setdlg .chk input{width:auto}
+#setdlg .ctl{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
+#setdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:6px}
 #dutdlg{position:fixed;inset:0;background:rgba(1,5,10,.9);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(3px)}
 #dutdlg.on{display:flex}
 #dutdlg .box{width:min(760px,92vw);border:1px solid var(--cy);background:rgba(2,11,18,.97);padding:26px 30px;box-shadow:0 0 40px -10px var(--cy)}
@@ -127,10 +138,43 @@ body.mm{overflow:auto}
   .app.mm .fv-chartp svg{height:260px}
 }
 @media (max-width:760px){ .app.mm .fv-wert{font-size:60px} .app.mm .logo{font-size:15px;letter-spacing:.18em} }
-#uebers{display:none}
-.app.mm #uebers{display:inline-block}
-.btn.ghost.mmbtn{color:var(--or);border-color:rgba(255,155,47,.55)}
-.btn.ghost.mmbtn:hover{box-shadow:0 0 12px rgba(255,155,47,.45)}
+/* ---- Startmenue ---- */
+#startm{position:fixed;inset:0;z-index:8;display:none;align-items:center;justify-content:center;overflow:auto;padding:28px;
+  background:radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0,229,255,.12), transparent 60%),
+    linear-gradient(rgba(0,229,255,.045) 1px, transparent 1px) 0 0/40px 40px,
+    linear-gradient(90deg, rgba(0,229,255,.045) 1px, transparent 1px) 0 0/40px 40px, var(--bg)}
+#startm.on{display:flex}
+.sm-box{width:min(1180px,96vw);text-align:center}
+.sm-titel{font:600 38px var(--f);letter-spacing:.42em;color:var(--cy);text-shadow:0 0 12px var(--cy),0 0 40px rgba(0,229,255,.45);margin:0 0 6px}
+.sm-sub{font:12px var(--m);letter-spacing:.32em;color:var(--mut);margin-bottom:26px}
+.sm-sub b{color:var(--cy2);font-weight:400}
+.sm-dut{display:flex;align-items:center;gap:16px;margin:0 auto 26px;max-width:900px;border:1px solid var(--cyd);background:rgba(4,20,32,.6);padding:12px 18px;cursor:pointer;text-align:left}
+.sm-dut:hover{border-color:var(--cy);box-shadow:0 0 14px -4px var(--cy)}
+.sm-dut .k{font:11px var(--m);letter-spacing:.3em;color:var(--mut)}
+.sm-dut .v{font:15px var(--m);color:var(--cy2);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sm-dut .v.leer{color:var(--or)}
+.sm-dut .e{font:11px var(--m);letter-spacing:.2em;color:var(--cy)}
+.sm-gross{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:22px}
+.sm-klein{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.sm-k{position:relative;border:1px solid var(--cyd);background:rgba(4,20,32,.72);padding:26px 20px 20px;cursor:pointer;color:var(--txt);font-family:var(--f);
+  clip-path:polygon(0 0,calc(100% - 22px) 0,100% 22px,100% 100%,22px 100%,0 calc(100% - 22px));transition:border-color .15s,box-shadow .15s,background .15s}
+.sm-k:hover{border-color:var(--cy);background:rgba(0,229,255,.07);box-shadow:inset 0 0 30px -12px var(--cy)}
+.sm-k svg{display:block;margin:0 auto 14px;filter:drop-shadow(0 0 8px rgba(0,229,255,.55))}
+.sm-k .n{font:600 22px var(--f);letter-spacing:.34em;color:var(--cy)}
+.sm-k .s{font:12px var(--m);letter-spacing:.12em;color:var(--mut);margin-top:6px}
+.sm-k .st{font:12px var(--m);letter-spacing:.08em;margin-top:12px;min-height:16px;color:var(--mut)}
+.sm-k .st.ok{color:var(--grn)}.sm-k .st.warn{color:var(--or)}.sm-k .st.bad{color:var(--red)}
+.sm-klein .sm-k{padding:18px 16px 16px;display:flex;align-items:center;gap:16px;text-align:left}
+.sm-klein .sm-k svg{margin:0;flex:none}
+.sm-klein .sm-k .n{font-size:16px;letter-spacing:.26em}
+.sm-k.fl .n{color:var(--or)} .sm-k.fl svg{filter:drop-shadow(0 0 8px rgba(255,155,47,.55))}
+.sm-k.fl:hover{border-color:var(--or);background:rgba(255,155,47,.06);box-shadow:inset 0 0 30px -12px var(--or)}
+.sm-k.aus .n{color:var(--red)} .sm-k.aus svg{filter:drop-shadow(0 0 8px rgba(255,59,78,.55))}
+.sm-k.aus:hover{border-color:var(--red);background:rgba(255,59,78,.06);box-shadow:inset 0 0 30px -12px var(--red)}
+.sm-fuss{margin-top:26px;font:11px var(--m);letter-spacing:.14em;color:var(--mut);line-height:1.9}
+.sm-upd{display:none;margin-top:12px;font:12px var(--m);letter-spacing:.12em;color:var(--grn);cursor:pointer;border:1px solid rgba(61,255,181,.5);padding:6px 14px}
+.sm-upd.on{display:inline-block}
+#toMenu{border-color:var(--cy);color:var(--cy2)}
 .tile.fluke{border-color:rgba(255,155,47,.45)}
 .tile.fluke .o{color:var(--or)}
 .tile.fluke.sel{border-color:var(--or);background:rgba(255,155,47,.10);box-shadow:inset 0 0 22px rgba(255,155,47,.16)}
@@ -294,7 +338,7 @@ tr.new td{animation:flash 1s}
     <img class="appicon" src="/icon.png" alt=""><div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
     <div class="dut" id="dut" title="Prüfling festlegen – Messungen werden im Geräteordner gesammelt"><span class="k">PRÜFLING</span><span class="v leer" id="dutTxt">KEINER – FESTLEGEN</span><span class="e">✎</span></div>
     <div class="pills"><span class="pill" id="pAd">ADAPTER</span><span class="pill" id="pUp">UPA</span><span class="pill" id="pMe">MESSUNG</span></div>
-    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="prot" title="Prüfprotokoll (PDF + DOCX) aus den Messungen des Prüflings">▤ PROTOKOLL</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn" id="uebers" title="Zurück zur Übersicht: Hauptfenster zeigen, Multimeter-Fenster schließen (während einer Aufzeichnung bleibt es offen)">⌂ ÜBERSICHT</button><button class="iconbtn quit" id="quit" title="UPA freigeben, Software beenden und Fenster schliessen">⏻ QUIT</button></div>
+    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="prot" title="Prüfprotokoll (PDF + DOCX) aus den Messungen des Prüflings">▤ PROTOKOLL</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn" id="toMenu" title="Zurück zum Startmenü (nicht während einer Messung oder Aufzeichnung)">⌂ MENÜ</button></div>
   </header>
 
   <nav class="menu" id="menu"><div class="mt">MESS-<br>PROGRAMM<small>KATALOG 19.11.</small></div></nav>
@@ -416,7 +460,7 @@ tr.new td{animation:flash 1s}
   <section class="panel logp"><pre id="log"></pre></section>
 </div>
 
-<div id="boot">
+<div id="boot" class="gone">
   <div class="bootbox">
     <img class="booticon" src="/icon.png" alt=""><h1 class="boottitle">SYSTEM-INITIALISIERUNG</h1>
     <div class="bootsub">ADAPTER-CHECK → UPA-VERBINDUNG → MESSUNG FREIGEBEN</div>
@@ -428,14 +472,47 @@ tr.new td{animation:flash 1s}
       <div class="pf" style="width:150px"><label>GPIB-Adresse (0–30)</label><input id="gaddr" type="number" min="0" max="30" step="1" value="7"></div>
       <button class="btn" id="start">System starten</button>
       <button class="btn ghost hide" id="close">Schliessen</button>
-      <button class="btn ghost" id="ohneUpa" title="Hauptfenster ohne Start-Check – UPA später über ⟲ INIT">Ohne UPA fortfahren</button>
-      <button class="btn ghost mmbtn" id="nurMM" title="Nur das Multimeter-Fenster (Ruhestrom/Offset mit dem Fluke) – zurück über ⌂ ÜBERSICHT">▣ Nur Multimeter</button>
+      <button class="btn ghost" id="ohneUpa" title="UPA-Ansicht ohne Start-Check – UPA später über ⟲ INIT">Ohne UPA fortfahren</button>
+      <button class="btn ghost" id="bootMenu" title="Zurück zum Startmenü">⌂ Menü</button>
     </div>
     <div class="hint">Voraussetzung: UPA eingeschaltet, am Gerät eingestellte IEC-Adresse eintragen · für den Verbindungstest Loopback (Ausgang → Eingang) gesteckt</div>
     <div class="bootfoot"><b id="bFirma"></b><span id="bSep"></span>UPA-SOFTWARE <span id="bVer">v–</span></div>
   </div>
 </div>
 
+<div id="startm" class="on">
+  <div class="sm-box">
+    <img class="booticon" src="/icon.png" alt="">
+    <h1 class="sm-titel">UPA·3 // ANALYZER CONTROL</h1>
+    <div class="sm-sub"><b id="smFirma"></b><span id="smSep"></span>MESSPLATZ · <span id="smVer">v–</span></div>
+    <div class="sm-dut" id="smDut" title="Prüfling festlegen – gilt für UPA- und Multimeter-Messungen"><span class="k">PRÜFLING</span><span class="v leer" id="smDutTxt">KEINER – FESTLEGEN</span><span class="e">✎ ÄNDERN</span></div>
+    <div class="sm-gross">
+      <div class="sm-k" id="smUpa" role="button" tabindex="0"><svg width="96" height="72" viewBox="0 0 96 72" fill="none" stroke="#00e5ff" stroke-width="2"><rect x="3" y="3" width="90" height="66" rx="5"/><g stroke="rgba(0,229,255,.35)" stroke-width="1"><path d="M3 24h90M3 36h90M3 48h90M25 3v66M48 3v66M71 3v66"/></g><path d="M8 36 C16 10, 24 10, 32 36 S48 62, 56 36 S72 10, 80 36 S88 54, 90 46" stroke="#6ff6ff" stroke-width="2.6" stroke-linecap="round"/></svg><div class="n">UPA-MESSUNG</div><div class="s">Frequenzgang · Pegel · THD+N · Übersprechen</div><div class="st" id="smUpaSt"></div></div>
+      <div class="sm-k fl" id="smMm" role="button" tabindex="0"><svg width="72" height="88" viewBox="0 0 72 88" fill="none" stroke="#ff9b2f" stroke-width="2"><rect x="4" y="3" width="64" height="82" rx="8"/><rect x="12" y="11" width="48" height="20" rx="2"/><path d="M17 26h10M31 26h6M41 26h14" stroke="rgba(255,155,47,.45)" stroke-width="1.5"/><circle cx="36" cy="52" r="13"/><path d="M36 52l7-8" stroke-width="2.6" stroke-linecap="round"/><circle cx="20" cy="76" r="3.5"/><circle cx="36" cy="76" r="3.5"/><circle cx="52" cy="76" r="3.5"/></svg><div class="n">MULTIMETER</div><div class="s">Ruhestrom · Offset · Fluke 287</div><div class="st" id="smMmSt"></div></div>
+    </div>
+    <div class="sm-klein">
+      <div class="sm-k" id="smProt" role="button" tabindex="0"><svg width="44" height="52" viewBox="0 0 44 52" fill="none" stroke="#00e5ff" stroke-width="2"><path d="M4 3h24l12 12v34H4z"/><path d="M28 3v12h12"/><path d="M11 24h22M11 31h22M11 38h12" stroke="rgba(0,229,255,.55)"/><path d="M26 40l4 4 8-9" stroke="#3dffb5" stroke-width="2.4" stroke-linecap="round"/></svg><div><div class="n">PROTOKOLLE</div><div class="st" id="smProtSt"></div></div></div>
+      <div class="sm-k" id="smSet" role="button" tabindex="0"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round"><path d="M6 12h36M6 24h36M6 36h36" stroke="rgba(0,229,255,.55)"/><circle cx="16" cy="12" r="4.5" fill="#01050a"/><circle cx="32" cy="24" r="4.5" fill="#01050a"/><circle cx="20" cy="36" r="4.5" fill="#01050a"/></svg><div><div class="n">EINSTELLUNGEN</div><div class="st">Ablage · Prüfer · Ports</div></div></div>
+      <div class="sm-k aus" id="smAus" role="button" tabindex="0"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#ff3b4e" stroke-width="2.6" stroke-linecap="round"><path d="M15 12.5a16 16 0 1 0 18 0"/><path d="M24 5v18"/></svg><div><div class="n">BEENDEN</div><div class="st">UPA freigeben · Programm schließen</div></div></div>
+    </div>
+    <div class="sm-upd" id="smUpd" title="Release-Seite im Browser öffnen"></div>
+    <div class="sm-fuss" id="smFuss"></div>
+  </div>
+</div>
+<div id="setdlg"><div class="box">
+  <h2>EINSTELLUNGEN</h2>
+  <div class="sub" id="sDaten"></div>
+  <div class="g">
+    <div class="w3"><label>Prüfer / Firma (Protokoll und Fußzeile)</label><input id="sFirma" maxlength="80" placeholder="z. B. Name oder Werkstatt – leer = ohne"></div>
+    <div class="w3"><label>Ablageordner für Messungen</label><input id="sAbl" maxlength="260" placeholder="leer = Dokumente\UPA-Analyzer-Control\Messungen"></div>
+    <div><label>UPA: Adapter-Port (AR488)</label><input id="sPort" maxlength="40" list="portlist"></div>
+    <div><label>UPA: GPIB-Adresse (0–30)</label><input id="sAddr" type="number" min="0" max="30" step="1"></div>
+    <div><label>Multimeter: Fluke-Port</label><input id="sFl" maxlength="40" list="portlist" placeholder="leer = beim Start suchen"></div>
+    <div class="w3"><label class="chk"><input type="checkbox" id="sUpd"> Beim Start bei GitHub nach einer neuen Version sehen</label></div>
+  </div>
+  <div class="err" id="sErr"></div>
+  <div class="ctl"><button class="btn ghost" id="sCancel">Abbrechen</button><button class="btn" id="sOk">Speichern</button></div>
+</div></div>
 <div id="dutdlg"><div class="box">
   <h2>PRÜFLING</h2>
   <div class="sub">Alle folgenden Messungen werden in einem eigenen Ordner gesammelt (CSV, Diagramm, Zusammenfassung) – Grundlage für das Prüfprotokoll. Ordnername: Auftragsnummer, sonst Hersteller_Typ_Seriennummer.</div>
@@ -471,13 +548,8 @@ tr.new td{animation:flash 1s}
 "use strict";
 const $=id=>document.getElementById(id);
 let S=null, PROGS=[], SEL=null, logLen=0, prevStatus={}, unit="V", bootActive=false, lastSig="";
-// Multimeter-Fenster: dieselbe Oberflaeche, nur Fluke-Bereich (ohne UPA-Kacheln und Start-Check)
-const MM=new URLSearchParams(location.search).get("ansicht")==="multimeter";
-if(MM){ document.body.classList.add("mm"); document.querySelector(".app").classList.add("mm","mode-fluke");
-  const b=$("boot"); b.style.transition="none"; b.classList.add("gone"); b.style.display="none";
-  document.title="UPA·3 // Multimeter";
-  const lg=document.querySelector(".logo"); if(lg&&lg.firstChild) lg.firstChild.nodeValue="UPA·3 // MULTIMETER";
-  $("quit").title="Software beenden – schließt Multimeter- und Hauptfenster"; }
+// Ansichten in einem Fenster: Startmenue, UPA-Messung, Multimeter (nur Fluke-Bereich)
+let VIEW="menu", MM=false;
 
 /* ---------------- Sound ---------------- */
 const Snd={ctx:null,on:true,ready:null,
@@ -538,18 +610,31 @@ function buildMenu(){
   f.innerHTML=`<span class="o">FLUKE</span><span class="n">Ruhestrom</span><span class="s">Offset · Fluke 287 · mV</span><span class="b ok">GETESTET</span>`;
   f.onclick=()=>select("ruhe",true); m.appendChild(f);
 }
-async function mmOeffnen(user,nur){
-  if(user){Snd.init();Snd.click();}
-  const r=await api("/api/fenster",{art:"multimeter",nur:!!nur});
-  if(!r.ok){ Snd.denied(); alert(r.error||"Multimeter-Fenster nicht verfügbar"); return; }
-  if(r.browser){ const w=window.open("/?ansicht=multimeter","upa_multimeter","width=1100,height=820");
-    if(!w) alert("Das Multimeter-Fenster wurde vom Browser blockiert – Pop-ups für diese Seite erlauben."); else w.focus(); }
+function setView(v){
+  VIEW=v; MM=v==="mm";
+  const app=document.querySelector(".app");
+  app.classList.toggle("mm",MM); document.body.classList.toggle("mm",MM);
+  if(!MM) app.classList.remove("mode-fluke");
+  $("startm").classList.toggle("on",v==="menu");
+  const lg=document.querySelector(".logo"); if(lg&&lg.firstChild) lg.firstChild.nodeValue=MM?"UPA·3 // MULTIMETER":"UPA·3 // ANALYZER CONTROL";
+  if(S) document.title=(MM?"UPA·3 // Multimeter v":"UPA·3 // Analyzer Control v")+S.app_version;
+  if(v==="mm") select("ruhe",false);
+  if(v==="upa"){ if(SEL) select(SEL.id,false); else select("fr",false);
+    if(!(S&&S.boot_ok)) bootZeigen(); }
+  if(v==="menu"){ $("boot").classList.add("gone"); menuRender(); }
+}
+function bootZeigen(){ $("boot").classList.remove("gone");$("start").disabled=false;$("start").textContent="System starten";$("bmsg").textContent="";$("bmsg").className="bootmsg";$("close").classList.add("hide"); }
+async function zumMenu(){
+  Snd.init(); Snd.click();
+  const r=await api("/api/menue",{});
+  if(!r.ok){ Snd.denied(); alert(r.error||"Zurück zum Menü nicht möglich"); return; }
+  setView("menu");
 }
 function select(id,user){
-  if(id==="ruhe"&&!MM){                    // Hauptfenster: zum Multimeter-Fenster wechseln (UPA-Fenster ausblenden)
+  if(id==="ruhe"&&!MM){                    // UPA-Ansicht: Kachel "Ruhestrom" wechselt zum Multimeter
     if(!user) return;
     if(S&&S.busy){ Snd.init(); Snd.denied(); alert("Bitte erst die laufende UPA-Messung stoppen."); return; }
-    mmOeffnen(true,true); return; }
+    Snd.init(); Snd.click(); setView("mm"); return; }
   if(id==="ruhe"){ document.querySelector(".app").classList.add("mode-fluke");
     document.querySelectorAll(".tile").forEach(t=>t.classList.toggle("sel",t.dataset.id==="ruhe"));
     if(user){Snd.init();Snd.click();} try{localStorage.setItem("upa_prog",id);}catch(e){} fRender(); return; }
@@ -697,7 +782,7 @@ function render(){
   $("ringTxt").textContent=`${S.steps.filter(s=>s.status==="ok").length}/${S.steps.length}`;
   S.steps.forEach(s=>{if(prevStatus[s.id]!==s.status){if(bootActive&&s.status==="ok")Snd.blip();prevStatus[s.id]=s.status;}});
   $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
-  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; const FB=!!(S.fluke&&S.fluke.busy), FREC=FB&&S.fluke.modus==="rec"; $("reboot").disabled=S.busy; $("quit").disabled=S.busy||FREC; $("dut").classList.toggle("dis",!!S.busy||FB); $("prot").disabled=S.busy||FB||!S.pruefling; fRender();
+  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; const FB=!!(S.fluke&&S.fluke.busy), FREC=FB&&S.fluke.modus==="rec"; $("reboot").disabled=S.busy; $("toMenu").disabled=S.busy||FREC||S.phase==="booting"; $("dut").classList.toggle("dis",!!S.busy||FB); $("prot").disabled=S.busy||FB||!S.pruefling; fRender();
   const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
   if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
   else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
@@ -741,14 +826,9 @@ async function startBoot(){
 }
 $("start").onclick=startBoot; $("close").onclick=()=>$("boot").classList.add("gone");
 $("ohneUpa").onclick=()=>{ Snd.init(); Snd.click(); $("boot").classList.add("gone"); };
-$("nurMM").onclick=()=>mmOeffnen(true,true);   // Hauptfenster wird ausgeblendet, Startbildschirm bleibt fuer die Rueckkehr
-$("uebers").onclick=async()=>{
-  Snd.init(); Snd.click();
-  const r=await api("/api/fenster/uebersicht",{});
-  if(r.browser){ try{ if(window.opener) window.opener.focus(); }catch(e){} if(!r.bleibt){ try{ window.close(); }catch(e){} } }
-  if(r.bleibt){ $("fSt").textContent="Aufzeichnung läuft – Multimeter-Fenster bleibt offen"; $("fSt").style.color="var(--or)"; }
-};
-$("reboot").onclick=()=>{$("boot").classList.remove("gone");$("start").disabled=false;$("start").textContent="System starten";$("bmsg").textContent="";$("bmsg").className="bootmsg";};
+$("bootMenu").onclick=()=>{ if(S&&S.phase==="booting") return; Snd.init(); Snd.click(); setView("menu"); };
+$("toMenu").onclick=zumMenu;
+$("reboot").onclick=bootZeigen;
 
 /* ---------------- Messung ---------------- */
 $("go").onclick=async()=>{
@@ -902,15 +982,17 @@ $("fStop").onclick=()=>api("/api/fluke/stop",{});
 $("fSuch").onclick=async()=>{ $("fSt").textContent="Suche Fluke …"; $("fSt").style.color="";
   const r=await api("/api/fluke/suchen",{}); if(r.ok){ $("fPort").value=r.port; $("fSt").textContent="Gefunden: "+r.ident; } else { $("fSt").textContent=r.error||"nicht gefunden"; $("fSt").style.color="var(--red)"; } };
 let quitting=false;
-$("quit").onclick=async()=>{
+async function beenden(gefragt){
   if(S&&S.busy){ alert("Bitte erst die laufende Messung stoppen."); return; }
   if(S&&S.fluke&&S.fluke.busy&&S.fluke.modus==="rec"){ alert("Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."); return; }
-  if(!confirm("UPA-Software beenden?\n\nAlle Fenster werden geschlossen, der UPA bleibt freigegeben.")) return;
+  if(!gefragt&&!confirm("UPA-Software beenden?\n\nDas Programm wird geschlossen, der UPA bleibt freigegeben.")) return;
   const r=await api("/api/quit",{});
   if(!r.ok){ alert(r.error||"Beenden nicht möglich"); return; }
   quitting=true; $("bye").classList.add("on");
   try{ window.close(); }catch(e){}   // klappt nur, wenn der Browser es zulaesst
-};
+}
+// X am Programmfenster: Rueckfrage statt sofort schliessen (vom Fenster aufgerufen)
+function xBeenden(){ if(confirm("UPA-Software beenden?\n\nDas Programm wird geschlossen, der UPA bleibt freigegeben.")) beenden(true); }
 
 /* ---------------- Netzwerk ---------------- */
 async function api(url,body){try{const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
@@ -925,19 +1007,82 @@ async function poll(){
       $("ver").textContent="v"+j.app_version; $("ver").title="UPA-Software "+j.app_version+" vom "+j.app_datum;
       $("bVer").textContent="v"+j.app_version+" · "+j.app_datum;
       { const fi=(j.firma||"").toUpperCase(); $("firma").textContent=fi; $("firmaSep").textContent=fi?" · ":""; $("bFirma").textContent=fi; $("bSep").textContent=fi?"  //  ":""; }
-      document.title=(MM?"UPA·3 // Multimeter v":"UPA·3 // Analyzer Control v")+j.app_version; }
+      document.title=(MM?"UPA·3 // Multimeter v":"UPA·3 // Analyzer Control v")+j.app_version;
+      $("smVer").textContent="v"+j.app_version; $("sAddr").value=j.addr; }
     {const o=$("att").querySelector('option[value="p78"]'); if(o){o.disabled=!j.p78; o.textContent=j.p78?"P78 - kalibriert":"P78 - Kalibrierdatei fehlt";}}
     if(wasMeasuring&&j.phase!=="measuring")(j.points.some(p=>p.abbruch)?Snd.denied():Snd.tone(660,990,.12,"sine",.05));
     { const pr=j.pruefling, t=$("dutTxt");
       if(pr){ t.textContent=(pr.auftrag?pr.auftrag+" · ":"")+`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr}`; t.className="v"; $("dut").title="Ordner: "+(j.ablage||j.ablage_lokal)+"\\"+j.pruefling_ordner+" – klicken zum Ändern"; }
       else { t.textContent="KEINER – FESTLEGEN"; t.className="v leer"; } }
-    wasMeasuring=j.phase==="measuring"; render();
+    wasMeasuring=j.phase==="measuring"; render(); if(VIEW==="menu") menuStatus();
   }catch(e){$("pgt").textContent="Server getrennt …";}
   if(!quitting) setTimeout(poll,400);
 }
+/* ---------------- Startmenue ---------------- */
+let PORTS=[], portsZeit=0, protZeit=0, PROTINFO=null;
+async function portsHolen(){ try{ PORTS=await (await fetch("/api/ports")).json(); portsZeit=Date.now();
+  $("portlist").innerHTML=PORTS.map(p=>`<option value="${esc(p.device)}">${esc(p.desc)}</option>`).join(""); }catch(e){} }
+async function protHolen(){ try{ PROTINFO=await (await fetch("/api/protokoll")).json(); protZeit=Date.now(); }catch(e){} }
+function stSetzen(id,txt,kl){ const e=$(id); e.textContent=txt; e.className="st"+(kl?" "+kl:""); }
+function portDa(p){ return !!p&&PORTS.some(x=>x.device.toUpperCase()===String(p).toUpperCase()); }
+function menuStatus(){
+  if(!S) return;
+  if(Date.now()-portsZeit>3000) portsHolen();
+  if(Date.now()-protZeit>4000) protHolen();
+  const pr=S.pruefling, t=$("smDutTxt");
+  if(pr){ t.textContent=(pr.auftrag?pr.auftrag+" · ":"")+`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr}`; t.className="v"; }
+  else { t.textContent="KEINER – FESTLEGEN"; t.className="v leer"; }
+  const fi=(S.firma||"").toUpperCase(); $("smFirma").textContent=fi; $("smSep").textContent=fi?"  //  ":"";
+  // UPA
+  if(S.phase==="booting") stSetzen("smUpaSt","Initialisierung läuft …","warn");
+  else if(S.boot_ok) stSetzen("smUpaSt",`UPA initialisiert · ${S.port} · GPIB ${S.addr}`,"ok");
+  else if(portDa(S.port)) stSetzen("smUpaSt",`Adapter an ${S.port} · GPIB ${S.addr} · Start-Check folgt`,"");
+  else stSetzen("smUpaSt",`${S.port||"Adapter-Port"} nicht gefunden – Kabel prüfen`,"bad");
+  // Multimeter
+  const F=S.fluke||{};
+  if(F.busy) stSetzen("smMmSt",F.modus==="rec"?"Aufzeichnung läuft":"Live-Anzeige läuft","warn");
+  else if(F.port&&portDa(F.port)) stSetzen("smMmSt",`IR-Kabel an ${F.port}`,"ok");
+  else if(F.port) stSetzen("smMmSt",`${F.port} nicht gefunden – IR-Kabel prüfen`,"bad");
+  else stSetzen("smMmSt","Fluke wird beim ersten Mal gesucht","");
+  // Protokolle
+  if(!pr) stSetzen("smProtSt","erst Prüfling festlegen","warn");
+  else if(PROTINFO&&PROTINFO.pruefling){ const n=(PROTINFO.messungen||[]).length, d=(PROTINFO.dateien||[]).filter(x=>x.endsWith(".pdf")).length;
+    stSetzen("smProtSt",`${n} Messung${n===1?"":"en"} · ${d} Protokoll${d===1?"":"e"}`,""); }
+  // Neue Version
+  const u=S.update; $("smUpd").classList.toggle("on",!!u); if(u) $("smUpd").textContent=`▲ NEUE VERSION ${u.version} VERFÜGBAR – RELEASE-SEITE ÖFFNEN`;
+  $("smFuss").innerHTML=`Datenordner ${esc(S.datenordner||"")}<br>Ablage ${esc(S.ablage||S.ablage_lokal||"")}`;
+}
+function menuRender(){ protZeit=0; portsZeit=0; menuStatus(); }
+function kachel(id,fn){ const e=$(id); e.onclick=()=>{ Snd.init(); Snd.click(); fn(); };
+  e.onkeydown=ev=>{ if(ev.key==="Enter"||ev.key===" "){ ev.preventDefault(); e.click(); } }; }
+kachel("smUpa",()=>setView("upa"));
+kachel("smMm",()=>setView("mm"));
+kachel("smProt",()=>{ if(!S) return; if(!S.pruefling){ dutOpen(); return; } protOpen(); });
+kachel("smSet",setOpen);
+kachel("smAus",()=>beenden(false));
+$("smDut").onclick=()=>{ Snd.init(); Snd.click(); dutOpen(); };
+$("smUpd").onclick=()=>api("/api/link",{});
+// ---- Einstellungen
+function setOpen(){ if(!S) return; if(S.busy||(S.fluke&&S.fluke.busy)){ alert("Während einer Messung nicht änderbar."); return; }
+  $("sFirma").value=S.firma||""; $("sAbl").value=S.ablage||""; $("sPort").value=S.port||""; $("sAddr").value=S.addr;
+  $("sFl").value=(S.fluke&&S.fluke.port)||""; $("sUpd").checked=S.update_pruefen!==false; $("sErr").textContent="";
+  $("sDaten").textContent="Datenordner: "+(S.datenordner||"")+" · Einstellungen werden dort in upa_einstellungen.json gespeichert.";
+  portsHolen(); $("setdlg").classList.add("on"); setTimeout(()=>$("sFirma").focus(),50); }
+$("sCancel").onclick=()=>$("setdlg").classList.remove("on");
+$("sOk").onclick=async()=>{
+  const a=parseInt($("sAddr").value,10); if(!(a>=0&&a<=30)){ $("sErr").textContent="GPIB-Adresse 0 bis 30"; return; }
+  $("sErr").style.color=""; $("sErr").textContent="Speichere …";
+  const r=await api("/api/einstellungen",{firma:$("sFirma").value,ablage:$("sAbl").value.trim(),port:$("sPort").value.trim(),
+    addr:a,fluke_port:$("sFl").value.trim(),update_pruefen:$("sUpd").checked});
+  if(!r.ok){ $("sErr").textContent=r.error||"Fehler"; return; }
+  $("sErr").textContent=""; $("port").value=$("sPort").value.trim(); $("gaddr").value=a;
+  if($("fPort")) $("fPort").value=$("sFl").value.trim();
+  $("setdlg").classList.remove("on"); menuRender(); };
+$("setdlg").addEventListener("keydown",e=>{ if(e.key==="Escape")$("sCancel").click(); });
 fetch("/api/ports").then(r=>r.json()).then(ps=>{$("portlist").innerHTML=ps.map(p=>`<option value="${esc(p.device)}">${esc(p.desc)}</option>`).join("");}).catch(()=>{});
 fetch("/api/programs").then(r=>r.json()).then(ps=>{PROGS=ps;buildMenu();let last="fr";try{last=localStorage.getItem("upa_prog")||"fr";}catch(e){}
-  select(MM?"ruhe":PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();});
+  select(PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();
+  if(new URLSearchParams(location.search).get("ansicht")==="multimeter") setView("mm"); });
 poll();
 </script>
 </body>
