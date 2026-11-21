@@ -51,6 +51,46 @@ TITEL_ANFANG = "UPA·3 // Analyzer Control"      # Fenstertitel ohne Versionsnum
 MM_TITEL = "UPA·3 // Multimeter – Ruhestrom · Offset"
 
 
+def _maximieren(w):
+    """Fenster maximieren (pywebview >= 5: maximize(); sonst wenigstens wiederherstellen)."""
+    for name in ("maximize", "restore"):
+        f = getattr(w, name, None)
+        if f:
+            try:
+                f()
+                return
+            except Exception:
+                pass
+
+
+def ist_maximiert(titel):
+    """Windows: True/False, ob das Fenster mit genau diesem Titel maximiert ist; None = unbekannt."""
+    if os.name != "nt":
+        return None
+    try:
+        import ctypes
+        import time
+        u32 = ctypes.windll.user32
+        u32.FindWindowW.restype = ctypes.c_void_p
+        u32.IsZoomed.argtypes = [ctypes.c_void_p]
+        for _ in range(30):
+            hwnd = u32.FindWindowW(None, titel)
+            if hwnd:
+                return bool(u32.IsZoomed(hwnd))
+            time.sleep(0.1)
+    except Exception:
+        pass
+    return None
+
+
+def _zustand_loggen(app, name, titel):
+    import time
+    time.sleep(1.0)
+    z = ist_maximiert(titel)
+    if z is not None:
+        app.log(f"{name}: {'maximiert' if z else 'NICHT maximiert'}.")
+
+
 def vorhandenes_fenster_zeigen(titel_anfang=TITEL_ANFANG):
     """Laeuft die Software schon mit sichtbarem Fenster, dieses nach vorne holen.
     Liefert True, wenn ein Fenster gefunden wurde."""
@@ -76,8 +116,7 @@ def vorhandenes_fenster_zeigen(titel_anfang=TITEL_ANFANG):
         if not gefunden:
             return False
         hwnd = gefunden[0]
-        if u32.IsIconic(hwnd):
-            u32.ShowWindow(hwnd, 9)                 # SW_RESTORE
+        u32.ShowWindow(hwnd, 3)                     # SW_MAXIMIZE (auch aus der Taskleiste)
         u32.SetForegroundWindow(hwnd)
         return True
     except Exception:
@@ -184,6 +223,7 @@ def run(app, url, title, storage_dir):
     def on_shown():
         app.log("Programmfenster angezeigt.")
         threading.Thread(target=_icon_setzen, args=(title,), daemon=True).start()
+        threading.Thread(target=_zustand_loggen, args=(app, "Hauptfenster", title), daemon=True).start()
 
     # Multimeter-Fenster (hoechstens eines). "versteckt": Hauptfenster ist im
     # Nur-Multimeter-Betrieb ausgeblendet; "ende": Software wird beendet.
@@ -200,21 +240,16 @@ def run(app, url, title, storage_dir):
             except Exception:
                 pass
             app.log("Hauptfenster wieder angezeigt.")
-        try:
-            win.restore()
-        except Exception:
-            pass
+        _maximieren(win)
+        _zustand_loggen(app, "Hauptfenster", title)
         import time
         time.sleep(0.2)
         vorhandenes_fenster_zeigen(TITEL_ANFANG)
 
     def mm_oeffnen(haupt_verbergen=False):
         w = mm["win"]
-        if w is not None:            # schon offen -> nach vorne holen
-            try:
-                w.restore()
-            except Exception:
-                pass
+        if w is not None:            # schon offen -> maximiert nach vorne holen
+            _maximieren(w)
             vorhandenes_fenster_zeigen(MM_TITEL)
             if haupt_verbergen and not mm["versteckt"]:
                 mm["versteckt"] = True
@@ -222,7 +257,7 @@ def run(app, url, title, storage_dir):
             return
         w = webview.create_window(
             MM_TITEL, url.rstrip("/") + "/?ansicht=multimeter",
-            width=1100, height=820, min_size=(640, 560),
+            width=1100, height=820, min_size=(640, 560), maximized=True,
             resizable=True, zoomable=True, text_select=True, background_color="#01050a")
 
         def mm_closing():
@@ -245,6 +280,7 @@ def run(app, url, title, storage_dir):
         def mm_shown():
             app.log("Multimeter-Fenster angezeigt.")
             threading.Thread(target=_icon_setzen, args=(MM_TITEL,), daemon=True).start()
+            threading.Thread(target=_zustand_loggen, args=(app, "Multimeter-Fenster", MM_TITEL), daemon=True).start()
         w.events.closing += mm_closing
         w.events.closed += mm_closed
         w.events.shown += mm_shown
