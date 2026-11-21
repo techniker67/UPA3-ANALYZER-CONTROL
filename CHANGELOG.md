@@ -2,6 +2,11 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.2.1 – 2026-11-21
+- Multimeter-Fenster:
+  - **▤ PROTOKOLL** auch hier – das Prüfprotokoll lässt sich direkt aus dem Multimeter-Fenster erstellen.
+  - Linke Spalte wächst mit der Fensterbreite (bis 580 px); bei großem/maximiertem Fenster liegen Live-Abgleich, Aufzeichnen und Stop nebeneinander.
+
 ## 1.2.0 – 2026-11-21
 - **Eigenes Multimeter-Fenster** für Ruhestrom/Offset: Die Kachel „Ruhestrom" (und „Ohne UPA fortfahren") öffnet ein zweites, frei skalierbares Fenster nur mit dem Fluke-Bereich – ohne UPA-Kacheln und Start-Check. Es lässt sich neben das Hauptfenster legen; ist es schon offen, wird es nach vorne geholt.
   - Aufteilung: links Einstellungen, rechts Anzeige und Verlauf; schmale Fenster stapeln alles untereinander.
