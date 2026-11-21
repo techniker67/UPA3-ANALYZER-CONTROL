@@ -7,7 +7,7 @@ Browser weiter (siehe upa_server.main).
 
 Fenster: startet maximiert in der Bildschirmaufloesung, frei veraenderbar,
 Zoom mit Strg + Mausrad bzw. Strg +/-/0. Schliessen (X) waehrend einer
-Messung wird abgelehnt - erst Stop.
+Messung bzw. Fluke-Aufzeichnung wird abgelehnt - erst Stop.
 """
 import os
 import sys
@@ -33,6 +33,69 @@ def message_box(text, title="UPA-Analyzer-Control"):
         except Exception:
             pass
     print(text)
+
+
+def frage(text, title="UPA-Analyzer-Control"):
+    """Ja/Nein-Frage ohne Konsole. Liefert True bei Ja (ausserhalb Windows: False)."""
+    if os.name == "nt":
+        try:
+            import ctypes
+            return ctypes.windll.user32.MessageBoxW(None, str(text), title, 0x24) == 6  # YESNO|QUESTION
+        except Exception:
+            pass
+    print(text)
+    return False
+
+
+TITEL_ANFANG = "UPA·3 // Analyzer Control"      # Fenstertitel ohne Versionsnummer
+
+
+def vorhandenes_fenster_zeigen():
+    """Laeuft die Software schon mit sichtbarem Fenster, dieses nach vorne holen.
+    Liefert True, wenn ein Fenster gefunden wurde."""
+    if os.name != "nt":
+        return False
+    try:
+        import ctypes
+        from ctypes import wintypes
+        u32 = ctypes.windll.user32
+        gefunden = []
+        PROC = ctypes.WINFUNCTYPE(wintypes.BOOL, wintypes.HWND, wintypes.LPARAM)
+
+        def pruefen(hwnd, _):
+            n = u32.GetWindowTextLengthW(hwnd)
+            if n and u32.IsWindowVisible(hwnd):
+                buf = ctypes.create_unicode_buffer(n + 1)
+                u32.GetWindowTextW(hwnd, buf, n + 1)
+                if buf.value.startswith(TITEL_ANFANG):
+                    gefunden.append(hwnd)
+                    return False
+            return True
+        u32.EnumWindows(PROC(pruefen), 0)
+        if not gefunden:
+            return False
+        hwnd = gefunden[0]
+        if u32.IsIconic(hwnd):
+            u32.ShowWindow(hwnd, 9)                 # SW_RESTORE
+        u32.SetForegroundWindow(hwnd)
+        return True
+    except Exception:
+        return False
+
+
+def andere_instanzen_beenden():
+    """Haengende Instanz ohne Fenster beenden: alle Prozesse mit demselben
+    Programmnamen ausser diesem. Nur in der installierten Version."""
+    if os.name != "nt" or not getattr(sys, "frozen", False):
+        return False
+    try:
+        import subprocess
+        exe = os.path.basename(sys.executable)
+        r = subprocess.run(["taskkill", "/F", "/IM", exe, "/FI", f"PID ne {os.getpid()}"],
+                           capture_output=True, timeout=10, creationflags=0x08000000)   # CREATE_NO_WINDOW
+        return r.returncode == 0
+    except Exception:
+        return False
 
 
 APP_ID = "VintageAudioRepair.UPAAnalyzerControl"   # gleich wie in packaging/installer.iss
@@ -107,15 +170,22 @@ def run(app, url, title, storage_dir):
         background_color="#01050a")
 
     def on_closing():
-        if app.busy:
+        grund = app.beenden_grund()
+        if grund:
             # Hinweis im Fenster anzeigen (nicht aus dem GUI-Thread heraus warten)
-            threading.Thread(target=lambda: win.evaluate_js(
-                'alert("Bitte erst die laufende Messung stoppen.")'), daemon=True).start()
+            import json
+            threading.Thread(target=lambda: win.evaluate_js(f"alert({json.dumps(grund)})"),
+                             daemon=True).start()
             return False          # Schliessen abbrechen
+        app.log("Programmfenster wird geschlossen.")
         return True
 
+    def on_shown():
+        app.log("Programmfenster angezeigt.")
+        threading.Thread(target=_icon_setzen, args=(title,), daemon=True).start()
+
     win.events.closing += on_closing
-    win.events.shown += lambda: threading.Thread(target=_icon_setzen, args=(title,), daemon=True).start()
+    win.events.shown += on_shown
     app.on_quit = win.destroy     # QUIT in der Oberflaeche schliesst das Fenster
 
     gui = "edgechromium" if os.name == "nt" else None   # unter Windows nie den alten IE-Unterbau

@@ -142,6 +142,23 @@ class App:
     def beschaeftigt(self):
         return self.busy or self.fl_busy
 
+    def beenden_grund(self):
+        """None, wenn die Software beendet werden darf, sonst der Hinweis.
+        Eine Fluke-Live-Anzeige speichert nichts und wird beim Beenden gestoppt."""
+        if self.busy:
+            return "Bitte erst die laufende Messung stoppen."
+        if self.fl_busy and self.fl_p.get("modus") == "rec":
+            return "Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."
+        return None
+
+    def aufraeumen(self, warten=3.0):
+        """Vor dem Beenden: Fluke-Lauf stoppen und Schnittstelle freigeben."""
+        if self.fl_busy:
+            self.fl_stop = True
+            ende = time.time() + warten
+            while self.fl_busy and time.time() < ende:
+                time.sleep(0.05)
+
     def fluke_state(self):
         lg, p = self.fl, self.fl_p
         st = {"busy": self.fl_busy, "port": self.fl_port, "ident": self.fl_ident,
@@ -764,8 +781,9 @@ def make_handler(app):
                 ok, hinweis = oeffnen(ziel, drucken=bool(body.get("drucken")))
                 return self._send(200 if ok else 400, {"ok": ok, "hinweis": hinweis, "error": None if ok else hinweis})
             if u.path == "/api/quit":
-                if app.beschaeftigt:
-                    return self._send(409, {"error": "Bitte erst die laufende Messung stoppen"})
+                grund = app.beenden_grund()
+                if grund:
+                    return self._send(409, {"error": grund})
                 app.log("Beenden ueber QUIT - Software wird geschlossen.")
                 self._send(200, {"ok": True})
                 # Serverschleife aus einem eigenen Thread beenden (nicht aus dem Handler),
@@ -852,16 +870,35 @@ def main():
         srv = Server((a.listen, a.http), make_handler(app))
     except OSError:
         # meist: Software laeuft schon
+        srv = None
         if fenster:
-            window.message_box("Die UPA-Software laeuft bereits.\n\n"
-                               f"(Port {a.http} ist belegt.)")
+            app.log(f"Start: Port {a.http} belegt.")
+            if window.vorhandenes_fenster_zeigen():
+                app.log("Laufendes Programmfenster nach vorne geholt - kein zweiter Start.")
+                return 0
+            if window.frage("Die UPA-Software läuft noch im Hintergrund, aber ohne sichtbares Fenster.\n\n"
+                            "Diese Instanz beenden und neu starten?"):
+                app.log("Hängende Instanz ohne Fenster wird beendet.")
+                window.andere_instanzen_beenden()
+                for _ in range(20):                 # Port wird nach dem Beenden frei
+                    time.sleep(0.25)
+                    try:
+                        srv = Server((a.listen, a.http), make_handler(app))
+                        break
+                    except OSError:
+                        pass
+            if srv is None:
+                window.message_box("Die UPA-Software läuft bereits.\n\n"
+                                   f"(Port {a.http} ist belegt. Im Task-Manager unter „Details“ "
+                                   "kann „UPA-Analyzer-Control.exe“ beendet werden.)")
+                return 0
+        else:
+            print(f"  Port {a.http} ist belegt - die UPA-Software laeuft vermutlich schon.")
+            print(f"  Oeffne {url}")
+            if not a.no_browser:
+                webbrowser.open(url)
+            time.sleep(4)
             return 0
-        print(f"  Port {a.http} ist belegt - die UPA-Software laeuft vermutlich schon.")
-        print(f"  Oeffne {url}")
-        if not a.no_browser:
-            webbrowser.open(url)
-        time.sleep(4)
-        return 0
     print("=" * 60)
     print(f"  UPA-Software v{__version__} ({DATUM}) laeuft:  {url}")
     print(f"  Adapter-Port: {a.port}   GPIB-Adresse: {a.addr}")
@@ -875,11 +912,20 @@ def main():
         t = threading.Thread(target=srv.serve_forever, daemon=True)
         t.start()
         app.log("Oberflaeche im Programmfenster.")
-        if window.run(app, url, f"UPA·3 // Analyzer Control  v{__version__}", paths.cache_dir("webview")):
-            srv.shutdown()        # Fenster zu (X oder QUIT) -> Software beenden
+        if window.run(app, url, f"{window.TITEL_ANFANG}  v{__version__}", paths.cache_dir("webview")):
+            # Fenster zu (X oder QUIT) -> Software beenden
+            app.aufraeumen()
+            srv.shutdown()
             srv.server_close()
+            app.log("Software beendet.")
             print("  UPA-Software beendet.")
-            return 0
+            try:
+                sys.stdout and sys.stdout.flush()
+            except Exception:
+                pass
+            # Hart beenden: Reste des Fenster-Unterbaus (WebView2/.NET) duerfen den
+            # Prozess nicht unsichtbar am Leben halten (sonst "Port belegt" beim naechsten Start).
+            os._exit(0)
         webbrowser.open(url)      # Fenster ging nicht -> Browser wie bisher
         try:
             t.join()
@@ -894,7 +940,9 @@ def main():
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
+    app.aufraeumen()
     srv.server_close()
+    app.log("Software beendet.")
     print("  UPA-Software beendet.")
 
 

@@ -2,6 +2,14 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.1.5 – 2026-11-21
+- **Sicheres Beenden und Starten:**
+  - Programm beendet sich nach X oder QUIT zuverlässig (vorher konnte ein Prozess ohne Fenster im Hintergrund bleiben – danach „Port belegt").
+  - X am Fenster wird während einer Fluke-Aufzeichnung abgelehnt (vorher ging die Aufzeichnung verloren). Eine Live-Anzeige wird beim Beenden gestoppt, die Schnittstelle freigegeben.
+  - Zweiter Start: das vorhandene Programmfenster wird nach vorne geholt. Läuft die Software ohne sichtbares Fenster, fragt das Programm, ob diese Instanz beendet und neu gestartet werden soll.
+  - Protokolldatei: „Programmfenster angezeigt", „Programmfenster wird geschlossen", „Software beendet" – zur Fehlersuche.
+- Build-Prüfung: zweiter Start und „Prozess nach QUIT wirklich beendet" werden getestet.
+
 ## 1.1.4 – 2026-11-21
 - **Ruhestrom/Offset – Überlauf (OL) sichtbar statt Stillstand:**
   - Live: Die große Anzeige zeigt „OL Überlauf" in Rot; die Zeitachse läuft weiter, OL-Abschnitte erscheinen als rote Fläche mit „OL", die Linie wird dort unterbrochen.

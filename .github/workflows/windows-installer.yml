@@ -127,11 +127,21 @@ jobs:
           if ($p.HasExited) { throw "Programm nach dem Start beendet (Exit $($p.ExitCode))" }
           $st = Invoke-RestMethod http://127.0.0.1:8498/api/state
           Write-Host "Server laeuft, Version $($st.app_version)"
+          $log = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "UPA-Analyzer-Control\upa_log.txt"
+          # Zweiter Start auf demselben Port: vorhandenes Fenster nach vorne, sofort beenden
+          $p2 = Start-Process -FilePath $exe -ArgumentList "--http","8498" -PassThru
+          $null = $p2.Handle
+          if ($p2.WaitForExit(15000)) {
+            if (Select-String -Path $log -Pattern "nach vorne geholt" -Quiet) { Write-Host "Zweiter Start: Fenster nach vorne geholt" }
+            else { Write-Host "::warning::Zweiter Start beendet, aber Fenster nicht gefunden" }
+          } else { $p2.Kill(); Write-Host "::warning::Zweiter Start wartet auf eine Rueckfrage (Fenster auf dem Build-Rechner nicht sichtbar)" }
           Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/quit -Body "{}" -ContentType "application/json" | Out-Null
           if (-not $p.WaitForExit(20000)) { $p.Kill(); throw "QUIT schliesst das Programmfenster nicht" }
           if ($p.ExitCode -ne 0) { throw "Exit-Code $($p.ExitCode)" }
-          $log = Join-Path ([Environment]::GetFolderPath("MyDocuments")) "UPA-Analyzer-Control\upa_log.txt"
-          Get-Content $log -Tail 6
+          Start-Sleep -Seconds 2
+          if (Get-Process -Id $p.Id -ErrorAction SilentlyContinue) { throw "Prozess laeuft nach QUIT weiter" }
+          if (-not (Select-String -Path $log -Pattern "Software beendet" -Quiet)) { throw "Beenden nicht protokolliert" }
+          Get-Content $log -Tail 8
           if (Select-String -Path $log -Pattern "Programmfenster nicht verfuegbar" -Quiet) {
             Write-Host "::warning::Programmfenster startete auf dem Build-Rechner nicht (Browser-Ersatz lief)"
           } else { Write-Host "Programmfenster OK, QUIT OK" }
