@@ -2,6 +2,12 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.1.4 – 2026-11-21
+- **Ruhestrom/Offset – Überlauf (OL) sichtbar statt Stillstand:**
+  - Live: Die große Anzeige zeigt „OL Überlauf" in Rot; die Zeitachse läuft weiter, OL-Abschnitte erscheinen als rote Fläche mit „OL", die Linie wird dort unterbrochen.
+  - Zeitmarken-Tabelle zeigt „OL" statt „--.---".
+  - Protokoll-Diagramm: Linie an Messlücken unterbrochen (keine geraden Verbindungslinien mehr über OL-Phasen), OL-Abschnitte rot hinterlegt mit Legende „Überlauf (OL)".
+
 ## 1.1.3 – 2026-11-21
 - **Ruhestrom/Offset – Auswertung:**
   - Diagramm: Spannungsachse richtet sich nach Sollband und den Werten ab der ersten Zeitmarke; Anklemm-/Abgleichspitzen davor werden abgeschnitten (mit Hinweis unter dem Diagramm). Das Toleranzband ist damit sichtbar.

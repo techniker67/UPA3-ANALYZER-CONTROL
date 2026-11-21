@@ -205,6 +205,9 @@ class Logger:
             if time.time() > naechste + intervall:      # nach Haenger nicht nachholen
                 naechste = time.time()
 
+    def luecken(self):
+        return luecken(self.punkte)
+
     def verlauf(self, max_punkte=600):
         """Fuer die Anzeige verdichtet (Mittelwert je Abschnitt)."""
         pts = [(t, v) for t, v, _ in self.punkte if v is not None]
@@ -216,6 +219,24 @@ class Logger:
             teil = pts[int(i * schritt):int((i + 1) * schritt)] or [pts[-1]]
             out.append((teil[len(teil) // 2][0], sum(v for _, v in teil) / len(teil)))
         return out
+
+
+def luecken(punkte):
+    """Abschnitte ohne Messwert: [(t_von, t_bis, "OL" oder "kein Wert")].
+    Ein Abschnitt reicht vom ersten Punkt ohne Wert bis zum naechsten gueltigen
+    Punkt (bzw. bis zum letzten Punkt, wenn der Lauf ohne Wert endet)."""
+    out, start, ol = [], None, True
+    for t, v, h in punkte:
+        if v is None:
+            if start is None:
+                start, ol = t, True
+            ol = ol and bool(h) and "OL" in h
+        elif start is not None:
+            out.append((start, t, "OL" if ol else "kein Wert"))
+            start = None
+    if start is not None:
+        out.append((start, max(punkte[-1][0], start + 0.5), "OL" if ol else "kein Wert"))
+    return out
 
 
 def zeit_txt(s):
