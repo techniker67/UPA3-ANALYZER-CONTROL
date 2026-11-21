@@ -2,6 +2,10 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.3.1 – 2026-11-21
+- Fenster immer maximiert: Das Multimeter-Fenster öffnet maximiert, und beim Wechsel (⌂ ÜBERSICHT, Kachel „Ruhestrom", zweiter Programmstart) wird das jeweilige Fenster maximiert nach vorne geholt.
+- Protokolldatei vermerkt, ob ein Fenster maximiert ist (zur Fehlersuche); die Build-Prüfung kontrolliert das.
+
 ## 1.3.0 – 2026-11-21
 - **Startbildschirm mit drei Wegen:** *System starten* (UPA), *Ohne UPA fortfahren* (Hauptfenster ohne Start-Check) und neu **▣ Nur Multimeter** – öffnet nur das Multimeter-Fenster, das Hauptfenster wird ausgeblendet (auch aus der Taskleiste).
 - **⌂ ÜBERSICHT** im Multimeter-Fenster (statt ✕ SCHLIESSEN): schließt das Multimeter-Fenster und holt das Hauptfenster zurück – ohne initialisierten UPA mit dem Startbildschirm. Während einer Aufzeichnung bleibt das Multimeter-Fenster offen, das Hauptfenster kommt nur nach vorne.

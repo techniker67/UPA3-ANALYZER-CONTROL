@@ -154,6 +154,10 @@ jobs:
           Start-Sleep -Seconds 4
           if (-not (Select-String -Path $log -Pattern "Hauptfenster wieder angezeigt" -Quiet)) { throw "UEBERSICHT: Hauptfenster nicht zurueck" }
           Write-Host "Nur-Multimeter und UEBERSICHT OK"
+          if (Select-String -Path $log -Pattern "NICHT maximiert" -Quiet) { throw "Ein Fenster war nicht maximiert" }
+          $mx = (Select-String -Path $log -Pattern ": maximiert" | Measure-Object).Count
+          Write-Host "Fenster maximiert (Log-Eintraege): $mx"
+          if ($mx -lt 3) { Write-Host "::warning::Maximiert-Zustand nicht fuer alle Fenster protokolliert" }
           # Multimeter-Fenster nochmals oeffnen; QUIT muss beide schliessen
           Invoke-RestMethod -Method Post -Uri http://127.0.0.1:8498/api/fenster -Body '{"art":"multimeter"}' -ContentType "application/json" | Out-Null
           Start-Sleep -Seconds 4
