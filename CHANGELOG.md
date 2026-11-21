@@ -2,6 +2,16 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.0.0 – 2026-11-21
+**Erste öffentliche Version.**
+- Windows-Programm mit eigenem Fenster und Setup (ohne Python, ohne Administratorrechte), eigenes Icon.
+- Start-Check der Messkette: AR488-Adapter (9 Schritte), Remote-Übernahme, Loopback-Testmessung, Freigabe.
+- Messprogramme, alle am UPA3 getestet: Frequenzgang, Pegel/Verstärkung, THD+N über Frequenz und über Pegel, Störabstand, Kanaltrennung.
+- Prüfling mit optionaler Auftragsnummer, Messordner je Gerät, frei wählbarer Ablageordner (auch Netzlaufwerk, lokaler Rückfall).
+- Prüfprotokoll als PDF und DOCX (Übersicht, Diagramme, Messwerte, Bemerkung, Unterschrift), Drucken aus dem Programm.
+- Abschwächer-Kalibrierung je Kanal, CSV-Export, Protokoll aller Busbefehle.
+- Releases ab 1.0.0 sind reguläre Versionen (keine Vorabversion mehr).
+
 ## 0.13.3 – 2026-11-21
 - README: getesteter Adapter mit Link zur DiyEMC-Seite, Dank an Hans W. (mit seiner Zustimmung), Verweis auf WilheJo/AR488-ESP32 (Pinout Rev. 4/5) ergänzt.
 
