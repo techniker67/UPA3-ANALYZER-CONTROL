@@ -709,7 +709,8 @@ def make_handler(app):
                       for e in protokoll.messungen(ordner)]
                 dateien = sorted(n for n in os.listdir(ordner) if n.startswith("Pruefprotokoll_"))
                 return self._send(200, {"pruefling": pr, "ordner": ordner, "messungen": ms,
-                                        "dateien": dateien, "formate": protokoll.verfuegbar()})
+                                        "dateien": dateien, "formate": protokoll.verfuegbar(),
+                                        "firma": load_settings().get("firma", "")})
             if u.path == "/api/programs":
                 return self._send(200, progs.PROGRAMS)
             if u.path == "/api/ports":
@@ -773,10 +774,17 @@ def make_handler(app):
                 pr = app.pruefling
                 if not pr:
                     return self._send(400, {"error": "Kein Prüfling festgelegt"})
+                firma = load_settings().get("firma", "")
+                if "firma" in body:          # Pruefer/Firma aus dem Dialog - wird gemerkt
+                    neu = " ".join(str(body.get("firma") or "").split())[:80]
+                    if neu != firma:
+                        save_settings({"firma": neu})
+                        app.log(f"Prüfer/Firma für Protokolle: {neu or '(ohne)'}")
+                        firma = neu
                 try:
                     dateien = protokoll.erstellen(report.ordner(pr), body.get("auswahl") or None,
                                                   str(body.get("bemerkung", ""))[:2000],
-                                                  load_settings().get("firma", ""), __version__)
+                                                  firma, __version__)
                 except Exception as e:
                     app.log(f"Prüfprotokoll nicht erstellt: {e}")
                     return self._send(400, {"error": str(e)})

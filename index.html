@@ -82,6 +82,7 @@ body.tick .pill.run::before{opacity:.2}
 #protdlg .m input{width:16px;height:16px;accent-color:var(--cy)}
 #protdlg .m .ab{color:var(--or)}
 #protdlg .m small{color:var(--mut)}
+#protdlg #pFirma{width:100%;margin-bottom:10px}
 #protdlg textarea{width:100%;height:58px;background:#020b12;border:1px solid var(--cyd);color:var(--cy2);font:13px var(--m);padding:6px 9px;resize:vertical;outline:none}
 #protdlg .ctl{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
 #protdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:8px}
@@ -456,6 +457,8 @@ tr.new td{animation:flash 1s}
   <div class="sub" id="pSub"></div>
   <label>Messungen für das Protokoll</label>
   <div class="liste" id="pListe"></div>
+  <label>Prüfer / Firma (steht im Protokoll und in der Fußzeile – wird gemerkt)</label>
+  <input id="pFirma" maxlength="80" placeholder="z. B. Name oder Werkstatt – leer = ohne">
   <label>Bemerkung (optional)</label>
   <textarea id="pBem" maxlength="2000" placeholder="z. B. Messung nach Reparatur, Lautstärkeregler auf Maximum, 8 Ω Last"></textarea>
   <div class="err" id="pErr"></div>
@@ -785,6 +788,7 @@ async function protOpen(){
   const pr=j.pruefling;
   $("pSub").textContent=`${pr.auftrag?pr.auftrag+" · ":""}${pr.hersteller} ${pr.typ} · SN ${pr.seriennr} · Ordner ${j.ordner}`;
   $("pErr").textContent=""; $("pFertig").classList.add("hide");
+  $("pFirma").value=j.firma||"";
   const f=j.formate||{}; $("pMake").textContent="Erstellen · "+[f.pdf&&"PDF",f.docx&&"DOCX"].filter(Boolean).join(" + ");
   $("pMake").disabled=!(f.pdf||f.docx);
   if(!(f.pdf||f.docx)) $("pErr").textContent="Für das Protokoll fehlen reportlab/python-docx (in der installierten Version enthalten).";
@@ -816,7 +820,7 @@ $("pMake").onclick=async()=>{
   const auswahl=[...$("pListe").querySelectorAll("input:checked")].map(i=>i.value);
   if(!auswahl.length){ $("pErr").textContent="Bitte mindestens eine Messung auswählen."; return; }
   $("pMake").disabled=true; $("pErr").style.color=""; $("pErr").textContent="Erstelle Protokoll …";
-  const r=await api("/api/protokoll",{auswahl, bemerkung:$("pBem").value});
+  const r=await api("/api/protokoll",{auswahl, bemerkung:$("pBem").value, firma:$("pFirma").value});
   $("pMake").disabled=false;
   if(!r.ok){ $("pErr").textContent=r.error||"Fehler"; return; }
   $("pErr").textContent=""; zeigeDateien(r.dateien, "✓ Erstellt:");
@@ -916,7 +920,7 @@ async function poll(){
     if(!$("port").dataset.set){$("port").value=j.port;$("port").dataset.set=1; $("gaddr").value=j.addr;
       $("ver").textContent="v"+j.app_version; $("ver").title="UPA-Software "+j.app_version+" vom "+j.app_datum;
       $("bVer").textContent="v"+j.app_version+" · "+j.app_datum;
-      if(j.firma){ $("firma").textContent=j.firma.toUpperCase(); $("firmaSep").textContent=" · "; $("bFirma").textContent=j.firma.toUpperCase(); $("bSep").textContent="  //  "; }
+      { const fi=(j.firma||"").toUpperCase(); $("firma").textContent=fi; $("firmaSep").textContent=fi?" · ":""; $("bFirma").textContent=fi; $("bSep").textContent=fi?"  //  ":""; }
       document.title=(MM?"UPA·3 // Multimeter v":"UPA·3 // Analyzer Control v")+j.app_version; }
     {const o=$("att").querySelector('option[value="p78"]'); if(o){o.disabled=!j.p78; o.textContent=j.p78?"P78 - kalibriert":"P78 - Kalibrierdatei fehlt";}}
     if(wasMeasuring&&j.phase!=="measuring")(j.points.some(p=>p.abbruch)?Snd.denied():Snd.tone(660,990,.12,"sine",.05));

@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.3.3 – 2026-11-21
+- Prüfprotokoll-Dialog: neues Feld **„Prüfer / Firma"** – steht im Protokoll (Zeile „Prüfer") und in der Fußzeile, wird gemerkt. Leer = ohne. Bisher ließ sich der Name nur in `upa_einstellungen.json` eintragen.
+
 ## 1.3.2 – 2026-11-21
 - Ruhestrom-Diagramm im Protokoll: Legende steht jetzt unter dem Diagramm (eine Zeile, rechts) und verdeckt keine Messwerte mehr; der Hinweis zur abgeschnittenen Achse steht links daneben (kürzer).
 
