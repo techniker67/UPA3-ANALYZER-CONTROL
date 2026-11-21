@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.1.1 – 2026-11-21
+- Ruhestrom/Offset am echten Fluke 287 getestet (Live-Anzeige deckungsgleich mit dem Messgerät, 10-min-Aufzeichnung mit Zeitmarken, Ablage auf dem NAS) – Kachel jetzt „GETESTET".
+
 ## 1.1.0 – 2026-11-21
 - **Ruhestrom / Offset mit Fluke 287/289** (IR-USB-Kabel, nur lesend: `ID`, `QM`): neue Kachel „Ruhestrom" mit eigener Ansicht.
   - **Live-Abgleich**: große Anzeige in mV, Trend (mV/min), grün/rot nach Toleranzband – zum Einstellen am Trimmer, ohne Speichern.
