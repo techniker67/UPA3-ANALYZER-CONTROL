@@ -2,6 +2,13 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.3.0 – 2026-11-21
+- **Startbildschirm mit drei Wegen:** *System starten* (UPA), *Ohne UPA fortfahren* (Hauptfenster ohne Start-Check) und neu **▣ Nur Multimeter** – öffnet nur das Multimeter-Fenster, das Hauptfenster wird ausgeblendet (auch aus der Taskleiste).
+- **⌂ ÜBERSICHT** im Multimeter-Fenster (statt ✕ SCHLIESSEN): schließt das Multimeter-Fenster und holt das Hauptfenster zurück – ohne initialisierten UPA mit dem Startbildschirm. Während einer Aufzeichnung bleibt das Multimeter-Fenster offen, das Hauptfenster kommt nur nach vorne.
+- **⏻ QUIT** auch im Multimeter-Fenster (beendet die Software, schließt alle Fenster).
+- Sicherheitsnetz: Wird das Multimeter-Fenster geschlossen (auch per X), kommt ein ausgeblendetes Hauptfenster immer zurück. Ein zweiter Programmstart findet auch das Multimeter-Fenster.
+- Build-Prüfung: Nur-Multimeter, zweiter Start dabei, ÜBERSICHT.
+
 ## 1.2.1 – 2026-11-21
 - Multimeter-Fenster:
   - **▤ PROTOKOLL** auch hier – das Prüfprotokoll lässt sich direkt aus dem Multimeter-Fenster erstellen.

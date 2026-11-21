@@ -126,6 +126,10 @@ body.mm{overflow:auto}
   .app.mm .fv-chartp svg{height:260px}
 }
 @media (max-width:760px){ .app.mm .fv-wert{font-size:60px} .app.mm .logo{font-size:15px;letter-spacing:.18em} }
+#uebers{display:none}
+.app.mm #uebers{display:inline-block}
+.btn.ghost.mmbtn{color:var(--or);border-color:rgba(255,155,47,.55)}
+.btn.ghost.mmbtn:hover{box-shadow:0 0 12px rgba(255,155,47,.45)}
 .tile.fluke{border-color:rgba(255,155,47,.45)}
 .tile.fluke .o{color:var(--or)}
 .tile.fluke.sel{border-color:var(--or);background:rgba(255,155,47,.10);box-shadow:inset 0 0 22px rgba(255,155,47,.16)}
@@ -289,7 +293,7 @@ tr.new td{animation:flash 1s}
     <img class="appicon" src="/icon.png" alt=""><div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
     <div class="dut" id="dut" title="Prüfling festlegen – Messungen werden im Geräteordner gesammelt"><span class="k">PRÜFLING</span><span class="v leer" id="dutTxt">KEINER – FESTLEGEN</span><span class="e">✎</span></div>
     <div class="pills"><span class="pill" id="pAd">ADAPTER</span><span class="pill" id="pUp">UPA</span><span class="pill" id="pMe">MESSUNG</span></div>
-    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="prot" title="Prüfprotokoll (PDF + DOCX) aus den Messungen des Prüflings">▤ PROTOKOLL</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn quit" id="quit" title="UPA freigeben, Software beenden und Fenster schliessen">⏻ QUIT</button></div>
+    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="prot" title="Prüfprotokoll (PDF + DOCX) aus den Messungen des Prüflings">▤ PROTOKOLL</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn" id="uebers" title="Zurück zur Übersicht: Hauptfenster zeigen, Multimeter-Fenster schließen (während einer Aufzeichnung bleibt es offen)">⌂ ÜBERSICHT</button><button class="iconbtn quit" id="quit" title="UPA freigeben, Software beenden und Fenster schliessen">⏻ QUIT</button></div>
   </header>
 
   <nav class="menu" id="menu"><div class="mt">MESS-<br>PROGRAMM<small>KATALOG 19.11.</small></div></nav>
@@ -423,7 +427,8 @@ tr.new td{animation:flash 1s}
       <div class="pf" style="width:150px"><label>GPIB-Adresse (0–30)</label><input id="gaddr" type="number" min="0" max="30" step="1" value="7"></div>
       <button class="btn" id="start">System starten</button>
       <button class="btn ghost hide" id="close">Schliessen</button>
-      <button class="btn ghost" id="ohneUpa" title="Nur Fluke-Messungen (Ruhestrom/Offset) – UPA später über ⟲ INIT">Ohne UPA fortfahren</button>
+      <button class="btn ghost" id="ohneUpa" title="Hauptfenster ohne Start-Check – UPA später über ⟲ INIT">Ohne UPA fortfahren</button>
+      <button class="btn ghost mmbtn" id="nurMM" title="Nur das Multimeter-Fenster (Ruhestrom/Offset mit dem Fluke) – zurück über ⌂ ÜBERSICHT">▣ Nur Multimeter</button>
     </div>
     <div class="hint">Voraussetzung: UPA eingeschaltet, am Gerät eingestellte IEC-Adresse eintragen · für den Verbindungstest Loopback (Ausgang → Eingang) gesteckt</div>
     <div class="bootfoot"><b id="bFirma"></b><span id="bSep"></span>UPA-SOFTWARE <span id="bVer">v–</span></div>
@@ -469,7 +474,7 @@ if(MM){ document.body.classList.add("mm"); document.querySelector(".app").classL
   const b=$("boot"); b.style.transition="none"; b.classList.add("gone"); b.style.display="none";
   document.title="UPA·3 // Multimeter";
   const lg=document.querySelector(".logo"); if(lg&&lg.firstChild) lg.firstChild.nodeValue="UPA·3 // MULTIMETER";
-  $("quit").textContent="✕ SCHLIESSEN"; $("quit").title="Nur dieses Multimeter-Fenster schließen (Live-Anzeige wird gestoppt)"; }
+  $("quit").title="Software beenden – schließt Multimeter- und Hauptfenster"; }
 
 /* ---------------- Sound ---------------- */
 const Snd={ctx:null,on:true,ready:null,
@@ -530,9 +535,9 @@ function buildMenu(){
   f.innerHTML=`<span class="o">FLUKE</span><span class="n">Ruhestrom</span><span class="s">Offset · Fluke 287 · mV</span><span class="b ok">GETESTET</span>`;
   f.onclick=()=>select("ruhe",true); m.appendChild(f);
 }
-async function mmOeffnen(user){
+async function mmOeffnen(user,nur){
   if(user){Snd.init();Snd.click();}
-  const r=await api("/api/fenster",{art:"multimeter"});
+  const r=await api("/api/fenster",{art:"multimeter",nur:!!nur});
   if(!r.ok||r.browser){ const w=window.open("/?ansicht=multimeter","upa_multimeter","width=1100,height=820");
     if(!w) alert("Das Multimeter-Fenster wurde vom Browser blockiert – Pop-ups für diese Seite erlauben."); else w.focus(); }
 }
@@ -685,7 +690,7 @@ function render(){
   $("ringTxt").textContent=`${S.steps.filter(s=>s.status==="ok").length}/${S.steps.length}`;
   S.steps.forEach(s=>{if(prevStatus[s.id]!==s.status){if(bootActive&&s.status==="ok")Snd.blip();prevStatus[s.id]=s.status;}});
   $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
-  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; const FB=!!(S.fluke&&S.fluke.busy), FREC=FB&&S.fluke.modus==="rec"; $("reboot").disabled=S.busy; $("quit").disabled=(S.busy&&!MM)||FREC; $("dut").classList.toggle("dis",!!S.busy||FB); $("prot").disabled=S.busy||FB||!S.pruefling; fRender();
+  $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; const FB=!!(S.fluke&&S.fluke.busy), FREC=FB&&S.fluke.modus==="rec"; $("reboot").disabled=S.busy; $("quit").disabled=S.busy||FREC; $("dut").classList.toggle("dis",!!S.busy||FB); $("prot").disabled=S.busy||FB||!S.pruefling; fRender();
   const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
   if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
   else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
@@ -728,7 +733,14 @@ async function startBoot(){
   },300);
 }
 $("start").onclick=startBoot; $("close").onclick=()=>$("boot").classList.add("gone");
-$("ohneUpa").onclick=()=>{ $("boot").classList.add("gone"); mmOeffnen(true); };
+$("ohneUpa").onclick=()=>{ Snd.init(); Snd.click(); $("boot").classList.add("gone"); };
+$("nurMM").onclick=()=>mmOeffnen(true,true);   // Hauptfenster wird ausgeblendet, Startbildschirm bleibt fuer die Rueckkehr
+$("uebers").onclick=async()=>{
+  Snd.init(); Snd.click();
+  const r=await api("/api/fenster/uebersicht",{});
+  if(r.browser){ try{ if(window.opener) window.opener.focus(); }catch(e){} if(!r.bleibt){ try{ window.close(); }catch(e){} } }
+  if(r.bleibt){ $("fSt").textContent="Aufzeichnung läuft – Multimeter-Fenster bleibt offen"; $("fSt").style.color="var(--or)"; }
+};
 $("reboot").onclick=()=>{$("boot").classList.remove("gone");$("start").disabled=false;$("start").textContent="System starten";$("bmsg").textContent="";$("bmsg").className="bootmsg";};
 
 /* ---------------- Messung ---------------- */
@@ -883,15 +895,9 @@ $("fSuch").onclick=async()=>{ $("fSt").textContent="Suche Fluke …"; $("fSt").s
   const r=await api("/api/fluke/suchen",{}); if(r.ok){ $("fPort").value=r.port; $("fSt").textContent="Gefunden: "+r.ident; } else { $("fSt").textContent=r.error||"nicht gefunden"; $("fSt").style.color="var(--red)"; } };
 let quitting=false;
 $("quit").onclick=async()=>{
-  if(MM){                                  // Multimeter-Fenster: nur dieses Fenster schliessen
-    const r=await api("/api/fenster/schliessen",{art:"multimeter"});
-    if(!r.ok){ alert(r.error||"Schließen nicht möglich"); return; }
-    if(r.browser){ try{ window.close(); }catch(e){} }
-    return;
-  }
   if(S&&S.busy){ alert("Bitte erst die laufende Messung stoppen."); return; }
   if(S&&S.fluke&&S.fluke.busy&&S.fluke.modus==="rec"){ alert("Bitte erst die Fluke-Aufzeichnung stoppen (STOP) – sonst geht sie verloren."); return; }
-  if(!confirm("UPA-Software beenden?\n\nDas Konsolenfenster schliesst sich, der UPA bleibt freigegeben.")) return;
+  if(!confirm("UPA-Software beenden?\n\nAlle Fenster werden geschlossen, der UPA bleibt freigegeben.")) return;
   const r=await api("/api/quit",{});
   if(!r.ok){ alert(r.error||"Beenden nicht möglich"); return; }
   quitting=true; $("bye").classList.add("on");
