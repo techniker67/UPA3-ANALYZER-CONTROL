@@ -185,9 +185,30 @@ def run(app, url, title, storage_dir):
         app.log("Programmfenster angezeigt.")
         threading.Thread(target=_icon_setzen, args=(title,), daemon=True).start()
 
-    mm = {"win": None}               # Multimeter-Fenster (hoechstens eines)
+    # Multimeter-Fenster (hoechstens eines). "versteckt": Hauptfenster ist im
+    # Nur-Multimeter-Betrieb ausgeblendet; "ende": Software wird beendet.
+    mm = {"win": None, "versteckt": False, "ende": False}
 
-    def mm_oeffnen():
+    def haupt_zeigen():
+        """Hauptfenster (wieder) anzeigen und nach vorne holen."""
+        if mm["ende"]:
+            return
+        if mm["versteckt"]:
+            mm["versteckt"] = False
+            try:
+                win.show()
+            except Exception:
+                pass
+            app.log("Hauptfenster wieder angezeigt.")
+        try:
+            win.restore()
+        except Exception:
+            pass
+        import time
+        time.sleep(0.2)
+        vorhandenes_fenster_zeigen(TITEL_ANFANG)
+
+    def mm_oeffnen(haupt_verbergen=False):
         w = mm["win"]
         if w is not None:            # schon offen -> nach vorne holen
             try:
@@ -195,6 +216,9 @@ def run(app, url, title, storage_dir):
             except Exception:
                 pass
             vorhandenes_fenster_zeigen(MM_TITEL)
+            if haupt_verbergen and not mm["versteckt"]:
+                mm["versteckt"] = True
+                win.hide()
             return
         w = webview.create_window(
             MM_TITEL, url.rstrip("/") + "/?ansicht=multimeter",
@@ -214,6 +238,9 @@ def run(app, url, title, storage_dir):
         def mm_closed():
             mm["win"] = None
             app.log("Multimeter-Fenster geschlossen.")
+            # Sicherheitsnetz: ein ausgeblendetes Hauptfenster kommt immer zurueck,
+            # damit nie ein Prozess ohne sichtbares Fenster uebrig bleibt
+            threading.Thread(target=haupt_zeigen, daemon=True).start()
 
         def mm_shown():
             app.log("Multimeter-Fenster angezeigt.")
@@ -222,6 +249,23 @@ def run(app, url, title, storage_dir):
         w.events.closed += mm_closed
         w.events.shown += mm_shown
         mm["win"] = w
+        if haupt_verbergen:          # Nur-Multimeter-Betrieb: Hauptfenster ausblenden
+            mm["versteckt"] = True
+            app.log("Nur-Multimeter-Betrieb: Hauptfenster ausgeblendet.")
+            win.hide()
+
+    def uebersicht():
+        """ÜBERSICHT im Multimeter-Fenster: Hauptfenster zeigen; Multimeter-Fenster
+        schliessen, ausser waehrend einer Aufzeichnung (dann bleibt es offen)."""
+        if app.mm_schliessen_grund():
+            haupt_zeigen()
+            return False
+        app.mm_beenden()
+        if mm["win"] is not None:
+            mm["win"].destroy()      # mm_closed holt das Hauptfenster zurueck
+        else:
+            haupt_zeigen()
+        return True
 
     def mm_zu():
         w = mm["win"]
@@ -229,10 +273,12 @@ def run(app, url, title, storage_dir):
             w.destroy()
 
     def alles_zu():                  # QUIT: Multimeter-Fenster und Hauptfenster
+        mm["ende"] = True
         mm_zu()
         win.destroy()
 
     def on_closed():                 # Hauptfenster zu -> Multimeter-Fenster mit schliessen
+        mm["ende"] = True
         threading.Thread(target=mm_zu, daemon=True).start()
 
     win.events.closing += on_closing
@@ -241,13 +287,14 @@ def run(app, url, title, storage_dir):
     app.on_quit = alles_zu        # QUIT in der Oberflaeche schliesst alle Fenster
     app.fenster_oeffnen = mm_oeffnen
     app.fenster_schliessen = mm_zu
+    app.fenster_uebersicht = uebersicht
 
     gui = "edgechromium" if os.name == "nt" else None   # unter Windows nie den alten IE-Unterbau
     try:
         os.makedirs(storage_dir, exist_ok=True)
         webview.start(gui=gui, private_mode=False, storage_path=storage_dir)
     except Exception as e:
-        app.on_quit = app.fenster_oeffnen = app.fenster_schliessen = None
+        app.on_quit = app.fenster_oeffnen = app.fenster_schliessen = app.fenster_uebersicht = None
         app.log(f"Programmfenster nicht verfuegbar ({e}) - Oberflaeche im Browser.")
         return False
     return True

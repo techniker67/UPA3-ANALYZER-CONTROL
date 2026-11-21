@@ -54,6 +54,7 @@ class App:
         self.on_quit = None          # vom Programmfenster gesetzt: Fenster schliessen
         self.fenster_oeffnen = None   # vom Programmfenster gesetzt: Multimeter-Fenster oeffnen
         self.fenster_schliessen = None
+        self.fenster_uebersicht = None
         # Fluke 287 (Ruhestrom/Offset) - unabhaengig vom UPA, eigener Port und Thread
         self.fl_busy = False
         self.fl_stop = False
@@ -812,9 +813,19 @@ def make_handler(app):
             if u.path == "/api/fenster":
                 # Multimeter-Fenster: im Programmfenster als zweites Fenster, sonst im Browser
                 if app.fenster_oeffnen:
-                    app.fenster_oeffnen()
+                    app.fenster_oeffnen(haupt_verbergen=bool(body.get("nur")))
                     return self._send(200, {"ok": True})
                 return self._send(200, {"ok": True, "browser": True})
+            if u.path == "/api/fenster/uebersicht":
+                # Multimeter -> Uebersicht: Hauptfenster zeigen, Multimeter-Fenster schliessen
+                # (waehrend einer Aufzeichnung bleibt es offen)
+                bleibt = bool(app.mm_schliessen_grund())
+                if app.fenster_uebersicht:
+                    threading.Thread(target=app.fenster_uebersicht, daemon=True).start()
+                    return self._send(200, {"ok": True, "bleibt": bleibt})
+                if not bleibt:
+                    app.mm_beenden()
+                return self._send(200, {"ok": True, "bleibt": bleibt, "browser": True})
             if u.path == "/api/fenster/schliessen":
                 grund = app.mm_schliessen_grund()
                 if grund:
@@ -901,7 +912,7 @@ def main():
         srv = None
         if fenster:
             app.log(f"Start: Port {a.http} belegt.")
-            if window.vorhandenes_fenster_zeigen():
+            if window.vorhandenes_fenster_zeigen() or window.vorhandenes_fenster_zeigen(window.MM_TITEL):
                 app.log("Laufendes Programmfenster nach vorne geholt - kein zweiter Start.")
                 return 0
             if window.frage("Die UPA-Software läuft noch im Hintergrund, aber ohne sichtbares Fenster.\n\n"
