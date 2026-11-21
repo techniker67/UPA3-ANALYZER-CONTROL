@@ -2,6 +2,9 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.4.1 – 2026-11-21
+- Ruhestrom-Diagramm im Protokoll: Die Spannungsachse reicht wieder über alle Messwerte (Minimum bis Maximum, Sollband immer enthalten) – der ganze Verlauf inkl. Anklemmen und Abgleich ist sichtbar, nichts wird mehr abgeschnitten. „Min / Max ab erster Zeitmarke" in der Tabelle bleibt.
+
 ## 1.4.0 – 2026-11-21
 - **Startmenü** im Stil des Programm-Icons: große Kacheln *UPA-Messung* und *Multimeter*, darunter *Protokolle*, *Einstellungen* und *Beenden*; Prüfling-Zeile oben (gilt für UPA und Multimeter).
   - Status auf den Kacheln: „UPA initialisiert" / „Adapter an COM4" / „COM4 nicht gefunden", „IR-Kabel an COM3", laufende Aufzeichnung, Anzahl Messungen und Protokolle zum Prüfling.

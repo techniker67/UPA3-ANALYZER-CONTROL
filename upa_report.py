@@ -348,21 +348,14 @@ def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
                 ax.annotate(_komma(f"{m['minute']:g} min: {m['wert']:.2f} mV"), (m["t"] / 60.0, m["wert"]),
                             textcoords="offset points", xytext=(-4 if rechts else 4, 6),
                             ha="right" if rechts else "left", fontsize=7.5, color="#333333")
-        # Spannungsachse auf Sollband und Werte ab der ersten Zeitmarke ausrichten;
-        # Anklemm-/Abgleichspitzen davor duerfen die Skalierung nicht bestimmen.
-        ab_t = marken[0]["t"] if marken else 0.0
-        fokus = [v for t, v, _ in punkte if v is not None and t >= ab_t] or ys
-        lo, hi = min(fokus), max(fokus)
+        # Spannungsachse ueber alle Messwerte (Min bis Max) und das Sollband,
+        # damit der ganze Verlauf inkl. Anklemmen/Abgleich sichtbar ist
+        lo, hi = min(ys), max(ys)
         if soll is not None and tol:
             lo, hi = min(lo, soll - tol), max(hi, soll + tol)
-        rand = max((hi - lo) * 0.3, 0.05)
-        y_lo, y_hi = lo - rand, hi + rand
-        ax.set_ylim(y_lo, y_hi)
+        rand = max((hi - lo) * 0.08, 0.05)
+        ax.set_ylim(lo - rand, hi + rand)
         ax.set_xlim(0, x_max)
-        if min(ys) < y_lo or max(ys) > y_hi:
-            fig.text(0.01, 0.02, _komma(f"Achse ab {marken[0]['minute']:g} min skaliert, "
-                                        "Spitzen davor abgeschnitten"),
-                     fontsize=7.5, color="#7F7F7F")
         ax.set_xlabel("Zeit (min)")
         ax.set_ylabel("Spannung (mV)")
         ax.xaxis.set_major_formatter(FuncFormatter(_zahl))
