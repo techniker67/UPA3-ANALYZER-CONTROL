@@ -15,6 +15,11 @@ AppId={{B26BF95B-8889-409B-8503-05B933A3ECC5}
 AppName={#AppName}
 AppVersion={#AppVersion}
 AppVerName={#AppName} {#AppVersion}
+VersionInfoVersion={#AppVersion}
+VersionInfoProductName={#AppName}
+VersionInfoProductVersion={#AppVersion}
+VersionInfoCompany=Vintage Audio Repair Magdeburg
+VersionInfoDescription={#AppName} Setup
 AppPublisher=Vintage Audio Repair Magdeburg
 AppPublisherURL=https://github.com/techniker67/UPA3-ANALYZER-CONTROL
 AppSupportURL=https://github.com/techniker67/UPA3-ANALYZER-CONTROL/issues
@@ -55,6 +60,7 @@ Source: "..\dist\{#AppName}\*"; DestDir: "{app}"; Flags: ignoreversion recursesu
 Source: "..\README.md";    DestDir: "{app}"; Flags: ignoreversion
 Source: "..\CHANGELOG.md"; DestDir: "{app}"; Flags: ignoreversion
 Source: "..\LICENSE";      DestDir: "{app}"; DestName: "LICENSE.txt"; Flags: ignoreversion
+Source: "..\THIRD-PARTY-NOTICES.md"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\{#AppName}";               Filename: "{app}\{#AppExe}"; WorkingDir: "{app}"; IconFilename: "{app}\{#AppExe}"; AppUserModelID: "VintageAudioRepair.UPAAnalyzerControl"

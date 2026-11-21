@@ -2,6 +2,10 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.0.1 – 2026-11-21
+- Vorbereitung Code-Signatur (SignPath Foundation): `docs/code-signing-policy.md` (Rollen, Datenschutz, Umfang), `THIRD-PARTY-NOTICES.md`, Verweise in README und Release-Text.
+- .exe und Setup tragen jetzt Produktname, Version und Herausgeber in den Datei-Eigenschaften; der Build prüft das.
+
 ## 1.0.0 – 2026-11-21
 **Erste öffentliche Version.**
 - Windows-Programm mit eigenem Fenster und Setup (ohne Python, ohne Administratorrechte), eigenes Icon.
