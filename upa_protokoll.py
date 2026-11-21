@@ -38,7 +38,8 @@ except Exception:
     docx = None
 
 PROG_NAMEN = {"fr": "Frequenzgang", "gain": "Pegel / Verstärkung", "thdf": "THD+N über Frequenz",
-              "thdl": "THD+N über Pegel", "sn": "Störabstand (unbewertet)", "xt": "Kanaltrennung"}
+              "thdl": "THD+N über Pegel", "sn": "Störabstand (unbewertet)", "xt": "Kanaltrennung",
+              "ruhe": "Ruhestrom / Offset"}
 
 
 def verfuegbar():
@@ -115,6 +116,13 @@ def _datum(iso):
 
 def einstellungen(e):
     p = e.get("parameter", {})
+    if e["programm"] == "ruhe":
+        t = [f"Multimeter {e.get('adapter') or 'Fluke'}"]
+        if p.get("soll") is not None:
+            t.append(f"Sollwert {k(p['soll'], '{:g}')} mV ± {k(p['tol'], '{:g}')} mV")
+        t.append("Dauer " + (_dauer(p["dauer_s"]) if p.get("dauer_s") else "bis Stop"))
+        t.append(f"Intervall {k(p.get('intervall') or 1, '{:g}')} s")
+        return " · ".join(t)
     teile = []
     if e["programm"] == "thdl":
         lv = p.get("levels") or []
@@ -133,6 +141,30 @@ def einstellungen(e):
     if p.get("load"):
         teile.append(f"Last {k(p['load'], '{:g}')} Ω")
     return " · ".join(teile)
+
+
+def _dauer(s):
+    s = int(round(s or 0))
+    return f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d} h" if s >= 3600 else f"{s // 60} min"
+
+
+def ruhe_tabelle(e):
+    """Zeitmarken + Endwert eines Ruhestrom-/Offset-Laufs."""
+    p = e.get("parameter", {})
+    soll = p.get("soll")
+    soll_txt = f"{k(soll, '{:g}')} ± {k(p.get('tol'), '{:g}')}" if soll is not None else "–"
+
+    def bew(ok):
+        return "–" if ok is None else ("✓ i. O." if ok else "✗ außerhalb")
+    z = [[f"nach {k(m['minute'], '{:g}')} min", k(m.get("wert"), "{:.3f}"), soll_txt, bew(m.get("ok"))]
+         for m in e.get("marken", [])]
+    ende = e.get("ende_wert")
+    ok = None if ende is None or soll is None else abs(ende - soll) <= p.get("tol", 0)
+    z.append([f"Endwert ({_dauer(e.get('ende_t'))})", k(ende, "{:.3f}"), soll_txt, bew(ok)])
+    st = e.get("statistik") or {}
+    if st:
+        z.append(["Minimum / Maximum", f"{k(st['min'], '{:.3f}')} / {k(st['max'], '{:.3f}')}", "", ""])
+    return ["Zeitpunkt", "Wert (mV)", "Soll (mV)", "Bewertung"], z, [2.2, 1.6, 1.6, 1.8]
 
 
 def werte_tabelle(prog, pts):
@@ -179,12 +211,15 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
     ms = [e for e in alle if not auswahl or e["csv"] in auswahl]
     if not ms:
         raise ValueError("Keine Messungen ausgewählt")
-    adapter = next((e.get("adapter") for e in reversed(ms) if e.get("adapter")), "–")
+    adapter = next((e.get("adapter") for e in reversed(ms) if e.get("adapter") and e["programm"] != "ruhe"), "–")
+    multimeter = next((e.get("adapter") for e in reversed(ms) if e["programm"] == "ruhe" and e.get("adapter")), "")
+    hat_upa = any(e["programm"] != "ruhe" for e in ms)
     software = ms[-1].get("software", "")
     tage = sorted({_datum(e.get("start"))[:10] for e in ms})
     b = [("titel", "PRÜFPROTOKOLL"),
          ("untertitel", f"{g['hersteller'].upper()} {g['typ']} · Audiomessung"),
-         ("grau", f"Seriennummer {g['seriennr']} · Messsystem R&S UPA Audioanalysator"),
+         ("grau", f"Seriennummer {g['seriennr']} · Messsystem "
+                  + " + ".join(([("R&S UPA Audioanalysator")] if hat_upa else []) + (["Fluke 287"] if multimeter else []))),
          ("datum", f"Protokolldatum: {datetime.now().strftime('%d.%m.%Y')}"),
          ("h1", "1. Prüfling und Messsystem"),
          ("tabelle", ["Parameter", "Wert"],
@@ -192,8 +227,8 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
            ["Seriennummer", g["seriennr"]]] + ([["Auftragsnummer", g["auftrag"]]] if g.get("auftrag") else []) + [
            ["Prüfdatum", ", ".join(tage)],
            ["Prüfer", firma or "–"],
-           ["Messsystem", "R&S UPA Audioanalysator, AR488-GPIB-Adapter"],
-           ["Adapter-Firmware", adapter],
+           ] + ([["Messsystem", "R&S UPA Audioanalysator, AR488-GPIB-Adapter"],
+                 ["Adapter-Firmware", adapter]] if hat_upa else []) + ([["Multimeter", multimeter]] if multimeter else []) + [
            ["Software", f"UPA-Analyzer-Control v{software}"]], [3000, 6638], True),
          ("h1", "2. Ergebnisübersicht")]
     z = []
@@ -204,7 +239,7 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
             for i, (n, w) in enumerate(c["werte"]):
                 z.append([name if erste else "", c["kanal"] if i == 0 else "", n, w])
                 erste = False
-    b.append(("tabelle", ["Messung", "Kanal", "Größe", "Ergebnis"], z, [2.4, 0.8, 2.3, 3.2], False))
+    b.append(("tabelle", ["Messung", "Kanal", "Größe", "Ergebnis"], z, [2.2, 1.3, 2.1, 3.0], False))
     for n, e in enumerate(ms, 1):
         prog = e["programm"]
         pts = lese_csv(os.path.join(ordner, e["csv"]))
@@ -220,7 +255,7 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
         b.append(("grau", zeile))
         if e.get("png") and os.path.exists(os.path.join(ordner, e["png"])):
             b.append(("bild", os.path.join(ordner, e["png"])))
-        kopf, zeilen, ant = werte_tabelle(prog, pts)
+        kopf, zeilen, ant = ruhe_tabelle(e) if prog == "ruhe" else werte_tabelle(prog, pts)
         b.append(("tabelle", kopf, zeilen, ant, False))
         b.append(("klein", f"Messdatei: {e['csv']}"))
     if bemerkung.strip():
@@ -282,6 +317,14 @@ def _schrift():
         kandidaten.append((os.path.join(d, "DejaVuSans.ttf"), os.path.join(d, "DejaVuSans-Bold.ttf")))
     except Exception:
         pass
+    global _SYMBOL
+    try:
+        import matplotlib
+        dj = os.path.join(os.path.dirname(matplotlib.__file__), "mpl-data", "fonts", "ttf", "DejaVuSans.ttf")
+        pdfmetrics.registerFont(TTFont("Symbole", dj))
+        _SYMBOL = "Symbole"
+    except Exception:
+        _SYMBOL = None
     for normal, fett in kandidaten:
         if os.path.exists(normal) and os.path.exists(fett):
             try:
@@ -295,8 +338,15 @@ def _schrift():
     return _FONT
 
 
+_SYMBOL = None
+
+
 def _esc(t):
-    return str(t).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    t = str(t).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    if _SYMBOL:            # Haken/Kreuz: Calibri/Carlito haben die Zeichen nicht
+        for z in ("✓", "✗"):
+            t = t.replace(z, f'<font name="{_SYMBOL}">{z}</font>')
+    return t
 
 
 def pdf(bl, pfad, kopfzeile, fuss):

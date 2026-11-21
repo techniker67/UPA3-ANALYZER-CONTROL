@@ -296,6 +296,54 @@ def diagramm(prog_id, titel, points, pfad):
         plt.close(fig)
 
 
+def ruhe_wert(v, ok):
+    """Text fuer einen Ruhestrom-/Offsetwert mit Bewertung."""
+    if v is None:
+        return "–"
+    t = _komma(f"{v:.3f} mV")
+    return t + ("" if ok is None else (" ✓" if ok else " ✗ außerhalb Toleranz"))
+
+
+def diagramm_ruhe(titel, punkte, soll, tol, marken, pfad):
+    """Verlauf Ruhestrom/Offset ueber der Zeit (mV ueber Minuten) mit Toleranzband."""
+    if plt is None:
+        return False
+    xs = [t / 60.0 for t, v, _ in punkte if v is not None]
+    ys = [v for t, v, _ in punkte if v is not None]
+    if not xs:
+        return False
+    fig, ax = plt.subplots(figsize=(8, 3.6), dpi=150)
+    try:
+        if soll is not None and tol:
+            ax.axhspan(soll - tol, soll + tol, color="#2E8B57", alpha=0.12, lw=0, label="Toleranzband")
+            ax.axhline(soll, color="#2E8B57", lw=1.0, ls="--", label=_komma(f"Soll {soll:g} mV"))
+        ax.plot(xs, ys, color=FARBE["L"], lw=1.4, label="Messwert")
+        for m in marken or []:
+            ax.axvline(m["t"] / 60.0, color="#7F7F7F", lw=0.8, ls=":")
+            if m.get("wert") is not None:
+                ax.annotate(_komma(f"{m['minute']:g} min: {m['wert']:.2f} mV"), (m["t"] / 60.0, m["wert"]),
+                            textcoords="offset points", xytext=(4, 6), fontsize=7.5, color="#333333")
+        lo, hi = min(ys), max(ys)
+        if soll is not None and tol:
+            lo, hi = min(lo, soll - tol), max(hi, soll + tol)
+        rand = max((hi - lo) * 0.15, 0.05)
+        ax.set_ylim(lo - rand, hi + rand)
+        ax.set_xlim(0, max(xs[-1], 0.5))
+        ax.set_xlabel("Zeit (min)")
+        ax.set_ylabel("Spannung (mV)")
+        ax.xaxis.set_major_formatter(FuncFormatter(_zahl))
+        ax.yaxis.set_major_formatter(FuncFormatter(_zahl))
+        ax.grid(True, color="#c9ced6", lw=0.7)
+        ax.set_title(titel, fontsize=10.5, loc="left", color="#2E5A88", fontweight="bold")
+        ax.tick_params(labelsize=8)
+        ax.legend(fontsize=8, frameon=False, loc="lower right")
+        fig.tight_layout()
+        fig.savefig(pfad, facecolor="white")
+        return True
+    finally:
+        plt.close(fig)
+
+
 # ---------------------------------------------------------------------------
 # Liste der Messungen
 def eintrag_speichern(ordner_, eintrag):

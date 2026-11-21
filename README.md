@@ -5,7 +5,7 @@
 Windows program for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV files and a printable test report (PDF + DOCX).
 
-> **Version 1.0.1** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
+> **Version 1.1.0** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -31,6 +31,7 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 - Filters LP 22 kHz / HP 22 Hz, range AUTO (4 digits) or HOLD (3 digits), live charts (log frequency axis, THD+N in % or dB).
 - **Device under test**: enter manufacturer, type and serial number (optionally an order number) — all following measurements are collected in one folder with CSV, chart (PNG) and a summary of the key results.
 - **Test report** as **PDF and DOCX** from the selected measurements: device data, result overview, one page per measurement with settings, chart and measured values, remarks, signature line. Open, print or edit in Word directly from the program.
+- **Quiescent current / DC offset logger** with a **Fluke 287/289** via the IR-USB cable: live adjustment display with trend and tolerance colour, or recording over 10 min … 2 h with time marks — works without the UPA. See [docs/fluke.md](docs/fluke.md).
 - **Storage folder** freely selectable, e.g. a network share; if it is unreachable, data is saved locally and a warning is shown.
 - **External attenuator** with a per-channel calibration table (log-f interpolation), e.g. for power amplifiers.
 - Free choice of COM port and GPIB address (0–30); the last working values are remembered.
@@ -40,6 +41,7 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 
 - R&S UPA audio analyzer with IEC bus (options as listed above)
 - AR488-compatible GPIB adapter — tested: [ESP32-S2 adapter by DiyEMC](https://www.diyemc.com/Products/Esp32s2Ar488/) with firmware **0.53.26 (JW)**; other adapters and versions run but are flagged in the log
+- Optional: Fluke 287/289 multimeter with Fluke IR-USB cable (quiescent current / offset logging)
 - Windows 10 or 11 (64 bit). The program window uses Microsoft Edge WebView2, which is part of current Windows versions.
 
 ## Installation
@@ -59,7 +61,7 @@ The installer is not code-signed yet, so Windows SmartScreen may warn: click *Mo
 5. Click **▤ PROTOKOLL**, select the measurements and create the test report (PDF + DOCX).
 6. Exit with **⏻ QUIT** (or the window's close button) — the UPA is released to local operation.
 
-Wiring, measurement details and attenuator calibration: [docs/hardware-setup.md](docs/hardware-setup.md) · [docs/measurements.md](docs/measurements.md) · [docs/attenuator-calibration.md](docs/attenuator-calibration.md)
+Wiring, measurement details, attenuator calibration and Fluke logger: [docs/hardware-setup.md](docs/hardware-setup.md) · [docs/measurements.md](docs/measurements.md) · [docs/attenuator-calibration.md](docs/attenuator-calibration.md) · [docs/fluke.md](docs/fluke.md)
 
 ## Data folder
 
@@ -145,6 +147,7 @@ Windows-Programm zur Steuerung des **R&S UPA Audioanalysators** über einen **AR
 - **Start:** über das Startmenü „UPA-Analyzer-Control". Im Startfenster COM-Port und GPIB-Adresse eintragen, initialisieren (dafür Generator L auf Eingang L stecken).
 - **Prüfling** (Hersteller, Typ, Seriennummer, optional Auftragsnummer und Ablageordner) in der Kopfzeile festlegen – alle Messungen landen dann in einem eigenen Ordner.
 - **▤ PROTOKOLL** erstellt das Prüfprotokoll als PDF und DOCX; Drucken direkt aus dem Programm.
+- **Ruhestrom / Offset** mit dem Fluke 287 (IR-USB-Kabel): Live-Abgleich mit Trend oder Aufzeichnung 10 min … 2 h mit Zeitmarken – auch ohne UPA („Ohne UPA fortfahren").
 - **Daten:** `Dokumente\UPA-Analyzer-Control` (Einstellungen, Kalibrierung, Messungen, Protokoll); der Ablageordner für Messungen ist frei wählbar, z. B. ein NAS.
 
 Getestet mit UPA3 und dem [ESP32-S2-GPIB-Adapter von DiyEMC](https://www.diyemc.com/Products/Esp32s2Ar488/) (Firmware 0.53.26 (JW)) – vielen Dank an Hans W. für Adapter und Firmware. Links zu AR488, den ESP32-Varianten und dem Forumsthread unter „Related projects & thanks". Die Oberfläche ist derzeit deutsch. Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.

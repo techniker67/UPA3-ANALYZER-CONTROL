@@ -2,6 +2,15 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.1.0 – 2026-11-21
+- **Ruhestrom / Offset mit Fluke 287/289** (IR-USB-Kabel, nur lesend: `ID`, `QM`): neue Kachel „Ruhestrom" mit eigener Ansicht.
+  - **Live-Abgleich**: große Anzeige in mV, Trend (mV/min), grün/rot nach Toleranzband – zum Einstellen am Trimmer, ohne Speichern.
+  - **Aufzeichnung** 10 min / 30 min / 1 h / 2 h / bis Stop, Intervall 1–10 s, Zeitmarken (Vorgabe 10 und 120 min), Sollwert ± Toleranz, Bezeichnung (z. B. „Ruhestrom L", „Offset R").
+  - Speicherung im Prüflingsordner: CSV, Verlaufsdiagramm mit Toleranzband, Eintrag mit Zeitmarken und Endwert; im Prüfprotokoll eigener Abschnitt.
+  - Fluke-Port wird automatisch gesucht (AR488-Port bleibt unberührt) und gemerkt.
+- Startfenster: **„Ohne UPA fortfahren"** – Fluke-Messungen auch ohne angeschlossenen UPA.
+- Prüfprotokoll: Messsystem je nach verwendeten Geräten, Haken/Kreuz in der PDF mit Ersatzschrift.
+
 ## 1.0.1 – 2026-11-21
 - Vorbereitung Code-Signatur (SignPath Foundation): `docs/code-signing-policy.md` (Rollen, Datenschutz, Umfang), `THIRD-PARTY-NOTICES.md`, Verweise in README und Release-Text.
 - .exe und Setup tragen jetzt Produktname, Version und Herausgeber in den Datei-Eigenschaften; der Build prüft das.
