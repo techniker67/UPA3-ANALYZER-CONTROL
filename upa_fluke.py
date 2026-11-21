@@ -152,11 +152,17 @@ class Logger:
             return 0.0
         return sum((t - mt) * (v - mv) for t, v in xs) / nen * 60.0
 
-    def statistik(self):
-        vs = [v for _, v, _ in self.punkte if v is not None]
+    def statistik(self, ab_t=0.0):
+        """Min/Max/Mittel ab Zeitpunkt ab_t (s). Fuer das Protokoll ab der ersten
+        Zeitmarke, damit Anklemm- und Abgleichspitzen nicht als Min/Max erscheinen."""
+        vs = [v for t, v, _ in self.punkte if v is not None and t >= ab_t]
         if not vs:
             return {}
-        return {"min": min(vs), "max": max(vs), "mittel": sum(vs) / len(vs), "n": len(vs)}
+        return {"min": min(vs), "max": max(vs), "mittel": sum(vs) / len(vs), "n": len(vs),
+                "ab_t": ab_t}
+
+    def ist_ol(self, hinweis):
+        return bool(hinweis) and "OL" in hinweis
 
     def laufen(self, emit):
         intervall = max(0.5, float(self.p.get("intervall") or 1.0))
@@ -184,8 +190,14 @@ class Logger:
             self.letzter = v
             while offen and t >= offen[0] * 60.0:
                 mm = offen.pop(0)
-                self.marken.append({"minute": mm, "t": round(t, 1), "wert": v, "ok": self.ok(v)})
-                self.log(f"Zeitmarke {mm:g} min: " + (f"{v:.3f} mV" if v is not None else "kein Wert"))
+                mk = {"minute": mm, "t": round(t, 1), "wert": v, "ok": self.ok(v)}
+                if v is None and self.ist_ol(self.hinweis):
+                    mk["ol"] = True
+                    if self.p.get("soll") is not None:
+                        mk["ok"] = False             # Ueberlauf liegt sicher ausserhalb
+                self.marken.append(mk)
+                self.log(f"Zeitmarke {mm:g} min: " + (f"{v:.3f} mV" if v is not None
+                                                      else ("OL" if mk.get("ol") else "kein Wert")))
             emit()
             naechste += intervall
             while not self.stop() and time.time() < naechste:
