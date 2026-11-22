@@ -755,14 +755,19 @@ def make_handler(app):
                 if not pr:
                     return self._send(200, {"pruefling": None, "messungen": [], "dateien": []})
                 ordner = report.ordner(pr)
-                ms = [{"csv": e["csv"], "name": protokoll.PROG_NAMEN.get(e["programm"], e.get("name")),
-                       "start": e.get("start"), "abgebrochen": e.get("abgebrochen"),
-                       "bezeichnung": e.get("bezeichnung", ""),
-                       "kanaele": [c["kanal"] for c in e.get("ergebnis", [])]}
-                      for e in protokoll.messungen(ordner)]
+                def kurz(e):
+                    return {"csv": e["csv"], "name": protokoll.PROG_NAMEN.get(e["programm"], e.get("name")),
+                            "start": e.get("start"), "abgebrochen": e.get("abgebrochen"),
+                            "bezeichnung": e.get("bezeichnung", ""),
+                            "kanaele": [c["kanal"] for c in e.get("ergebnis", [])]}
+                ms = [kurz(e) for e in protokoll.messungen(ordner)]
                 dateien = sorted(n for n in os.listdir(ordner) if n.startswith("Pruefprotokoll_"))
+                korb_ms, korb_pr = protokoll.im_papierkorb(ordner)
                 return self._send(200, {"pruefling": pr, "ordner": ordner, "messungen": ms,
-                                        "dateien": dateien, "formate": protokoll.verfuegbar(),
+                                        "dateien": dateien, "protokolle": protokoll.protokolle(ordner),
+                                        "papierkorb": {"messungen": [kurz(e) for e in korb_ms],
+                                                       "protokolle": korb_pr},
+                                        "formate": protokoll.verfuegbar(),
                                         "firma": load_settings().get("firma", "")})
             if u.path == "/api/programs":
                 return self._send(200, progs.PROGRAMS)
@@ -843,6 +848,22 @@ def make_handler(app):
                     return self._send(400, {"error": str(e)})
                 app.log("Prüfprotokoll erstellt: " + ", ".join(dateien))
                 return self._send(200, {"ok": True, "dateien": dateien})
+            if u.path == "/api/papierkorb":
+                # Messung/Protokoll in den Papierkorb des Geraeteordners verschieben bzw. zurueckholen
+                pr = app.pruefling
+                if not pr:
+                    return self._send(400, {"error": "Kein Prüfling festgelegt"})
+                if app.busy or app.fl_busy:
+                    return self._send(409, {"error": "Während einer Messung oder Aufzeichnung nicht möglich"})
+                zurueck = body.get("aktion") == "zurueck"
+                try:
+                    namen = protokoll.verschieben(report.ordner(pr), str(body.get("art", "")),
+                                                  body.get("name"), zurueck)
+                except ValueError as e:
+                    return self._send(400, {"error": str(e)})
+                app.log(("Aus dem Papierkorb zurückgeholt: " if zurueck else "In den Papierkorb verschoben: ")
+                        + ", ".join(namen))
+                return self._send(200, {"ok": True, "dateien": namen})
             if u.path == "/api/oeffnen":
                 # nur Dateien im Geraeteordner bzw. der Ordner selbst; nur auf diesem Rechner
                 pr = app.pruefling

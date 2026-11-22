@@ -73,6 +73,90 @@ def messungen(ordner):
     return [e for e in liste if os.path.exists(os.path.join(ordner, e.get("csv", "")))]
 
 
+# ---------------------------------------------------------------------------
+# Papierkorb: Messungen und Protokolle nicht loeschen, sondern in den Unterordner
+# "Papierkorb" des Geraeteordners verschieben (wiederherstellbar; endgueltig
+# loescht der Anwender den Ordner selbst im Explorer).
+PAPIERKORB = "Papierkorb"
+
+
+def _liste(ordner):
+    try:
+        with open(os.path.join(ordner, "messungen.json"), encoding="utf-8") as fh:
+            return json.load(fh)
+    except Exception:
+        return []
+
+
+def protokolle(ordner, im_korb=False):
+    """Erstellte Protokolle, neueste zuerst: [{"basis", "pdf", "docx"}]."""
+    o = os.path.join(ordner, PAPIERKORB) if im_korb else ordner
+    try:
+        namen = os.listdir(o)
+    except OSError:
+        return []
+    basen = {}
+    for n in namen:
+        b, ext = os.path.splitext(n)
+        if n.startswith("Pruefprotokoll_") and ext.lower() in (".pdf", ".docx"):
+            basen.setdefault(b, {"basis": b, "pdf": None, "docx": None})[ext.lower()[1:]] = n
+    return sorted(basen.values(), key=lambda e: e["basis"], reverse=True)
+
+
+def im_papierkorb(ordner):
+    """Messungen (Eintraege aus messungen.json, deren CSV im Papierkorb liegt) und Protokolle."""
+    korb = os.path.join(ordner, PAPIERKORB)
+    ms = [e for e in _liste(ordner)
+          if e.get("csv") and not os.path.exists(os.path.join(ordner, e["csv"]))
+          and os.path.exists(os.path.join(korb, e["csv"]))]
+    return ms, protokolle(ordner, True)
+
+
+def _dateien(ordner, art, name):
+    """Dateinamen, die zu einer Messung (CSV-Name) bzw. einem Protokoll (Basisname) gehoeren."""
+    name = os.path.basename(str(name or ""))
+    if not name:
+        raise ValueError("Kein Eintrag angegeben")
+    if art == "messung":
+        e = next((e for e in _liste(ordner) if e.get("csv") == name), None)
+        if not e:
+            raise ValueError("Messung nicht gefunden")
+        return [n for n in (e.get("csv"), e.get("png")) if n]
+    if art == "protokoll":
+        if not name.startswith("Pruefprotokoll_"):
+            raise ValueError("Kein Prüfprotokoll")
+        return [name + ext for ext in (".pdf", ".docx")]
+    raise ValueError("Unbekannte Art")
+
+
+def verschieben(ordner, art, name, zurueck=False):
+    """Messung/Protokoll in den Papierkorb (zurueck=False) oder zurueck in den Geraeteordner.
+    Verschiebt nur vorhandene Dateien, ueberschreibt nie. Liefert die verschobenen Namen."""
+    korb = os.path.join(ordner, PAPIERKORB)
+    von, nach = (korb, ordner) if zurueck else (ordner, korb)
+    dateien = [n for n in _dateien(ordner, art, name) if os.path.isfile(os.path.join(von, os.path.basename(n)))]
+    if not dateien:
+        raise ValueError("Nichts zu verschieben – Datei nicht gefunden")
+    for n in dateien:
+        if os.path.exists(os.path.join(nach, os.path.basename(n))):
+            raise ValueError(f"{os.path.basename(n)} gibt es am Ziel schon – nichts verschoben")
+    os.makedirs(nach, exist_ok=True)
+    fertig = []
+    try:
+        for n in dateien:
+            n = os.path.basename(n)
+            os.replace(os.path.join(von, n), os.path.join(nach, n))
+            fertig.append(n)
+    except OSError as e:
+        for n in fertig:               # halb verschoben -> rueckgaengig
+            try:
+                os.replace(os.path.join(nach, n), os.path.join(von, n))
+            except OSError:
+                pass
+        raise ValueError(f"Verschieben nicht möglich: {e}")
+    return fertig
+
+
 def geraet(ordner):
     with open(os.path.join(ordner, "geraet.json"), encoding="utf-8") as fh:
         return json.load(fh)
@@ -681,6 +765,8 @@ def selbsttest(ziel):
     """Beispiel-Geraeteordner + Protokoll (Pruefung der installierten Version)."""
     pr = {"hersteller": "Selbsttest", "typ": "Loopback", "seriennr": "0001"}
     os.makedirs(ziel, exist_ok=True)
+    import shutil
+    shutil.rmtree(os.path.join(ziel, PAPIERKORB), ignore_errors=True)   # nur im Selbsttest-Ordner
     with open(os.path.join(ziel, "geraet.json"), "w", encoding="utf-8") as fh:
         json.dump(pr, fh)
     fs = [20, 100, 1000, 10000, 20000]
@@ -696,4 +782,16 @@ def selbsttest(ziel):
                     "csv": "upa_fr_selbsttest.csv", "png": "upa_fr_selbsttest.png", "adapter": "Selbsttest",
                     "software": "test", "parameter": {"level": 0.5, "rng": "AUTO", "atten": 1.0},
                     "ergebnis": report.zusammenfassung("fr", pts), "abgebrochen": False}], fh, ensure_ascii=False)
-    return erstellen(ziel, bemerkung="Selbsttest µ Ω → äöü", firma="Selbsttest", version="test")
+    dateien = erstellen(ziel, bemerkung="Selbsttest µ Ω → äöü", firma="Selbsttest", version="test")
+    # Papierkorb: Messung + Protokoll hin und zurueck
+    basis = protokolle(ziel)[0]["basis"]
+    verschieben(ziel, "messung", "upa_fr_selbsttest.csv")
+    verschieben(ziel, "protokoll", basis)
+    ms, pk = im_papierkorb(ziel)
+    if messungen(ziel) or len(ms) != 1 or len(pk) != 1:
+        raise RuntimeError("Papierkorb-Selbsttest fehlgeschlagen")
+    verschieben(ziel, "messung", "upa_fr_selbsttest.csv", zurueck=True)
+    verschieben(ziel, "protokoll", basis, zurueck=True)
+    if len(messungen(ziel)) != 1 or any(im_papierkorb(ziel)):
+        raise RuntimeError("Papierkorb-Selbsttest: Zurückholen fehlgeschlagen")
+    return dateien

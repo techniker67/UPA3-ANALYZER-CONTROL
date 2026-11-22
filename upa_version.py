@@ -6,8 +6,8 @@ Schema MAJOR.MINOR.PATCH (Semantic Versioning):
   MAJOR  1   erste oeffentliche GitHub-Version (Messungen + DOCX-Protokoll komplett)
 Aenderungen stehen in CHANGELOG.md.
 """
-__version__ = "1.4.2"
-DATUM = "2026-11-21"
+__version__ = "1.5.0"
+DATUM = "2026-11-22"
 
 # Adapter-Firmware, mit der alle Messprogramme am Geraet getestet wurden.
 # Andere Versionen laufen, erzeugen aber einen Hinweis im Protokoll.

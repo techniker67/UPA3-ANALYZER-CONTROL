@@ -5,7 +5,7 @@
 Windows program for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV files and a printable test report (PDF + DOCX).
 
-> **Version 1.4.2** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
+> **Version 1.5.0** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -30,7 +30,7 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 
 - Filters LP 22 kHz / HP 22 Hz, range AUTO (4 digits) or HOLD (3 digits), live charts (log frequency axis, THD+N in % or dB).
 - **Device under test**: enter manufacturer, type and serial number (optionally an order number) — all following measurements are collected in one folder with CSV, chart (PNG) and a summary of the key results.
-- **Test report** as **PDF and DOCX** from the selected measurements: device data, result overview, one page per measurement with settings, chart and measured values, remarks, signature line. Open, print or edit in Word directly from the program.
+- **Test report** as **PDF and DOCX** from the selected measurements: device data, result overview, one page per measurement with settings, chart and measured values, remarks, signature line. Open, print or edit in Word directly from the program. Measurements and reports that are no longer needed can be moved to a **recycle bin** subfolder of the device folder (✕) and restored from there (↺).
 - **Quiescent current / DC offset logger** with a **Fluke 287/289** via the IR-USB cable: live adjustment display with trend and tolerance colour, or recording over 10 min … 2 h with time marks — chosen directly from the **start menu**, works without the UPA. See [docs/fluke.md](docs/fluke.md).
 - **Start menu** with large tiles: UPA measurement, multimeter, test reports, settings (storage folder, tester/company, ports) and exit; status of adapter and IR cable at a glance. Every view has **⌂ MENÜ** to return; the program is only closed from the menu (or the window's close button with confirmation).
 - **Update notice**: at start the program asks GitHub whether a newer release exists (can be switched off in the settings; no other data is sent).
@@ -150,7 +150,7 @@ Windows-Programm zur Steuerung des **R&S UPA Audioanalysators** über einen **AR
 - **UPA-Messung:** COM-Port und GPIB-Adresse eintragen, initialisieren (dafür Generator L auf Eingang L stecken) – danach direkt in die Messansicht.
 - **Prüfling** (Hersteller, Typ, Seriennummer, optional Auftragsnummer) im Startmenü oder in der Kopfzeile festlegen – alle Messungen landen dann in einem eigenen Ordner.
 - **Einstellungen:** Ablageordner, Prüfer/Firma, Ports; Hinweis auf neue Versionen (fragt beim Start GitHub, abschaltbar).
-- **▤ PROTOKOLL** erstellt das Prüfprotokoll als PDF und DOCX; Drucken direkt aus dem Programm.
+- **▤ PROTOKOLL** erstellt das Prüfprotokoll als PDF und DOCX; Drucken direkt aus dem Programm. Nicht mehr benötigte Messungen und Protokolle wandern mit ✕ in den Unterordner `Papierkorb` des Geräteordners und lassen sich dort mit ↺ zurückholen.
 - **Ruhestrom / Offset** mit dem Fluke 287 (IR-USB-Kabel): Live-Abgleich mit Trend oder Aufzeichnung 10 min … 2 h mit Zeitmarken – direkt über die Kachel **Multimeter** im Startmenü, auch ohne UPA.
 - **Daten:** `Dokumente\UPA-Analyzer-Control` (Einstellungen, Kalibrierung, Messungen, Protokoll); der Ablageordner für Messungen ist frei wählbar, z. B. ein NAS.
 

@@ -95,6 +95,22 @@ body.tick .pill.run::before{opacity:.2}
 #protdlg .m input{width:16px;height:16px;accent-color:var(--cy)}
 #protdlg .m .ab{color:var(--or)}
 #protdlg .m small{color:var(--mut)}
+#protdlg .m.mz{grid-template-columns:28px 1.6fr 1fr 1.4fr 30px}
+#protdlg .liste.prot{min-height:0;max-height:18vh}
+#protdlg .m.pz{grid-template-columns:1fr auto;cursor:default}
+#protdlg .liste.korb{max-height:22vh}
+#protdlg .liste.mess{max-height:30vh}
+#protdlg .m .akt{display:flex;gap:6px;justify-content:flex-end;align-items:center}
+#protdlg .m .akt .btn{padding:3px 10px;font-size:10.5px}
+#protdlg .x{background:none;border:1px solid transparent;color:var(--mut);font:14px var(--m);width:26px;height:24px;cursor:pointer;padding:0;line-height:1}
+#protdlg .x:hover{color:var(--red);border-color:var(--red)}
+#protdlg .x:disabled{opacity:.3;cursor:default}
+#protdlg .korb .m{opacity:.55;cursor:default}
+#protdlg .korb .m:hover{opacity:.85}
+#protdlg .korbkopf{display:flex;justify-content:space-between;align-items:center;margin:-4px 0 8px}
+#protdlg .korbkopf button{background:none;border:none;color:var(--mut);font:11.5px var(--m);cursor:pointer;padding:2px 0;letter-spacing:.05em}
+#protdlg .korbkopf button:hover{color:var(--cy)}
+#protdlg .korbkopf small{font:11px var(--m);color:var(--mut)}
 #protdlg #pFirma{width:100%;margin-bottom:10px}
 #protdlg textarea{width:100%;height:58px;background:#020b12;border:1px solid var(--cyd);color:var(--cy2);font:13px var(--m);padding:6px 9px;resize:vertical;outline:none}
 #protdlg .ctl{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}
@@ -535,7 +551,11 @@ tr.new td{animation:flash 1s}
   <h2>PRÜFPROTOKOLL</h2>
   <div class="sub" id="pSub"></div>
   <label>Messungen für das Protokoll</label>
-  <div class="liste" id="pListe"></div>
+  <div class="liste mess" id="pListe"></div>
+  <label>Erstellte Protokolle</label>
+  <div class="liste prot" id="pProt"></div>
+  <div class="korbkopf"><button id="pKorbBtn" title="Mit ✕ entfernte Messungen und Protokolle liegen im Unterordner „Papierkorb“ des Geräteordners – hier zurückholen">Papierkorb zeigen (0)</button><small id="pKorbHint"></small></div>
+  <div class="liste korb hide" id="pKorb"></div>
   <label>Prüfer / Firma (steht im Protokoll und in der Fußzeile – wird gemerkt)</label>
   <input id="pFirma" maxlength="80" placeholder="z. B. Name oder Werkstatt – leer = ohne">
   <label>Bemerkung (optional)</label>
@@ -868,24 +888,70 @@ $("dCancel").onclick=()=>$("dutdlg").classList.remove("on");
 $("dutdlg").addEventListener("keydown",e=>{ if(e.key==="Enter")$("dOk").click(); if(e.key==="Escape")$("dCancel").click(); });
 // ---- Pruefprotokoll
 function dt(iso){ try{ const d=new Date(iso); return d.toLocaleDateString("de-DE")+" "+d.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"}); }catch(e){ return iso||""; } }
+let KORB_AUF=false;
+function protDatum(basis){ const m=/_(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})$/.exec(basis||""); return m?`${m[3]}.${m[2]}.${m[1]} ${m[4]}:${m[5]}`:(basis||""); }
 async function protOpen(){
   if(!S||S.busy||!S.pruefling) return;
-  const j=await (await fetch("/api/protokoll")).json();
-  const pr=j.pruefling;
-  $("pSub").textContent=`${pr.auftrag?pr.auftrag+" · ":""}${pr.hersteller} ${pr.typ} · SN ${pr.seriennr} · Ordner ${j.ordner}`;
   $("pErr").textContent=""; $("pFertig").classList.add("hide");
-  $("pFirma").value=j.firma||"";
-  const f=j.formate||{}; $("pMake").textContent="Erstellen · "+[f.pdf&&"PDF",f.docx&&"DOCX"].filter(Boolean).join(" + ");
-  $("pMake").disabled=!(f.pdf||f.docx);
-  if(!(f.pdf||f.docx)) $("pErr").textContent="Für das Protokoll fehlen reportlab/python-docx (in der installierten Version enthalten).";
-  $("pListe").innerHTML = j.messungen.length ? j.messungen.slice().reverse().map(m=>
-    `<label class="m"><input type="checkbox" value="${esc(m.csv)}" ${m.abgebrochen?"":"checked"}>`+
-    `<span>${esc(m.name)}${m.abgebrochen?' <span class="ab">· abgebrochen</span>':""}</span>`+
-    `<span>${esc(m.kanaele.join(", "))}</span><small>${dt(m.start)}${m.bezeichnung?" · "+esc(m.bezeichnung):""}</small></label>`).join("")
-    : '<div class="m"><span></span><small>Noch keine Messungen für diesen Prüfling.</small></div>';
-  if(j.dateien.length) zeigeDateien(j.dateien.slice(-2), "Vorhanden:");
+  KORB_AUF=false;
+  if(!await protLaden(true)) return;
   $("protdlg").classList.add("on");
 }
+async function protLaden(erstmals){
+  let j; try{ j=await (await fetch("/api/protokoll")).json(); }catch(e){ return false; }
+  const pr=j.pruefling; if(!pr) return false;
+  $("pSub").textContent=`${pr.auftrag?pr.auftrag+" · ":""}${pr.hersteller} ${pr.typ} · SN ${pr.seriennr} · Ordner ${j.ordner}`;
+  if(erstmals){
+    $("pFirma").value=j.firma||"";
+    const f=j.formate||{}; $("pMake").textContent="Erstellen · "+[f.pdf&&"PDF",f.docx&&"DOCX"].filter(Boolean).join(" + ");
+    $("pMake").disabled=!(f.pdf||f.docx);
+    if(!(f.pdf||f.docx)) $("pErr").textContent="Für das Protokoll fehlen reportlab/python-docx (in der installierten Version enthalten).";
+  }
+  // Auswahl merken, damit ein Entfernen die Haken der anderen nicht zuruecksetzt
+  const vorher=erstmals?null:new Set([...$("pListe").querySelectorAll("input:checked")].map(i=>i.value));
+  const bekannt=erstmals?null:new Set([...$("pListe").querySelectorAll("input")].map(i=>i.value));
+  const an=m=>(vorher&&bekannt.has(m.csv))?vorher.has(m.csv):!m.abgebrochen;   // neu/zurueckgeholt: Vorgabe
+  const zeile=(m,korb)=>`<label class="m mz"><input type="checkbox" value="${esc(m.csv)}" ${korb?"disabled":(an(m)?"checked":"")}>`+
+    `<span>${esc(m.name)}${m.abgebrochen?' <span class="ab">· abgebrochen</span>':""}</span>`+
+    `<span>${esc(m.kanaele.join(", "))}</span><small>${dt(m.start)}${m.bezeichnung?" · "+esc(m.bezeichnung):""}</small>`+
+    (korb?`<button class="x" data-z="messung" data-n="${esc(m.csv)}" title="Zurückholen">↺</button>`
+         :`<button class="x" data-k="messung" data-n="${esc(m.csv)}" title="In den Papierkorb (CSV + Diagramm)">✕</button>`)+`</label>`;
+  $("pListe").innerHTML = j.messungen.length ? j.messungen.slice().reverse().map(m=>zeile(m,false)).join("")
+    : '<div class="m"><span></span><small>Noch keine Messungen für diesen Prüfling.</small></div>';
+  const prz=(p,korb)=>`<div class="m pz"><span>${protDatum(p.basis)} <small>· ${[p.pdf&&"PDF",p.docx&&"DOCX"].filter(Boolean).join(" + ")}</small></span><span class="akt">`+
+    (korb?`<button class="x" data-z="protokoll" data-n="${esc(p.basis)}" title="Zurückholen">↺</button>`
+         :(p.pdf?`<button class="btn ghost" data-o="${esc(p.pdf)}">PDF</button><button class="btn ghost" data-p="${esc(p.pdf)}">Drucken</button>`:"")+
+          (p.docx?`<button class="btn ghost" data-o="${esc(p.docx)}">DOCX</button>`:"")+
+          `<button class="x" data-k="protokoll" data-n="${esc(p.basis)}" title="In den Papierkorb (PDF + DOCX)">✕</button>`)+`</span></div>`;
+  const prot=j.protokolle||[];
+  $("pProt").innerHTML = prot.length ? prot.map(p=>prz(p,false)).join("")
+    : '<div class="m"><small>Noch keine Protokolle erstellt.</small></div>';
+  const K=j.papierkorb||{messungen:[],protokolle:[]}, nk=K.messungen.length+K.protokolle.length;
+  $("pKorbBtn").textContent=(KORB_AUF?"▾ Papierkorb ausblenden":"▸ Papierkorb zeigen")+` (${nk})`;
+  $("pKorbHint").textContent=KORB_AUF&&nk?"Endgültig löschen: Ordner „Papierkorb“ im Explorer löschen":"";
+  $("pKorb").innerHTML = (K.messungen.slice().reverse().map(m=>zeile(m,true)).join("")+K.protokolle.map(p=>prz(p,true)).join(""))
+    || '<div class="m"><small>Papierkorb ist leer.</small></div>';
+  $("pKorb").classList.toggle("hide",!KORB_AUF);
+  document.querySelectorAll("#protdlg .liste [data-o],#protdlg .liste [data-p]").forEach(b=>b.onclick=()=>oeffne(b.dataset.o||b.dataset.p, !!b.dataset.p));
+  document.querySelectorAll("#protdlg .liste [data-k],#protdlg .liste [data-z]").forEach(b=>b.onclick=e=>{ e.preventDefault(); e.stopPropagation(); korb(b); });
+  PROTINFO=j; protZeit=Date.now();
+  return true;
+}
+async function korb(b){
+  const zurueck=!!b.dataset.z, art=b.dataset.z||b.dataset.k, name=b.dataset.n;
+  if(S&&(S.busy||(S.fluke&&S.fluke.busy))){ $("pErr").style.color=""; $("pErr").textContent="Während einer Messung oder Aufzeichnung nicht möglich."; return; }
+  if(!zurueck){
+    const was=art==="messung"?"diese Messung (CSV + Diagramm)":"dieses Protokoll (PDF + DOCX)";
+    if(!confirm(`${was} in den Papierkorb verschieben?\n\nSie liegt danach im Unterordner „Papierkorb“ des Geräteordners und kann hier zurückgeholt werden.`)) return;
+  }
+  b.disabled=true;
+  const r=await api("/api/papierkorb",{aktion:zurueck?"zurueck":"entfernen", art, name});
+  $("pErr").style.color=r.ok?"var(--cy2)":""; 
+  const nd=(r.dateien||[]).length;
+  $("pErr").textContent=r.ok?(zurueck?"↺ Zurückgeholt":"✕ In den Papierkorb verschoben")+` (${nd} Datei${nd===1?"":"en"})`:(r.error||"Fehler");
+  await protLaden(false);
+}
+$("pKorbBtn").onclick=()=>{ KORB_AUF=!KORB_AUF; protLaden(false); };
 function zeigeDateien(dateien, titel){
   const pdf=dateien.find(n=>n.endsWith(".pdf")), dx=dateien.find(n=>n.endsWith(".docx"));
   $("pFertig").innerHTML=`<span>${titel} ${dateien.map(esc).join(" · ")}</span>`+
@@ -909,7 +975,7 @@ $("pMake").onclick=async()=>{
   const r=await api("/api/protokoll",{auswahl, bemerkung:$("pBem").value, firma:$("pFirma").value});
   $("pMake").disabled=false;
   if(!r.ok){ $("pErr").textContent=r.error||"Fehler"; return; }
-  $("pErr").textContent=""; zeigeDateien(r.dateien, "✓ Erstellt:");
+  $("pErr").textContent=""; await protLaden(false); zeigeDateien(r.dateien, "✓ Erstellt:");
 };
 $("protdlg").addEventListener("keydown",e=>{ if(e.key==="Escape")$("pClose").click(); });
 
