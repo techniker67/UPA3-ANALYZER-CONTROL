@@ -2,6 +2,12 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.5.0 – 2026-11-22
+- **Aufräumen im Protokoll-Fenster:** Jede Messung und jedes erstellte Protokoll hat ein **✕**. Nach Rückfrage wandern die Dateien (Messung: CSV + Diagramm, Protokoll: PDF + DOCX) in den Unterordner **`Papierkorb`** des Geräteordners – nichts wird endgültig gelöscht.
+- **Papierkorb zeigen (n):** blendet die entfernten Einträge grau ein; **↺** holt sie zurück. Endgültig löschen: Ordner `Papierkorb` im Explorer löschen („Ordner öffnen“).
+- Neue Liste **Erstellte Protokolle** mit allen Protokollen des Prüflings (neueste zuerst) und Knöpfen PDF / Drucken / DOCX – bisher wurden nur die letzten zwei angezeigt.
+- Gesperrt während einer Messung oder Aufzeichnung; vorhandene Dateien werden nie überschrieben.
+
 ## 1.4.2 – 2026-11-21
 - Ablageordner: Schaltfläche **DURCHSUCHEN** rechts im Feld (Einstellungen und Prüfling-Dialog) öffnet den Windows-Dialog „Ordner auswählen" – Desktop, Dokumente, Netzwerk → NAS usw. Im Browser-Betrieb ausgeblendet.
 
