@@ -2,6 +2,16 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.6.0 – 2026-11-23
+- **Bandmessungen (Tapedeck / Tonband)** – Quelle ist das Messband, der UPA-Generator bleibt aus. Alle drei Programme sind als *VERIFIKATION* markiert, bis sie am Gerät bestätigt sind:
+  - **Wow & Flutter** (Option B9): `WOWFLUTTER(DIN|NAB|JIS WTD)` laut Handbuch 2.4.8, dazu Frequenz und Geschwindigkeitsabweichung je Wert (`TRIGGER(MODE(LEV/FREQ/FNCT))`). JIS = WRMS. Die ersten 6 s zählen nicht (Einschwingen). Ergebnis: W&F max./Mittel/min., Geschwindigkeit, Schwankung, Drift.
+  - **Bandgeschwindigkeit**: nur bewährte Befehle (Pegel + Frequenz), Abweichung von 3000/3150 Hz in %, Drift.
+  - **Wiedergabe-Frequenzgang**: erkennt die Frequenzstufen des Messbands selbst (L/R abwechselnd, Median je Stufe), Bezug 0 dB wählbar (Vorgabe 315 Hz), endet 20 s nach dem letzten Ton.
+  - **Azimut live**: Pegel L/R, Höchstwert und Abstand zum Maximum, L–R; nichts wird gespeichert.
+- Neu im Gerätekern: einmal einstellen, dann je Wert nur `TRIGGER(SINGLE)` + Lesen (wartet auf den Wert, Abbruch bei „NOT TRIGGERED“, alle 10 Werte ++spoll).
+- Prüfprotokoll: Seiten und Diagramme für die Bandmessungen.
+- Gesperrte Programme erscheinen nicht mehr in der Kachelleiste. Phase L–R bleibt gesperrt (laut Handbuch 2.3.1.8 nur mit Sonderverkabelung).
+
 ## 1.5.0 – 2026-11-22
 - **Aufräumen im Protokoll-Fenster:** Jede Messung und jedes erstellte Protokoll hat ein **✕**. Nach Rückfrage wandern die Dateien (Messung: CSV + Diagramm, Protokoll: PDF + DOCX) in den Unterordner **`Papierkorb`** des Geräteordners – nichts wird endgültig gelöscht.
 - **Papierkorb zeigen (n):** blendet die entfernten Einträge grau ein; **↺** holt sie zurück. Endgültig löschen: Ordner `Papierkorb` im Explorer löschen („Ordner öffnen“).

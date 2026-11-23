@@ -5,7 +5,7 @@
 Windows program for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV files and a printable test report (PDF + DOCX).
 
-> **Version 1.5.0** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
+> **Version 1.6.0** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -26,7 +26,11 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
   | THD+N vs. level (up to clipping) | B8 | tested |
   | Signal-to-noise, unweighted 22 Hz–22 kHz | B6 | tested |
   | Crosstalk vs. frequency | B6 | tested |
-  | SINAD, weighted S/N (A/CCIR), wow & flutter, azimuth/phase | – | locked until verified |
+  | **Tape:** wow & flutter DIN / NAB / JIS (WRMS) + speed, from a test tape | B9 | verification |
+  | **Tape:** speed / drift (3000 / 3150 Hz test tape) | – | verification |
+  | **Tape:** playback frequency response, steps of a test tape detected automatically | – | verification |
+  | **Tape:** azimuth live (level L/R, maximum, L–R) | – | verification |
+  | SINAD, weighted S/N (A/CCIR), phase L–R | – | locked until verified |
 
 - Filters LP 22 kHz / HP 22 Hz, range AUTO (4 digits) or HOLD (3 digits), live charts (log frequency axis, THD+N in % or dB).
 - **Device under test**: enter manufacturer, type and serial number (optionally an order number) — all following measurements are collected in one folder with CSV, chart (PNG) and a summary of the key results.
@@ -143,7 +147,7 @@ Service manuals and other R&S documents are not included and must be obtained se
 
 ## Deutsch
 
-Windows-Programm zur Steuerung des **R&S UPA Audioanalysators** über einen **AR488-GPIB-Adapter** – für den Reparaturtisch: Frequenzgang, Verstärkung, THD+N, Störabstand und Kanaltrennung mit Diagrammen, CSV-Dateien und Prüfprotokoll (PDF + DOCX).
+Windows-Programm zur Steuerung des **R&S UPA Audioanalysators** über einen **AR488-GPIB-Adapter** – für den Reparaturtisch: Frequenzgang, Verstärkung, THD+N, Störabstand und Kanaltrennung, für Bandgeräte Gleichlauf (W&F DIN/NAB/JIS), Bandgeschwindigkeit, Wiedergabe-Frequenzgang ab Messband und Azimut live – mit Diagrammen, CSV-Dateien und Prüfprotokoll (PDF + DOCX).
 
 - **Installation:** `Setup.exe` unter [Releases](../../releases) herunterladen und starten – ohne Python, ohne Administratorrechte. Updates einfach drüber installieren; Daten bleiben erhalten.
 - **Start:** Das Programm öffnet mit einem **Startmenü**: UPA-Messung, Multimeter, Protokolle, Einstellungen, Beenden – mit Status von Adapter und IR-Kabel. Jede Ansicht hat **⌂ MENÜ** für den Weg zurück; beendet wird nur im Menü.

@@ -10,6 +10,7 @@ Jedes Programm nutzt UPA.measure() aus upa_core. Status:
   locked = Syntax/Zubehoer laut Katalog §4 noch offen -> nicht startbar
 """
 import math
+import time
 
 CH = {"L": ("LEFT UNBAL", "LEFT UNBAL"), "R": ("RIGHT UNBAL", "RIGHT UNBAL")}
 OTHER = {"L": "R", "R": "L"}
@@ -46,18 +47,43 @@ PROGRAMS = [
      "ui": {"freqs": True, "level": True},
      "def": {"lp22": True, "hp22": False, "rng": "AUTO", "ch": "L", "preset": "xt3", "level": 0.5},
      "note": "Kurze, gut geschirmte, gleich lange Kabel verwenden – lange Kabel fangen Brumm ein und verfälschen das Ergebnis. Messgrenze ca. −96 dB (1 kHz)."},
+    # --- Bandmessungen (ab v1.6.0): Quelle = Messband, UPA-Generator AUS ----------
+    {"id": "bspeed", "name": "Bandgeschwindigkeit", "sub": "Speed · Drift · 3000/3150 Hz", "opt": "BAND",
+     "status": "test", "band": True, "x": "time", "est": 4,
+     "ui": {"band": True, "sollf": True, "dauer": True},
+     "def": {"lp22": True, "hp22": False, "rng": "AUTO", "ch": "L", "sollf": 3000, "dauer": 30},
+     "note": "Speed-Messband abspielen (Kassette 3000 Hz, Spule 3150 Hz), dann starten. Liest Frequenz und Pegel "
+             "über die Dauer: Abweichung in %, Drift. UPA-Generator bleibt aus. Erster Lauf = Verifikation."},
+    {"id": "bfg", "name": "Wiedergabe-Frequenzgang", "sub": "ab Messband · Stufen automatisch", "opt": "BAND",
+     "status": "test", "band": True, "x": "time", "est": 4,
+     "ui": {"band": True, "dauer": True, "bezug": True},
+     "def": {"lp22": False, "hp22": False, "rng": "AUTO", "ch": "LR", "dauer": 300, "bezug": 315},
+     "note": "Frequenzgang-Messband abspielen und direkt starten. Die Software erkennt die Frequenzstufen selbst "
+             "(L/R abwechselnd) und endet 20 s nach dem letzten Ton oder per Stop. Bezug 0 dB = Stufe am "
+             "nächsten an der Bezugsfrequenz. Erster Lauf = Verifikation."},
+    {"id": "azi", "name": "Azimut live", "sub": "Pegel L/R · 10 kHz · Maximum", "opt": "BAND",
+     "status": "test", "band": True, "live": True, "x": "time", "est": 4,
+     "ui": {"band": True, "dauer": True},
+     "def": {"lp22": False, "hp22": False, "rng": "AUTO", "ch": "LR", "dauer": 600},
+     "note": "Azimut-Band (10 kHz) abspielen. Zeigt Pegel L und R abwechselnd, den Höchstwert und den Abstand "
+             "dazu – Kopf auf Maximum und L≈R stellen. Nichts wird gespeichert. (Phase L–R bräuchte laut Handbuch eine Sonderverkabelung.)"},
     {"id": "sinad", "name": "SINAD", "sub": "Signal / (Rausch+Klirr)", "opt": "B8", "status": "locked",
      "x": "freq", "est": 22, "ui": {}, "def": {},
      "lock": "Befehl noch nicht am Gerät geprüft."},
     {"id": "snw", "name": "S/N bewertet", "sub": "A / CCIR", "opt": "B2", "status": "locked",
      "x": "none", "est": 45, "ui": {}, "def": {},
      "lock": "Bewertungsfilter A / CCIR noch nicht am Gerät geprüft."},
-    {"id": "wf", "name": "Wow & Flutter", "sub": "DIN 45507 · 3150 Hz", "opt": "B9", "status": "locked",
+    {"id": "wf", "name": "Wow & Flutter", "sub": "DIN · NAB · JIS (WRMS) + Speed", "opt": "B9", "status": "test",
+     "band": True, "x": "time", "est": 4,
+     "ui": {"band": True, "sollf": True, "dauer": True, "wfnorm": True},
+     "def": {"lp22": True, "hp22": False, "rng": "AUTO", "ch": "L", "sollf": 3000, "dauer": 30, "wfnorm": "JIS"},
+     "note": "Speed-/Flutter-Messband abspielen, dann starten. Misst W&F bewertet (WTD) nach gewählter Norm, dazu "
+             "Frequenz und Geschwindigkeitsabweichung. JIS = WRMS (japanische Decks), DIN = Quasi-Peak 3150 Hz, "
+             "NAB = Mittelwert. Die ersten 6 s zählen nicht (Einschwingen). Erster Lauf = Verifikation."},
+    {"id": "phase", "name": "Phase L–R", "sub": "PHASE(ON) · Sonderverkabelung", "opt": "B6", "status": "locked",
      "x": "none", "est": 30, "ui": {}, "def": {},
-     "lock": "Noch nicht am Gerät geprüft; benötigt Messband oder Messplatte 3150 Hz."},
-    {"id": "phase", "name": "Azimut / Phase", "sub": "10 kHz · L/R", "opt": "B6", "status": "locked",
-     "x": "none", "est": 30, "ui": {}, "def": {},
-     "lock": "Noch nicht am Gerät geprüft; benötigt Azimut-Messband."},
+     "lock": "Laut Handbuch 2.3.1.8 nur mit zusätzlicher Verkabelung (Differenz auf symmetrischen Eingang R). "
+             "Für Azimut 'Azimut live' (Pegelmaximum, L≈R) nutzen."},
 ]
 BY_ID = {p["id"]: p for p in PROGRAMS}
 
@@ -112,9 +138,80 @@ def _db(a, b):
         return None
 
 
+# Bandmessung: Ende erkennen, wenn so lange kein gueltiger Ton mehr kommt
+BAND_PAUSE_S = 20.0
+BAND_MIN_U = 0.5e-3          # unter 0,5 mV gilt als "kein Ton" (Pause zwischen Stufen)
+BAND_CHECK_JEDE = 10         # alle n Werte ++spoll (Flut-Schutz)
+WF_EINSCHWING_S = 6.0        # W&F-Gleichrichter (Quasi-Peak/RMS) einschwingen lassen
+WF_NORMEN = ("DIN", "NAB", "JIS")
+
+
+def run_band(u, prog, p, emit, log, stop):
+    """Bandmessungen: einmal einstellen (Generator aus), dann Werte im Takt
+    des UPA lesen, bis Dauer, Stop, Bandende (bfg) oder Abbruch."""
+    pid = prog["id"]
+    chans = p["channels"]
+    if pid == "wf":
+        mode, func = "LEV/FREQ/FNCT", [f"WOWFLUTTER({p['wfnorm']} WTD)"]
+    else:
+        mode, func = "LEV/FREQ", []
+    err = u.band_setup(CH[chans[0]][1], mode, _filters(p), func=func, rng="AUTO")
+    for c in getattr(u, "neu_ok", []):
+        log(f"  [OK] neuer Befehl angenommen: {c}")
+    if err:
+        emit({"ch": chans[0], "x": 0, "t": 0, "abbruch": err, "raw": "", "f": None, "u": None, "u_true": None})
+        return
+    log(f"  Analysator eingestellt (Generator aus), lese Werte – Kanal {'/'.join(chans)} ...")
+    t0 = time.time()
+    k = 0
+    ton_gesehen, ruhe_seit = False, None
+    while not stop() and time.time() - t0 < p["dauer"]:
+        ch = chans[k % len(chans)]
+        u.band_input(CH[ch][1])
+        r = u.band_sample()
+        t = round(time.time() - t0, 1)
+        if (pid == "bfg" and ton_gesehen and r["abbruch"]
+                and r["abbruch"].startswith("Kein Messwert")):
+            log("  Bandende erkannt (kein Messwert mehr) – Messung beendet.")
+            return
+        r["freq_soll"] = p.get("sollf")
+        extra = {"t": t}
+        f = r.get("hz")
+        if pid in ("bspeed", "wf") and f:
+            extra["dev_pct"] = (f - p["sollf"]) / p["sollf"] * 100
+        if pid == "wf":
+            extra["wf_pc"] = r.get("values", {}).get("FNCT")
+            extra["wf_line"] = r.get("lines", {}).get("FNCT")
+            extra["ein"] = t < WF_EINSCHWING_S
+        emit(_pt(ch, t, r, p, **extra))
+        if r["abbruch"]:
+            return
+        k += 1
+        if k % BAND_CHECK_JEDE == 0:
+            fehler, sp = u.band_check()
+            if fehler:
+                log("ABBRUCH: " + fehler)
+                return
+            if sp != "0":
+                log(f"  Hinweis: spoll={sp!r} nach {k} Werten (Messung läuft weiter)")
+        if pid == "bfg":
+            gueltig = bool(f) and (r.get("volt") or 0) > BAND_MIN_U
+            if gueltig:
+                ton_gesehen, ruhe_seit = True, None
+            elif ton_gesehen:
+                ruhe_seit = ruhe_seit or time.time()
+                if time.time() - ruhe_seit > BAND_PAUSE_S:
+                    log(f"  Bandende erkannt ({BAND_PAUSE_S:.0f} s kein Ton) – Messung beendet.")
+                    return
+    if not stop():
+        log(f"  Messdauer {p['dauer']:.0f} s erreicht.")
+
+
 def run(u, prog, p, emit, log, stop):
     """Fuehrt Programm prog mit Parametern p aus. emit(punkt) je Ergebnis.
     Bricht bei erstem Abbruch ab (keine Folgefehler)."""
+    if prog.get("band"):
+        return run_band(u, prog, p, emit, log, stop)
     pid = prog["id"]
     flt = _filters(p)
     rng = p["rng"]

@@ -381,6 +381,10 @@ tr.new td{animation:flash 1s}
         <div class="f-freqs cust log"><label>Stopp (Hz)</label><input id="fe" type="number" value="20000"></div>
         <div class="f-freqs cust log"><label>Punkte</label><input id="fn" type="number" value="21"></div>
         <div class="f-freqs cust list" style="grid-column:span 4"><label>Liste (Hz)</label><input id="fl" value="100, 1000, 10000"></div>
+        <div class="f-wfn hide"><label>W&amp;F-Norm (bewertet)</label><select id="wfn"><option value="JIS">JIS · WRMS · 3 kHz</option><option value="DIN">DIN 45507 · Quasi-Peak · 3,15 kHz</option><option value="NAB">NAB · Mittelwert · 3 kHz</option></select></div>
+        <div class="f-sollf hide"><label>Sollfrequenz Band (Hz)</label><input id="sollf" type="number" value="3000"></div>
+        <div class="f-bezug hide"><label>Bezug 0 dB (Hz)</label><input id="bezug" type="number" value="315"></div>
+        <div class="f-dauer hide"><label>Dauer max. (s)</label><input id="dauer" type="number" value="30"></div>
         <div class="f-lsw"><label>Startpegel (V)</label><input id="ls" type="number" step="0.01" value="0.05"></div>
         <div class="f-lsw"><label>Endpegel (V)</label><input id="le" type="number" step="0.01" value="1"></div>
         <div class="f-lsw"><label>Punkte</label><input id="ln" type="number" value="8"></div>
@@ -624,7 +628,8 @@ const chSel=()=>document.querySelector("#chSeg .on").dataset.v;
 const BADGE={ok:"GETESTET",test:"VERIFIKATION",locked:"GESPERRT"};
 function buildMenu(){
   const m=$("menu");
-  PROGS.forEach(p=>{ const b=document.createElement("button"); b.className="tile "+(p.status==="locked"?"locked":""); b.dataset.id=p.id;
+  /* gesperrte Programme nicht anzeigen (Platz in der Leiste) */
+  PROGS.filter(p=>p.status!=="locked").forEach(p=>{ const b=document.createElement("button"); b.className="tile "+(p.status==="locked"?"locked":""); b.dataset.id=p.id;
     b.title=p.lock||p.note||""; b.innerHTML=`<span class="o">${p.opt}</span><span class="n">${esc(p.name)}</span><span class="s">${esc(p.sub)}</span><span class="b ${p.status}">${BADGE[p.status]}</span>`;
     b.onclick=()=>select(p.id,true); m.appendChild(b); });
   const f=document.createElement("button"); f.className="tile fluke"; f.dataset.id="ruhe";
@@ -670,6 +675,8 @@ function select(id,user){
   document.querySelectorAll("#chSeg button").forEach(b=>b.classList.toggle("on",b.dataset.v===(d.ch||"L")));
   if(d.preset) $("preset").value=d.preset; if(d.level!=null) $("lev").value=d.level; if(d.fixfreq) $("fix").value=d.fixfreq;
   if(d.lstart){ $("ls").value=d.lstart; $("le").value=d.lstop; $("ln").value=d.ln; }
+  if(d.sollf) $("sollf").value=d.sollf; if(d.dauer) $("dauer").value=d.dauer; if(d.bezug) $("bezug").value=d.bezug; if(d.wfnorm) $("wfn").value=d.wfnorm;
+  if(p.band){ $("att").value="1"; $("rng").value="AUTO"; }
   const n=$("note"); n.className="note "+(p.status==="test"?"test":""); n.textContent=(p.status==="test"?"⚠ ":"ℹ ")+p.note;
   try{localStorage.setItem("upa_prog",id);}catch(e){}
   paintFields();
@@ -683,15 +690,20 @@ function paintFields(){
   document.querySelectorAll(".f-level").forEach(e=>e.classList.toggle("hide",!ui.level));
   document.querySelectorAll(".f-fix").forEach(e=>e.classList.toggle("hide",!ui.fixfreq));
   document.querySelectorAll(".f-lsw").forEach(e=>e.classList.toggle("hide",!ui.levelsweep));
+  [["f-wfn","wfnorm"],["f-sollf","sollf"],["f-bezug","bezug"],["f-dauer","dauer"]].forEach(([c,k])=>document.querySelectorAll("."+c).forEach(e=>e.classList.toggle("hide",!ui[k])));
   document.querySelectorAll(".f-freqs").forEach(e=>{ const c=e.classList.contains("cust"); e.classList.toggle("hide",!ui.freqs||(c&&!e.classList.contains(v))); });
   const nch=chSel()==="LR"?2:1; let html="", n=1;
   if(ui.freqs){ const fl=freqs(); n=fl.length; html=fl.map(f=>`<span class="chip">${fmtF(f)}</span>`).join(""); }
   else if(ui.levelsweep){ const l=levels(); n=l.length; html=l.map(x=>`<span class="chip">${fmtV(x)}V</span>`).join(""); }
+  else if(ui.band){ html=`<span class="chip">Quelle Messband · Generator aus</span><span class="chip">max. ${$("dauer").value} s</span>`+
+    (ui.sollf?`<span class="chip">Soll ${fmtF(+$("sollf").value)} Hz</span>`:"")+(ui.wfnorm?`<span class="chip">W&amp;F ${$("wfn").value} WTD</span>`:"");
+    $("chips").innerHTML=html; return; }
   else html=`<span class="chip">${fmtF(+$("fix").value)} Hz · ${$("lev").value} V</span>`;
   const tot=n*nch; html+=`<span class="chip" style="border-color:transparent;color:var(--mut)">${tot} Messung${tot>1?"en":""} · ca. ${Math.max(1,Math.ceil(tot*SEL.est/60))} min</span>`;
   $("chips").innerHTML=html;
 }
-["preset","fs","fe","fn","fl","ls","le","ln","fix","lev"].forEach(id=>$(id).addEventListener("input",paintFields));
+["preset","fs","fe","fn","fl","ls","le","ln","fix","lev","sollf","bezug","dauer"].forEach(id=>$(id).addEventListener("input",paintFields));
+$("wfn").addEventListener("change",()=>{ $("sollf").value=$("wfn").value==="DIN"?3150:3000; paintFields(); });
 
 /* ---------------- Diagramme ---------------- */
 const NS="http://www.w3.org/2000/svg";
@@ -701,12 +713,15 @@ function niceTicks(lo,hi,n=5){const span=hi-lo||1,st=Math.pow(10,Math.floor(Math
 function drawChart(svg,series,o){
   svg.innerHTML="";const W=svg.clientWidth||800,H=svg.clientHeight||300;svg.setAttribute("viewBox",`0 0 ${W} ${H}`);
   const L=66,R=18,T=o.top||30,B=28,pw=W-L-R,ph=H-T-B;
-  const lx0=Math.log10(o.xmin), lx1=Math.log10(o.xmax), fx=x=>L+(Math.log10(x)-lx0)/(lx1-lx0)*pw;
+  const lx0=Math.log10(o.xmin), lx1=Math.log10(o.xmax),
+    fx=o.lin?(x=>L+(x-o.xmin)/((o.xmax-o.xmin)||1)*pw):(x=>L+(Math.log10(x)-lx0)/(lx1-lx0)*pw);
   let ys=[];series.forEach(s=>s.pts.forEach(p=>p[1]!=null&&isFinite(p[1])&&ys.push(p[1])));
   let lo=o.defLo,hi=o.defHi;
   if(ys.length){const a=Math.min(...ys),b=Math.max(...ys),span=Math.max(b-a,o.minSpan),mid=(a+b)/2;lo=mid-span*.75;hi=mid+span*.75;}
   const fy=v=>T+(1-(v-lo)/(hi-lo))*ph, g=el("g",{});
-  for(let d=Math.pow(10,Math.floor(lx0));d<=o.xmax;d*=10){for(let k=1;k<10;k++){const x=d*k;if(x<o.xmin*0.999||x>o.xmax*1.001)continue;
+  if(o.lin) niceTicks(o.xmin,o.xmax,8).forEach(x=>{g.appendChild(el("line",{x1:fx(x),x2:fx(x),y1:T,y2:T+ph,stroke:"rgba(0,229,255,.14)"}));
+    g.appendChild(el("text",{x:fx(x),y:H-9,fill:"#5d8a98","font-size":11,"text-anchor":"middle","font-family":"Consolas,monospace"},o.xfmt(x)));});
+  else for(let d=Math.pow(10,Math.floor(lx0));d<=o.xmax;d*=10){for(let k=1;k<10;k++){const x=d*k;if(x<o.xmin*0.999||x>o.xmax*1.001)continue;
     g.appendChild(el("line",{x1:fx(x),x2:fx(x),y1:T,y2:T+ph,stroke:k===1?"rgba(0,229,255,.28)":"rgba(0,229,255,.08)"}));
     if([1,2,5].includes(k))g.appendChild(el("text",{x:fx(x),y:H-9,fill:"#5d8a98","font-size":11,"text-anchor":"middle","font-family":"Consolas,monospace"},o.xfmt(x)));}}
   niceTicks(lo,hi,o.nt||5).forEach(v=>{g.appendChild(el("line",{x1:L,x2:L+pw,y1:fy(v),y2:fy(v),stroke:"rgba(0,229,255,.12)"}));
@@ -717,7 +732,7 @@ function drawChart(svg,series,o){
   svg.appendChild(g);
   const defs=el("defs",{}),fl=el("filter",{id:"gl"+svg.id,x:"-20%",y:"-20%",width:"140%",height:"140%"});
   fl.appendChild(el("feGaussianBlur",{stdDeviation:3,result:"b"}));const mg=el("feMerge",{});mg.appendChild(el("feMergeNode",{in:"b"}));mg.appendChild(el("feMergeNode",{in:"SourceGraphic"}));fl.appendChild(mg);defs.appendChild(fl);svg.appendChild(defs);
-  series.forEach(s=>{const pts=s.pts.filter(p=>p[1]!=null&&isFinite(p[1])&&p[0]>0);if(!pts.length)return;
+  series.forEach(s=>{const pts=s.pts.filter(p=>p[1]!=null&&isFinite(p[1])&&(o.lin?p[0]!=null:p[0]>0));if(!pts.length)return;
     const d=pts.map((p,i)=>(i?"L":"M")+fx(p[0]).toFixed(1)+","+fy(p[1]).toFixed(1)).join("");
     svg.appendChild(el("path",{d,fill:"none",stroke:s.c,"stroke-width":s.w||2,"stroke-dasharray":s.dash||"",filter:s.glow?`url(#gl${svg.id})`:""}));
     if(s.dots)pts.forEach(p=>svg.appendChild(el("circle",{cx:fx(p[0]),cy:fy(p[1]),r:3.5,fill:"#01050a",stroke:s.c,"stroke-width":2})));});
@@ -735,10 +750,42 @@ function view(){
   const pts=(S&&S.points)||[], pid=(S&&S.meta&&S.meta.prog)||(SEL&&SEL.id)||"fr";
   const box2=$("box2"), cards=$("cards"), ch1=$("ch1");
   $("unit").classList.toggle("hide",pid!=="fr"); $("tunit").classList.toggle("hide",!(pid==="thdf"||pid==="thdl")); $("leg").classList.toggle("hide",!pts.some(p=>p.ch==="R"));
-  const single=pid==="gain"||pid==="sn";
+  const single=pid==="gain"||pid==="sn"||pid==="azi";
   cards.classList.toggle("hide",!single); ch1.classList.toggle("hide",single); box2.classList.toggle("hide",single);
   $("ctag").textContent=S&&S.meta&&S.meta.label?"// "+S.meta.label:"";
   const refU=ch=>{const p=pts.find(q=>q.ch===ch&&q.f_soll===1000&&q.u_true);return p&&p.u_true;};
+  const XT=()=>{const ts=pts.map(p=>p.t||0),b=Math.max(10,...ts);return {lin:1,xmin:0,xmax:b,xfmt:v=>v+"",xunit:"s"};};
+  if(pid==="bspeed"||pid==="wf"){
+    const ok=pts.filter(p=>!p.abbruch);
+    $("t1").textContent="GESCHWINDIGKEIT"; $("ctag").textContent="// Abweichung von "+fmtF(((S.meta||{}).params||{}).sollf||3000)+" Hz, %";
+    drawChart(ch1,mkSeries(byCh(ok.filter(p=>p.dev_pct!=null),p=>p.dev_pct,p=>p.t)),Object.assign({},XT(),{fmt:v=>v.toFixed(2),minSpan:.5,defLo:-1,defHi:1,top:34,ylab:"Δ SPEED  %"}));
+    if(pid==="wf"){ $("t2").textContent="WOW & FLUTTER "+(((S.meta||{}).params||{}).wfnorm||""); $("t2tag").textContent="// bewertet, % (erste 6 s Einschwingen)";
+      drawChart($("ch2"),mkSeries(byCh(ok.filter(p=>typeof p.wf_pc==="number"&&!p.ein),p=>p.wf_pc,p=>p.t),{w:1.8}),Object.assign({},XT(),{fmt:v=>v.toFixed(3),minSpan:.02,defLo:0,defHi:.1,nt:3,ylab:"W&F  %"})); }
+    else { $("t2").textContent="PEGEL"; $("t2tag").textContent="// V rms";
+      drawChart($("ch2"),mkSeries(byCh(ok,p=>p.u_true,p=>p.t),{w:1.8}),Object.assign({},XT(),{fmt:v=>v.toFixed(3),minSpan:.02,defLo:0,defHi:1,nt:3,ylab:"U  V"})); }
+    return;
+  }
+  if(pid==="bfg"){
+    const st=(S&&S.stufen)||[];
+    $("t1").textContent="WIEDERGABE-FREQUENZGANG"; $("ctag").textContent="// "+st.length+" Stufen erkannt · dB re Bezug";
+    const ser=["L","R"].map(ch=>({ch,pts:st.filter(x=>x.kanaele[ch]&&x.kanaele[ch].db!=null).map(x=>[x.f,x.kanaele[ch].db])})).filter(g=>g.pts.length);
+    drawChart(ch1,mkSeries(ser),Object.assign({},XF,{fmt:v=>v.toFixed(1),minSpan:3,defLo:-6,defHi:3,top:34,ylab:"dB re Bezug"}));
+    $("t2").textContent="BANDVERLAUF"; $("t2tag").textContent="// Einzelwerte, dBV über Zeit";
+    drawChart($("ch2"),mkSeries(byCh(pts.filter(p=>p.u>5e-4),p=>20*Math.log10(p.u),p=>p.t),{w:1.4,dots:1}),Object.assign({},XT(),{fmt:v=>v.toFixed(0),minSpan:10,defLo:-40,defHi:0,nt:3,ylab:"dBV"}));
+    return;
+  }
+  if(pid==="azi"){
+    $("t1").textContent="AZIMUT LIVE";
+    const ok=pts.filter(p=>!p.abbruch&&p.u>0), last=ch=>{const a=ok.filter(p=>p.ch===ch);return a[a.length-1];},
+      mx=ch=>Math.max(0,...ok.filter(p=>p.ch===ch).map(p=>p.u)), dbv=u=>u>0?20*Math.log10(u):null, L=last("L"), R=last("R");
+    const karte=(ch,p)=>{ if(!p) return `<div class="card"><h5>KANAL ${ch}</h5><div class="big" style="color:#2d5866;text-shadow:none">---</div></div>`;
+      const d=db(p.u,mx(ch)); return `<div class="card"><h5>KANAL ${ch} · ${p.f!=null?fmtF(p.f)+" Hz":"---"}</h5><div class="big">${dbv(p.u).toFixed(2)}<small>dBV</small></div>
+      <dl><dt>Pegel</dt><dd>${fmtU(p.u)}</dd><dt>Maximum</dt><dd>${fmtU(mx(ch))}</dd><dt>Abstand zum Max.</dt><dd style="color:${d<-0.3?"var(--or)":"var(--grn)"}">${d.toFixed(2)} dB</dd></dl></div>`; };
+    const dlr=L&&R?db(L.u,R.u):null;
+    cards.innerHTML=karte("L",L)+karte("R",R)+`<div class="card"><h5>L – R</h5><div class="big" style="${dlr!=null&&Math.abs(dlr)>1?"color:var(--or);text-shadow:none":""}">${dlr!=null?(dlr>=0?"+":"")+dlr.toFixed(2):"---"}<small>dB</small></div>
+      <dl><dt>Ziel</dt><dd>beide Kanäle am Maximum, L ≈ R</dd><dt>Werte</dt><dd>${ok.length}</dd></dl></div>`;
+    return;
+  }
   if(pid==="fr"){
     $("t1").textContent="FREQUENZGANG";
     const yf=p=>p.u_true==null?null:unit==="V"?p.u_true:unit==="dBV"?20*Math.log10(p.u_true):db(p.u_true,refU(p.ch));
@@ -781,6 +828,10 @@ const COLS={
   thdf:[["#",p=>p.i],["K",p=>p.ch],["HZ",p=>fmtF(p.x)],["U AUS",p=>n4(p.u_true)],["THD+N %",p=>{const t=thd(p);return t.pc!=null?t.pc.toFixed(4):"---";}],["DB",p=>{const t=thd(p);return t.db!=null?t.db.toFixed(1):"---";}]],
   thdl:[["#",p=>p.i],["K",p=>p.ch],["U GEN",p=>n4(p.x)],["U AUS",p=>n4(p.u_true)],["P W",p=>p.p_w!=null?p.p_w.toFixed(2):"–"],["THD+N %",p=>{const t=thd(p);return t.pc!=null?t.pc.toFixed(4):"---";}],["DB",p=>{const t=thd(p);return t.db!=null?t.db.toFixed(1):"---";}]],
   sn:[["#",p=>p.i],["K",p=>p.ch],["REFERENZ",p=>fmtU(p.ref_u)],["RAUSCHEN",p=>fmtU(p.noise_u)],["S/N DB",p=>p.sn_db!=null?p.sn_db.toFixed(1):"---"]],
+  bspeed:[["#",p=>p.i],["K",p=>p.ch],["T S",p=>p.t!=null?p.t.toFixed(0):"–"],["HZ",p=>p.f!=null?p.f.toFixed(1):"---"],["Δ %",p=>p.dev_pct!=null?(p.dev_pct>=0?"+":"")+p.dev_pct.toFixed(2):"---"],["U V",p=>n4(p.u_true)]],
+  wf:[["#",p=>p.i],["K",p=>p.ch],["T S",p=>p.t!=null?p.t.toFixed(0):"–"],["HZ",p=>p.f!=null?p.f.toFixed(1):"---"],["Δ %",p=>p.dev_pct!=null?(p.dev_pct>=0?"+":"")+p.dev_pct.toFixed(2):"---"],["W&F %",p=>typeof p.wf_pc==="number"?(p.ein?"("+p.wf_pc.toFixed(3)+")":p.wf_pc.toFixed(3)):"---"]],
+  bfg:[["#",p=>p.i],["K",p=>p.ch],["T S",p=>p.t!=null?p.t.toFixed(0):"–"],["HZ",p=>p.f!=null?fmtF(p.f):"---"],["U",p=>fmtU(p.u_true)]],
+  azi:[["#",p=>p.i],["K",p=>p.ch],["T S",p=>p.t!=null?p.t.toFixed(0):"–"],["HZ",p=>p.f!=null?fmtF(p.f):"---"],["U",p=>fmtU(p.u_true)],["DBV",p=>p.u>0?(20*Math.log10(p.u)).toFixed(2):"---"]],
   xt:[["#",p=>p.i],["RICHT.",p=>p.dir||p.ch],["HZ",p=>fmtF(p.x)],["REF",p=>fmtU(p.ref_u)],["ÜBERSPR.",p=>fmtU(p.xt_u)],["DB",p=>p.xt_db!=null?p.xt_db.toFixed(1):"---"]]};
 function table(){
   const pts=(S&&S.points)||[], pid=(S&&S.meta&&S.meta.prog)||(SEL&&SEL.id)||"fr",
@@ -806,16 +857,19 @@ function render(){
   $("pAd").className="pill "+grp("ADAPTER"); $("pAd").title=S.version?("Firmware: "+S.version+(S.fw_getestet?" (getestet)":" – NICHT getestet")):""; $("pUp").className="pill "+grp("UPA"); $("pMe").className="pill "+(S.phase==="measuring"?"run":S.boot_ok?"ok":"");
   $("go").disabled=!S.boot_ok||S.busy||!SEL; $("stop").disabled=!S.busy; $("csv").disabled=!S.last_csv; const FB=!!(S.fluke&&S.fluke.busy), FREC=FB&&S.fluke.modus==="rec"; $("reboot").disabled=S.busy; $("toMenu").disabled=S.busy||FREC||S.phase==="booting"; $("dut").classList.toggle("dis",!!S.busy||FB); $("prot").disabled=S.busy||FB||!S.pruefling; fRender();
   const pts=S.points||[], n=(S.meta&&S.meta.n)||0, est=(PROGS.find(p=>p.id===(S.meta&&S.meta.prog))||{est:22}).est;
-  if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
+  const BD=S.meta&&S.meta.params&&S.meta.params.dauer, tl=pts.length?(pts[pts.length-1].t||0):0;
+  if(S.phase==="measuring"&&BD){$("pg").style.width=Math.min(100,tl/BD*100)+"%";$("pgt").textContent=`Band läuft · ${pts.length} Werte · ${Math.round(tl)} / max. ${BD} s`;}
+  else if(S.phase==="measuring"){$("pg").style.width=(n?pts.length/n*100:0)+"%";$("pgt").textContent=`Messung ${Math.min(pts.length+1,n)}/${n} · Rest ca. ${Math.ceil((n-pts.length)*est/60)} min`;}
   else if(pts.length){$("pg").style.width="100%";$("pgt").textContent=`${pts.length} Messungen fertig`;}
   else $("pgt").textContent=S.boot_ok?"bereit":"bereit nach Initialisierung";
   const lp=pts[pts.length-1], fn=lp&&lp.fnct_line;
   $("rU").innerHTML=lp&&lp.u_true!=null?(lp.u_true<1e-3?(+(lp.u_true*1e6).toPrecision(3))+"<small>µV</small>":lp.u_true<0.1?(+(lp.u_true*1e3).toPrecision(4))+"<small>mV</small>":lp.u_true.toFixed(4)+"<small>V</small>"):"-.----<small>V</small>";
-  $("rFk").textContent=fn?"THD+N":"FREQUENZ";
-  $("rF").innerHTML=fn?(()=>{const t=thd(lp);return t.pc!=null?`${t.pc.toFixed(4)}<small>% · ${t.db.toFixed(1)} dB</small>`:"---";})():
+  const wfv=lp&&typeof lp.wf_pc==="number";
+  $("rFk").textContent=wfv?"W&F "+((S.meta.params||{}).wfnorm||"")+(lp.ein?" · EINSCHWINGEN":""):fn?"THD+N":"FREQUENZ";
+  $("rF").innerHTML=wfv?`${lp.wf_pc.toFixed(3)}<small>%${lp.f!=null?" · "+lp.f.toFixed(1)+" Hz":""}</small>`:fn?(()=>{const t=thd(lp);return t.pc!=null?`${t.pc.toFixed(4)}<small>% · ${t.db.toFixed(1)} dB</small>`:"---";})():
     (lp&&lp.f!=null?(lp.f>=1000?(lp.f/1000).toFixed(3)+"<small>kHz</small>":lp.f.toFixed(2)+"<small>Hz</small>"):"-----<small>Hz</small>");
   $("rN").innerHTML=(pts.length?String(pts.length).padStart(2,"0"):"--")+`<small>/${n?String(n).padStart(2,"0"):"--"}</small>`;
-  if(S.phase==="measuring"&&S.meta&&S.meta.params){ const pr=S.meta.params;
+  if(S.phase==="measuring"&&S.meta&&S.meta.params&&!S.meta.params.dauer){ const pr=S.meta.params;
     const list=pr.freqs||pr.levels||[pr.fixfreq||1000], isL=!pr.freqs&&!!pr.levels, nch=(pr.channels||["L"]).length, k=pts.length,
       ci=Math.floor(k/list.length), ai=k%list.length;
     const cs=k+"|"+S.meta.start; if(cs!==chipSig){ chipSig=cs;
@@ -857,7 +911,8 @@ $("go").onclick=async()=>{
   Snd.init(); if(!SEL)return;
   const body={prog:SEL.id,channels:chSel(),rng:$("rng").value,lp22:$("tLP").classList.contains("on"),hp22:$("tHP").classList.contains("on"),
     atten:$("att").value==="p78"?"p78":+$("att").value,load:+$("load").value||0,label:$("lbl").value,level:+$("lev").value,fixfreq:+$("fix").value,
-    freqs:SEL.ui.freqs?freqs():[],lstart:+$("ls").value,lstop:+$("le").value,ln:+$("ln").value};
+    freqs:SEL.ui.freqs?freqs():[],lstart:+$("ls").value,lstop:+$("le").value,ln:+$("ln").value,
+    sollf:+$("sollf").value,dauer:+$("dauer").value,bezug:+$("bezug").value,wfnorm:$("wfn").value};
   const r=await api("/api/run",body);
   if(!r.ok){addLog(["FEHLER: "+(r.error||"Start abgelehnt")]);Snd.denied();return;}
   Snd.blip();
