@@ -102,6 +102,8 @@ class App:
                 "phase": self.phase, "busy": self.busy, "boot_ok": self.boot_ok,
                 "port": self.port, "addr": self.addr, "version": self.version,
                 "steps": self.steps, "points": self.points, "meta": self.sweep_meta,
+                "stufen": (report.band_stufen(self.points, (self.sweep_meta.get("params") or {}).get("bezug"))
+                           if self.sweep_meta.get("prog") == "bfg" else None),
                 "log": self.log_lines[since:], "log_len": len(self.log_lines),
                 "last_csv": os.path.basename(self.last_csv) if self.last_csv else None,
                 "sound": bool(find_sound()), "p78": bool(load_p78()),
@@ -397,7 +399,10 @@ class App:
             finally:
                 u.close()
                 self.log("Freigabe: REM/LLD aus.")
-                self.ablegen()
+                if prog.get("live"):
+                    self.log("Live-Anzeige – nichts gespeichert.")
+                else:
+                    self.ablegen()
                 with self.lock:
                     self.phase = "ready"
         return self._start(job, "measuring")
@@ -419,7 +424,8 @@ class App:
         png = None
         try:
             titel = f"{meta.get('name')} – {report.bezeichnung(pr)}"
-            if report.diagramm(meta.get("prog"), titel, pts, basis + ".png"):
+            if report.diagramm(meta.get("prog"), titel, pts, basis + ".png",
+                               (meta.get("params") or {}).get("bezug") or 315):
                 png = os.path.basename(basis + ".png")
                 self.log(f"Diagramm gespeichert: {png}")
         except Exception as e:
@@ -432,7 +438,7 @@ class App:
                 "png": png, "adapter": meta.get("adapter"), "software": __version__,
                 "parameter": {k: v for k, v in meta.get("params", {}).items()
                               if k not in ("atten_tab", "atten_tabs")},
-                "ergebnis": report.zusammenfassung(meta.get("prog"), pts),
+                "ergebnis": report.zusammenfassung(meta.get("prog"), pts, (meta.get("params") or {}).get("bezug")),
                 "abgebrochen": any(p.get("abbruch") for p in pts) or bool(self.stop_flag)})
         except Exception as e:
             self.log(f"messungen.json nicht aktualisiert: {e}")
@@ -469,7 +475,7 @@ class App:
 
 CSV_COLS = ["i", "ch", "x", "f_soll", "f", "u_soll", "u", "u_true", "p_w", "gain", "gain_db",
             "att_k", "fnct", "fnct_line", "versuche", "step", "ref_u", "ref_raw", "noise_u", "sn_db", "xt_u", "xt_db", "dir",
-            "abbruch", "raw"]
+            "t", "dev_pct", "wf_pc", "wf_line", "ein", "abbruch", "raw"]
 
 
 def validate_fluke(b):
@@ -695,6 +701,28 @@ def validate_run(body):
     if n > MAX_POINTS:
         raise ValueError(f"Maximal {MAX_POINTS} Punkte")
     p["n"] = max(n, 1) * len(channels)
+    if prog.get("band"):
+        # Bandmessung: Quelle = Messband, Generator aus, Bereich AUTO, kein Abschwaecher
+        if atten_tab or atten != 1:
+            raise ValueError("Bandmessungen ohne Abschwächer (Line-Ausgang des Decks direkt an den UPA)")
+        p["rng"] = "AUTO"
+        dauer = _f(body, "dauer", prog["def"].get("dauer", 30))
+        if not (10 <= dauer <= 3600):
+            raise ValueError("Dauer 10 bis 3600 s")
+        p["dauer"] = dauer
+        if ui.get("sollf"):
+            p["sollf"] = _f(body, "sollf", prog["def"].get("sollf", 3000))
+            if not (100 <= p["sollf"] <= 20000):
+                raise ValueError("Sollfrequenz 100 bis 20000 Hz")
+        if ui.get("bezug"):
+            p["bezug"] = _f(body, "bezug", prog["def"].get("bezug", 315))
+            if not (20 <= p["bezug"] <= 20000):
+                raise ValueError("Bezugsfrequenz 20 bis 20000 Hz")
+        if ui.get("wfnorm"):
+            p["wfnorm"] = str(body.get("wfnorm", prog["def"].get("wfnorm", "JIS")))
+            if p["wfnorm"] not in progs.WF_NORMEN:
+                raise ValueError("W&F-Norm DIN, NAB oder JIS")
+        p["n"] = 0           # offen: endet nach Zeit, Stop oder Bandende
     return prog, p
 
 

@@ -39,7 +39,9 @@ except Exception:
 
 PROG_NAMEN = {"fr": "Frequenzgang", "gain": "Pegel / Verstärkung", "thdf": "THD+N über Frequenz",
               "thdl": "THD+N über Pegel", "sn": "Störabstand (unbewertet)", "xt": "Kanaltrennung",
-              "ruhe": "Ruhestrom / Offset"}
+              "ruhe": "Ruhestrom / Offset", "bspeed": "Bandgeschwindigkeit",
+              "wf": "Gleichlauf (Wow & Flutter) und Geschwindigkeit",
+              "bfg": "Wiedergabe-Frequenzgang (Messband)"}
 
 
 def verfuegbar():
@@ -208,6 +210,18 @@ def einstellungen(e):
         t.append(f"Intervall {k(p.get('intervall') or 1, '{:g}')} s")
         return " · ".join(t)
     teile = []
+    if e["programm"] in ("bspeed", "wf", "bfg"):
+        teile.append("Quelle Messband (UPA-Generator aus)")
+        if e["programm"] == "wf":
+            teile.append(f"W&F {p.get('wfnorm', '')} bewertet")
+        if p.get("sollf"):
+            teile.append(f"Sollfrequenz {f_hz(p['sollf'])}")
+        if p.get("bezug"):
+            teile.append(f"Bezug 0 dB = Stufe bei {f_hz(p['bezug'])}")
+        filt = [n for key, n in (("lp22", "TP 22 kHz"), ("hp22", "HP 22 Hz")) if p.get(key)]
+        teile.append("Filter " + (" + ".join(filt) if filt else "aus"))
+        teile.append(f"max. Dauer {k(p.get('dauer'), '{:g}')} s")
+        return " · ".join(teile)
     if e["programm"] == "thdl":
         lv = p.get("levels") or []
         if lv:
@@ -269,8 +283,33 @@ def ruhe_tabelle(e):
     return ["Zeitpunkt", "Wert (mV)", "Soll (mV)", "Bewertung"], z, [2.2, 1.6, 1.6, 1.8]
 
 
-def werte_tabelle(prog, pts):
+def werte_tabelle(prog, pts, bezug=None):
     """Kopf, Zeilen, Spaltenanteile fuer die Messwert-Tabelle."""
+    if prog == "bfg":
+        z = []
+        for st in report.band_stufen(pts, bezug or 315):
+            for c in ("L", "R"):
+                kk = st["kanaele"].get(c)
+                if kk:
+                    z.append([f_hz(st["f"]) + (" (Bezug)" if st.get("bezug") else ""), c, u_v(kk["u"]),
+                              db(kk.get("db")) if kk.get("db") is not None else "–", str(kk["n"])])
+        return ["Stufe", "Kanal", "Pegel", "re Bezug (dB)", "Werte"], z, [2.2, 1, 1.8, 1.8, 1]
+    if prog in ("bspeed", "wf"):
+        ok = [p for p in pts if not p.get("abbruch")]
+        z = []
+        for p in ok:
+            zeile = [k(p.get("t"), "{:.0f}") + " s", p.get("ch") or "", f_hz(p.get("f")),
+                     k(p.get("dev_pct"), "{:+.2f}") if p.get("dev_pct") is not None else "–"]
+            if prog == "wf":
+                ein = report._wahr(p.get("ein"))
+                wv = p.get("wf_pc")
+                zeile.append(("(" + k(wv, "{:.3f}") + ")" if ein else k(wv, "{:.3f}"))
+                             if isinstance(wv, float) else "–")
+            z.append(zeile)
+        if prog == "wf":
+            return (["Zeit", "Kanal", "Frequenz", "Abweichung (%)", "W&F (%) – (…) = Einschwingen"], z,
+                    [1, 1, 1.8, 1.8, 2.6])
+        return ["Zeit", "Kanal", "Frequenz", "Abweichung (%)"], z, [1, 1, 2, 2]
     pts = [p for p in pts if not p.get("abbruch")]
     kan = lambda p: p.get("dir") or p.get("ch")
     if prog == "fr":
@@ -357,7 +396,7 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
         b.append(("grau", zeile))
         if e.get("png") and os.path.exists(os.path.join(ordner, e["png"])):
             b.append(("bild", os.path.join(ordner, e["png"])))
-        kopf, zeilen, ant = ruhe_tabelle(e) if prog == "ruhe" else werte_tabelle(prog, pts)
+        kopf, zeilen, ant = ruhe_tabelle(e) if prog == "ruhe" else werte_tabelle(prog, pts, (e.get("parameter") or {}).get("bezug"))
         b.append(("tabelle", kopf, zeilen, ant, False))
         b.append(("klein", f"Messdatei: {e['csv']}"))
     if bemerkung.strip():

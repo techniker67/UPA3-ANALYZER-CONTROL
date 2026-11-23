@@ -140,7 +140,67 @@ def _ref_1k(pts):
     return min(pts, key=lambda p: abs(math.log10(max(p.get("f") or p["x"], 1) / 1000)))
 
 
-def zusammenfassung(prog_id, points):
+# ---------------------------------------------------------------------------
+# Bandmessungen
+BAND_MIN_U = 0.5e-3          # wie upa_programs: darunter = kein Ton
+STUFE_TOL = 0.03             # Werte innerhalb +-3 % Frequenz = dieselbe Stufe
+
+
+def _wahr(v):
+    return v is True or v == "True"
+
+
+def _median(werte):
+    w = sorted(werte)
+    n = len(w)
+    return None if not n else w[n // 2] if n % 2 else (w[n // 2 - 1] + w[n // 2]) / 2
+
+
+def band_gueltig(pts):
+    return [p for p in pts if not p.get("abbruch") and p.get("f") and (p.get("u") or 0) > BAND_MIN_U]
+
+
+def band_stufen(points, bezug=None):
+    """Frequenzstufen eines Messbands aus den Einzelwerten: Werte mit gleicher
+    Frequenz (+-3 %) werden je Kanal zusammengefasst (Median). Die Stufe am
+    naechsten an der Bezugsfrequenz ist 0 dB. Liefert Liste
+    [{"f", "n", "kanaele": {ch: {"u", "n", "db"}}}] nach Frequenz sortiert."""
+    stufen = []
+    for p in band_gueltig(points):
+        f = p["f"]
+        st = next((s for s in stufen if abs(f - s["fm"]) / s["fm"] <= STUFE_TOL), None)
+        if st is None:
+            st = {"fm": f, "fs": [], "werte": {}}
+            stufen.append(st)
+        st["fs"].append(f)
+        st["fm"] = _median(st["fs"])
+        st["werte"].setdefault(p["ch"], []).append(p.get("u_true") or p["u"])
+    stufen = [s for s in stufen if len(s["fs"]) >= 1]
+    stufen.sort(key=lambda s: s["fm"])
+    out = []
+    for s in stufen:
+        out.append({"f": s["fm"], "n": len(s["fs"]),
+                    "kanaele": {c: {"u": _median(w), "n": len(w)} for c, w in s["werte"].items()}})
+    if out and bezug:
+        ref = min(out, key=lambda s: abs(math.log10(s["f"] / bezug)))
+        for c in ("L", "R"):
+            ru = (ref["kanaele"].get(c) or {}).get("u")
+            for s in out:
+                k = s["kanaele"].get(c)
+                if k and ru:
+                    k["db"] = 20 * math.log10(k["u"] / ru)
+        for s in out:
+            s["bezug"] = s is ref
+    return out
+
+
+def wf_werte(pts):
+    """W&F-Werte nach dem Einschwingen."""
+    return [p for p in pts if not p.get("abbruch") and p.get("wf_pc") is not None
+            and isinstance(p.get("wf_pc"), float) and not _wahr(p.get("ein"))]
+
+
+def zusammenfassung(prog_id, points, bezug=None):
     """Kernergebnisse je Kanal als Liste von {kanal, werte:[(Name, Text)]}."""
     out = []
     for c in _kanaele(points):
@@ -188,6 +248,32 @@ def zusammenfassung(prog_id, points):
             if ok:
                 mx = max(ok, key=lambda p: p["xt_db"])
                 w = [("Übersprechen schlechtester Wert", f"{mx['xt_db']:.1f} dB bei {_fmt_f(mx['x'])}")]
+        elif prog_id in ("bspeed", "wf"):
+            if prog_id == "wf":
+                ok = wf_werte(pts)
+                if ok:
+                    wf = [p["wf_pc"] for p in ok]
+                    w += [("W&F max.", f"{max(wf):.3f} %"), ("W&F Mittel", f"{sum(wf) / len(wf):.3f} %"),
+                          ("W&F min.", f"{min(wf):.3f} %")]
+            ok = [p for p in pts if not p.get("abbruch") and p.get("dev_pct") is not None]
+            if ok:
+                d = [p["dev_pct"] for p in ok]
+                fm = sum(p["f"] for p in ok) / len(ok)
+                w += [("Frequenz Mittel", f"{fm:.1f} Hz"),
+                      ("Geschwindigkeit", f"{sum(d) / len(d):+.2f} %"),
+                      ("Schwankung", f"{min(d):+.2f} / {max(d):+.2f} %"),
+                      ("Drift", f"{d[-1] - d[0]:+.2f} % in {ok[-1].get('t', 0) - ok[0].get('t', 0):.0f} s")]
+        elif prog_id == "bfg":
+            st = band_stufen(points, bezug or 315)
+            db = [s["kanaele"][c]["db"] for s in st if c in s["kanaele"] and s["kanaele"][c].get("db") is not None]
+            if db:
+                ref = next((s for s in st if s.get("bezug")), None)
+                r3 = lambda f: float(f"{f:.3g}")
+                w = [("Stufen erkannt", str(sum(1 for s in st if c in s["kanaele"]))),
+                     ("Abweichung", f"{min(db):+.2f} / {max(db):+.2f} dB"),
+                     ("Bereich", f"{_fmt_f(r3(st[0]['f']))} – {_fmt_f(r3(st[-1]['f']))}")]
+                if ref and c in ref["kanaele"]:
+                    w.insert(0, ("Bezug (0 dB)", f"{_fmt_f(r3(ref['f']))}: {_fmt_u(ref['kanaele'][c]['u'])}"))
         if any(p.get("abbruch") for p in pts):
             w.append(("Hinweis", "Messung abgebrochen"))
         out.append({"kanal": c, "werte": [(n, _komma(v)) for n, v in w]})
@@ -233,8 +319,77 @@ def _dekaden(ax, werte):
     return lo, hi
 
 
-def diagramm(prog_id, titel, points, pfad):
+def diagramm_band(prog_id, titel, points, pfad, bezug=315):
+    """Bandmessungen: bfg = Pegel re Bezug ueber f (Stufen); bspeed/wf = Verlauf ueber Zeit."""
+    if plt is None:
+        return False
+    if prog_id == "wf":
+        fig, (ax, ax2) = plt.subplots(2, 1, figsize=(8, 4.6), dpi=DPI, sharex=True)
+    else:
+        fig, ax = plt.subplots(figsize=(8, 3.6), dpi=DPI)
+        ax2 = None
+    try:
+        if prog_id == "bfg":
+            st = band_stufen(points, bezug)
+            for c in ("L", "R"):
+                xs = [s["f"] for s in st if (s["kanaele"].get(c) or {}).get("db") is not None]
+                ys = [s["kanaele"][c]["db"] for s in st if (s["kanaele"].get(c) or {}).get("db") is not None]
+                if xs:
+                    ax.plot(xs, ys, marker="o", ms=3.5, lw=1.6, color=FARBE.get(c), label=f"Kanal {c}")
+            ax.set_xscale("log")
+            ax.set_xlabel("Frequenz (Hz)")
+            ax.xaxis.set_major_formatter(FuncFormatter(_logfmt_f))
+            ax.set_ylabel("Pegel re Bezug (dB)")
+            lo, hi = ax.get_ylim()
+            ax.set_ylim(min(lo, -3.0), max(hi, 3.0))
+            ax.yaxis.set_major_formatter(FuncFormatter(_zahl))
+        else:
+            ziel = ax2 if ax2 is not None else ax
+            if ax2 is not None:
+                for c in _kanaele(points):
+                    ok = wf_werte([p for p in points if p.get("ch") == c])
+                    if ok:
+                        ax.plot([p["t"] for p in ok], [p["wf_pc"] for p in ok], marker="o", ms=3, lw=1.4,
+                                color=FARBE.get(c), label=f"W&F Kanal {c}")
+                ax.set_ylabel("W&F (%)")
+                ax.set_ylim(bottom=0)
+                ax.yaxis.set_major_formatter(FuncFormatter(_zahl))
+                ax.grid(True, color="#c9ced6", lw=0.7)
+                ax.legend(fontsize=8, frameon=False)
+                ax.tick_params(labelsize=8)
+            for c in _kanaele(points):
+                ok = [p for p in points if p.get("ch") == c and not p.get("abbruch") and p.get("dev_pct") is not None]
+                if ok:
+                    ziel.plot([p["t"] for p in ok], [p["dev_pct"] for p in ok], marker="o", ms=3, lw=1.4,
+                              color=FARBE.get(c), label=f"Geschwindigkeit Kanal {c}")
+            ziel.axhline(0, color="#7F7F7F", lw=0.8)
+            ziel.set_xlabel("Zeit (s)")
+            ziel.set_ylabel("Abweichung (%)")
+            lo, hi = ziel.get_ylim()
+            ziel.set_ylim(min(lo, -0.5), max(hi, 0.5))
+            ziel.yaxis.set_major_formatter(FuncFormatter(_zahl))
+            ziel.xaxis.set_major_formatter(FuncFormatter(_zahl))
+            if ax2 is not None:
+                ziel.grid(True, color="#c9ced6", lw=0.7)
+                ziel.tick_params(labelsize=8)
+                ziel.legend(fontsize=8, frameon=False)
+        ax.grid(True, which="major", color="#c9ced6", lw=0.7)
+        ax.grid(True, which="minor", color="#e6e9ee", lw=0.5)
+        ax.set_title(titel, fontsize=10.5, loc="left", color="#2E5A88", fontweight="bold")
+        ax.tick_params(labelsize=8)
+        if ax2 is None:
+            ax.legend(fontsize=8, frameon=False)
+        fig.tight_layout()
+        fig.savefig(pfad, facecolor="white")
+        return True
+    finally:
+        plt.close(fig)
+
+
+def diagramm(prog_id, titel, points, pfad, bezug=315):
     """PNG fuer Programme mit Kurve. Liefert True, wenn geschrieben."""
+    if prog_id in ("bfg", "bspeed", "wf"):
+        return diagramm_band(prog_id, titel, points, pfad, bezug)
     if plt is None or prog_id not in ("fr", "thdf", "thdl", "xt"):
         return False
     fig, ax = plt.subplots(figsize=(8, 3.6), dpi=DPI)

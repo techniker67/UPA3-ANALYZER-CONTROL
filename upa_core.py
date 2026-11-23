@@ -415,6 +415,92 @@ class UPA:
             info["abbruch"] = "Flut nach dem Lesen - Messung gestoppt (Adapter-USB kurz ziehen)"
         return info
 
+    # -----------------------------------------------------------------------
+    # Bandmessungen (Quelle = Messband, UPA-Generator AUS)
+    # Neu ab v1.6.0 und noch in Verifikation: EINMAL einstellen, danach je
+    # Messwert nur TRIGGER(SINGLE) + Lesen (Kernregel: nach dem Trigger nur
+    # lesen, erst danach neu einstellen). Gelesen wird per _read_value (wartet,
+    # bis der Wert fertig ist) - also weder zu frueh noch zu oft.
+    # -----------------------------------------------------------------------
+    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO"):
+        """Analysator fuer Bandmessungen einstellen. Liefert None oder Abbruchtext.
+        Ungepruefte Befehle einzeln senden und per ++spoll pruefen (wie measure)."""
+        self.ifc()
+        self._w("++clr"); time.sleep(0.3)
+        self.ser.reset_input_buffer()
+        self.ensure_remote()
+        self.neu_ok = []
+        self._w("STRING(SINGLE ALPHANUM)"); time.sleep(0.25)
+        self._w(DELIM_CMD); time.sleep(0.25)
+        sp = self.spoll()
+        if sp != "0":
+            return f"{DELIM_CMD} nicht angenommen (spoll={sp!r})"
+        kette = (["OUTPUT(LEFT OFF)", f"INPUT({inp})", "MEASUREMENT(AC)", "MEASUREMENT(LEVEL VOLT)"]
+                 + list(func) + ["DETECTOR(RMS)"] + list(filters)
+                 + [f"RANGE(LEVEL {rng})", f"TRIGGER(MODE({mode}))"])
+        for c in kette:
+            self._w(c); time.sleep(0.25)
+            if not is_proven(c):
+                sp = self.spoll()
+                if sp != "0":
+                    return f"UPA lehnt neuen Befehl ab: {c}  (spoll={sp!r}) -> kein Trigger"
+                self.neu_ok.append(c)
+        sp = self.spoll()
+        if sp != "0":
+            return f"Einstellung nicht angenommen (spoll={sp!r}) -> kein Trigger"
+        self.band_mode = mode
+        self.band_inp = inp
+        return None
+
+    def band_input(self, inp):
+        """Eingang zwischen zwei Messwerten umschalten (bewiesene Befehle L/R)."""
+        if inp != getattr(self, "band_inp", None):
+            self._w(f"INPUT({inp})"); time.sleep(0.3)
+            self.band_inp = inp
+
+    def band_sample(self, total=20.0):
+        """EIN Messwert-Satz: TRIGGER(SINGLE), dann genau so viele Werte lesen,
+        wie der Modus liefert. 'NOT TRIGGERED' = Schutzregel -> Abbruch."""
+        teile = self.band_mode.split("/")
+        info = {"values": {}, "lines": {}, "raw": "", "abbruch": None, "versuche": []}
+        self.ser.reset_input_buffer()
+        self._w("TRIGGER(SINGLE)")
+        time.sleep(0.3)
+        raws = []
+        for _ in teile:
+            r, n = self._read_value(total)
+            info["versuche"].append(n)
+            raws.append(r)
+            if "NOT TRIGGERED" in r:
+                info["raw"] = "".join(raws)
+                info["abbruch"] = "UPA meldet NOT TRIGGERED - Bandmessung gestoppt"
+                return info
+            if not self._extract(r):
+                info["raw"] = "".join(raws)
+                info["abbruch"] = f"Kein Messwert innerhalb {total:.0f} s - Bandmessung gestoppt"
+                return info
+        info["raw"] = "".join(raws)
+        lines = [self._extract(r) for r in raws]
+        if self.band_mode == "LEV/FREQ":
+            lv, fq = assign(lines)
+            zu = {"LEV": lv, "FREQ": fq}
+        else:
+            zu = classify(lines, teile)
+        for t in teile:
+            info["lines"][t] = zu.get(t)
+            info["values"][t] = parse_value(zu.get(t))
+        info["volt"] = info["values"].get("LEV")
+        info["hz"] = info["values"].get("FREQ")
+        return info
+
+    def band_check(self):
+        """Zwischenpruefung (alle paar Werte): (Abbruchtext oder None, spoll-Antwort).
+        Abgebrochen wird nur bei einer Flut; andere Statusbytes werden protokolliert."""
+        sp = self.spoll()
+        if sp.startswith("FLUT"):
+            return "Flut erkannt - Bandmessung gestoppt (Adapter-USB kurz ziehen)", sp
+        return None, sp
+
     def measure_point(self, freq, level, output="LEFT UNBAL", inp="LEFT UNBAL",
                       hold=10, settle=3.0):
         """Bewiesene v16-Messung (Pegel + Frequenz), unveraendert."""
