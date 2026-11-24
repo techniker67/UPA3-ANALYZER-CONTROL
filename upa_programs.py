@@ -72,7 +72,7 @@ PROGRAMS = [
      "status": "test", "band": True, "live": True, "hidden": True, "x": "time", "est": 4,
      "ui": {"band": True, "dauer": True, "gen": True},
      "def": {"lp22": False, "hp22": False, "rng": "AUTO", "ch": "LR", "dauer": 900},
-     "note": "Abgleich nach Liste: UPA-Generator gibt den Schritt-Ton aus (oder aus = Messband), der Analysator "
+     "note": "Abgleich nach Liste: UPA-Generator gibt den Schritt-Ton an beiden Ausgängen L/R aus (oder aus = Messband), der Analysator "
              "liest L/R laufend. Nichts wird gespeichert – Ist-Werte im Abgleich-Dialog übernehmen."},
     {"id": "sinad", "name": "SINAD", "sub": "Signal / (Rausch+Klirr)", "opt": "B8", "status": "locked",
      "x": "freq", "est": 22, "ui": {}, "def": {},
@@ -154,6 +154,21 @@ WF_NORMEN = ("DIN", "NAB", "JIS")
 
 
 def run_band(u, prog, p, emit, log, stop):
+    """Bandmessungen / Abgleich live. Beim Abgleich mit Generator werden am Ende
+    beide Generatorausgaenge wieder abgeschaltet."""
+    try:
+        return _run_band(u, prog, p, emit, log, stop)
+    finally:
+        if prog["id"] == "abgl" and p.get("gen_v"):
+            try:
+                for h in u.gen_aus():
+                    log("  Hinweis: " + h)
+                log("  Generator L/R aus.")
+            except Exception as e:
+                log(f"  Generator konnte nicht abgeschaltet werden: {e}")
+
+
+def _run_band(u, prog, p, emit, log, stop):
     """Bandmessungen: einmal einstellen (Generator aus), dann Werte im Takt
     des UPA lesen, bis Dauer, Stop, Bandende (bfg) oder Abbruch."""
     pid = prog["id"]

@@ -1383,7 +1383,7 @@ function abgRender(){
   const s=L.schritte.find(x=>x.nr===AB.sel); if(!s){ $("aDet").innerHTML=""; return; }
   const e=(L.ergebnisse||{})[s.nr]; const laeuft=S&&S.busy&&S.meta&&S.meta.prog==="abgl";
   $("aDet").innerHTML=`<h3>${esc(s.nr)} · ${esc(s.titel)}</h3>
-    <dl><dt>Einsteller</dt><dd>${esc(s.einsteller||"–")}</dd><dt>Generator</dt><dd>${s.generator?esc(aF(s.generator.f)+" · "+aV(s.generator.v)+" (UPA-Ausgang L, ggf. Y-Kabel für beide Kanäle)"):"aus"}</dd>
+    <dl><dt>Einsteller</dt><dd>${esc(s.einsteller||"–")}</dd><dt>Generator</dt><dd>${s.generator?esc(aF(s.generator.f)+" · "+aV(s.generator.v)+" (UPA-Ausgänge L und R, BNC)"):"aus"}</dd>
     ${s.band?`<dt>Messband</dt><dd>${esc(s.band)}</dd>`:""}${s.anschluss?`<dt>Anschluss</dt><dd>${esc(s.anschluss)}</dd>`:""}
     <dt>Soll</dt><dd>${esc(aSoll(s)||"–")}</dd>${e?`<dt>Ist (gespeichert)</dt><dd>${esc(aIst(e))} · ${esc(e.zeit||"")}</dd>`:""}</dl>
     ${s.hinweis?`<div class="hin">${esc(s.hinweis)}</div>`:""}

@@ -436,7 +436,9 @@ class UPA:
         if sp != "0":
             return f"{DELIM_CMD} nicht angenommen (spoll={sp!r})"
         # Generator aus (Messband) oder fest an (Abgleich): bewaehrte Befehle wie in measure()
-        generator = (["OUTPUT(LEFT UNBAL)", f"SOURCE(FREQUENCY){gen[0]:g}", f"SOURCE(LEVEL VOLT){gen[1]:g}"]
+        # Abgleich: beide unsymmetrischen Ausgaenge (BNC L und R, Handbuch 2.4.9.1) mit demselben Signal
+        generator = (["OUTPUT(LEFT UNBAL)", "OUTPUT(RIGHT UNBAL)", f"SOURCE(FREQUENCY){gen[0]:g}",
+                      f"SOURCE(LEVEL VOLT){gen[1]:g}"]
                      if gen else ["OUTPUT(LEFT OFF)"])
         kette = (generator + [f"INPUT({inp})", "MEASUREMENT(AC)", "MEASUREMENT(LEVEL VOLT)"]
                  + list(func) + ["DETECTOR(RMS)"] + list(filters)
@@ -454,6 +456,18 @@ class UPA:
         self.band_mode = mode
         self.band_inp = inp
         return None
+
+    def gen_aus(self):
+        """Beide Generatorausgaenge abschalten (nach dem Abgleich, damit spaetere
+        Einkanal-Messungen nicht vom zweiten Ausgang gestoert werden).
+        OUTPUT(RIGHT OFF) steht im Handbuch 2.4.9.1, ist am Geraet noch ungeprueft."""
+        hinweise = []
+        for c in ("OUTPUT(LEFT OFF)", "OUTPUT(RIGHT OFF)"):
+            self._w(c); time.sleep(0.25)
+            sp = self.spoll()
+            if sp != "0":
+                hinweise.append(f"{c} nicht angenommen (spoll={sp!r})")
+        return hinweise
 
     def band_input(self, inp):
         """Eingang zwischen zwei Messwerten umschalten (bewiesene Befehle L/R)."""

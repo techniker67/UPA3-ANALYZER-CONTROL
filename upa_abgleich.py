@@ -14,7 +14,7 @@ Format (Version 1):
   "schritte": [
     {"nr": "3", "titel": "Wiedergabepegel", "einsteller": "RV101 (L), RV201 (R)",
      "band": "P-4-L300 (315 Hz, 0 dB)", "anschluss": "LINE OUT, 47 kOhm",
-     "generator": null,                   # oder {"f": 315, "v": 0.245}
+     "generator": null,                   # oder {"f": 315, "v": 0.245} - Ausgang L und R
      "messung": "pegel",                  # pegel | frequenz | info
      "soll_v": 0.44, "min_v": 0.42, "max_v": 0.46,    # optional
      "soll_f": 3000, "min_f": 2985, "max_f": 3015,    # bei "frequenz"
