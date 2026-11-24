@@ -26,6 +26,7 @@ import upa_programs as progs
 import upa_report as report
 import upa_fluke as fluke
 import upa_protokoll as protokoll
+import upa_abgleich as abgleich
 import upa_window as window
 from upa_version import __version__, DATUM, GETESTETE_FIRMWARE
 
@@ -111,6 +112,7 @@ class App:
                 "fw_getestet": bool(self.version) and any(g in self.version for g in GETESTETE_FIRMWARE),
                 "firma": load_settings().get("firma", ""),
                 "pruefling": self.pruefling,
+                "pegelbezug": pegelbezug(self.pruefling),
                 "pruefling_ordner": report.ordnername(self.pruefling) if self.pruefling else None,
                 "ablage": paths.ABLAGE, "ablage_lokal": paths.mess_dir_lokal(),
                 "diagramme": report.plt is not None,
@@ -594,6 +596,21 @@ def validate_einstellungen(b, app):
     return neu
 
 
+PEGELBEZUG_STD = 0.775     # 0 dB = 0,775 V (dBs/dBu) - Vorgabe der meisten Service-Manuals
+
+
+def pegelbezug(pr):
+    """Bezugspegel (V fuer 0 dB) des Prueflings, sonst zuletzt benutzter, sonst 0,775 V."""
+    st = load_settings()
+    je = st.get("pegelbezug") if isinstance(st.get("pegelbezug"), dict) else {}
+    try:
+        if pr and report.ordnername(pr) in je:
+            return float(je[report.ordnername(pr)])
+        return float(st.get("pegelbezug_letzt", PEGELBEZUG_STD))
+    except (TypeError, ValueError):
+        return PEGELBEZUG_STD
+
+
 def load_settings():
     """Einstellungen (Firmenname ...) aus upa_einstellungen.json - optional."""
     try:
@@ -718,6 +735,13 @@ def validate_run(body):
             p["bezug"] = _f(body, "bezug", prog["def"].get("bezug", 315))
             if not (20 <= p["bezug"] <= 20000):
                 raise ValueError("Bezugsfrequenz 20 bis 20000 Hz")
+        if ui.get("gen"):
+            p["gen_v"] = _f(body, "gen_v", 0) or 0.0          # 0 = Generator aus (Messband)
+            p["gen_f"] = _f(body, "gen_f", 1000)
+            if p["gen_v"] and not (LEVEL_MIN <= p["gen_v"] <= LEVEL_MAX):
+                raise ValueError(f"Generatorpegel {LEVEL_MIN} bis {LEVEL_MAX} V")
+            if not (FREQ_MIN <= p["gen_f"] <= FREQ_MAX):
+                raise ValueError(f"Frequenz {FREQ_MIN} bis {FREQ_MAX} Hz")
         if ui.get("wfnorm"):
             p["wfnorm"] = str(body.get("wfnorm", prog["def"].get("wfnorm", "JIS")))
             if p["wfnorm"] not in progs.WF_NORMEN:
@@ -778,6 +802,16 @@ def make_handler(app):
                         except ValueError:
                             pass
                 return self._send(200, app.state(since))
+            if u.path == "/api/abgleich":
+                pr = app.pruefling
+                if not pr:
+                    return self._send(200, {"liste": None, "pruefling": None})
+                try:
+                    liste, pfad = abgleich.laden(report.ordner(pr))
+                except Exception as e:
+                    return self._send(200, {"liste": None, "error": f"Abgleichliste fehlerhaft: {e}"})
+                return self._send(200, {"liste": liste, "datei": os.path.basename(pfad) if pfad else None,
+                                        "ordner": report.ordner(pr), "pruefling": pr})
             if u.path == "/api/protokoll":
                 pr = app.pruefling
                 if not pr:
@@ -876,6 +910,53 @@ def make_handler(app):
                     return self._send(400, {"error": str(e)})
                 app.log("Prüfprotokoll erstellt: " + ", ".join(dateien))
                 return self._send(200, {"ok": True, "dateien": dateien})
+            if u.path.startswith("/api/abgleich/"):
+                pr = app.pruefling
+                if not pr:
+                    return self._send(400, {"error": "Erst einen Prüfling festlegen – die Abgleichliste "
+                                                     "wird in seinem Ordner abgelegt"})
+                ordner = report.ordner(pr)
+                try:
+                    if u.path == "/api/abgleich/laden":
+                        liste = abgleich.pruefen(body.get("liste"))
+                        alt, alt_pfad = abgleich.laden(ordner)
+                        if alt and alt["ergebnisse"] and not body.get("ersetzen"):
+                            return self._send(409, {"error": "Im Geräteordner liegt schon eine Abgleichliste mit "
+                                                             "Ist-Werten", "frage": True})
+                        if alt_pfad and os.path.basename(alt_pfad) != abgleich.dateiname(liste):
+                            os.replace(alt_pfad, alt_pfad + ".alt")
+                        pfad = abgleich.speichern(ordner, liste)
+                        hinweis = ""
+                        g = liste["geraet"]
+                        if g["typ"] and g["typ"].lower() not in (pr.get("typ") or "").lower():
+                            hinweis = f"Achtung: Liste ist für {g['hersteller']} {g['typ']}, Prüfling ist {pr.get('hersteller')} {pr.get('typ')}"
+                        app.log(f"Abgleichliste geladen: {os.path.basename(pfad)} ({len(liste['schritte'])} Schritte)")
+                        return self._send(200, {"ok": True, "liste": liste, "datei": os.path.basename(pfad),
+                                                "hinweis": hinweis})
+                    if u.path == "/api/abgleich/ergebnis":
+                        liste = abgleich.ergebnis(ordner, body.get("nr"), body)
+                        return self._send(200, {"ok": True, "liste": liste})
+                    if u.path == "/api/abgleich/pdf":
+                        name = abgleich.abgleichblatt(ordner, load_settings().get("firma", ""), __version__)
+                        app.log("Abgleichblatt erstellt: " + name)
+                        return self._send(200, {"ok": True, "datei": name})
+                except (ValueError, RuntimeError, OSError) as e:
+                    return self._send(400, {"error": str(e)})
+                return self._send(404, {"error": "unbekannt"})
+            if u.path == "/api/pegelbezug":
+                # Bezugspegel des Pegelrechners (0 dB = x V) je Pruefling merken
+                try:
+                    v = float(body.get("v"))
+                except (TypeError, ValueError):
+                    return self._send(400, {"error": "Bezugspegel fehlt"})
+                if not (0.001 <= v <= 100):
+                    return self._send(400, {"error": "Bezugspegel 0,001 bis 100 V"})
+                st = load_settings()
+                je = st.get("pegelbezug") if isinstance(st.get("pegelbezug"), dict) else {}
+                if app.pruefling:
+                    je[report.ordnername(app.pruefling)] = v
+                save_settings({"pegelbezug": je, "pegelbezug_letzt": v})
+                return self._send(200, {"ok": True, "v": v})
             if u.path == "/api/papierkorb":
                 # Messung/Protokoll in den Papierkorb des Geraeteordners verschieben bzw. zurueckholen
                 pr = app.pruefling

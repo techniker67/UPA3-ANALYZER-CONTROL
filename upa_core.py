@@ -422,7 +422,7 @@ class UPA:
     # lesen, erst danach neu einstellen). Gelesen wird per _read_value (wartet,
     # bis der Wert fertig ist) - also weder zu frueh noch zu oft.
     # -----------------------------------------------------------------------
-    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO"):
+    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO", gen=None):
         """Analysator fuer Bandmessungen einstellen. Liefert None oder Abbruchtext.
         Ungepruefte Befehle einzeln senden und per ++spoll pruefen (wie measure)."""
         self.ifc()
@@ -435,7 +435,12 @@ class UPA:
         sp = self.spoll()
         if sp != "0":
             return f"{DELIM_CMD} nicht angenommen (spoll={sp!r})"
-        kette = (["OUTPUT(LEFT OFF)", f"INPUT({inp})", "MEASUREMENT(AC)", "MEASUREMENT(LEVEL VOLT)"]
+        # Generator aus (Messband) oder fest an (Abgleich): bewaehrte Befehle wie in measure()
+        # Abgleich: beide unsymmetrischen Ausgaenge (BNC L und R, Handbuch 2.4.9.1) mit demselben Signal
+        generator = (["OUTPUT(LEFT UNBAL)", "OUTPUT(RIGHT UNBAL)", f"SOURCE(FREQUENCY){gen[0]:g}",
+                      f"SOURCE(LEVEL VOLT){gen[1]:g}"]
+                     if gen else ["OUTPUT(LEFT OFF)"])
+        kette = (generator + [f"INPUT({inp})", "MEASUREMENT(AC)", "MEASUREMENT(LEVEL VOLT)"]
                  + list(func) + ["DETECTOR(RMS)"] + list(filters)
                  + [f"RANGE(LEVEL {rng})", f"TRIGGER(MODE({mode}))"])
         for c in kette:
@@ -451,6 +456,18 @@ class UPA:
         self.band_mode = mode
         self.band_inp = inp
         return None
+
+    def gen_aus(self):
+        """Beide Generatorausgaenge abschalten (nach dem Abgleich, damit spaetere
+        Einkanal-Messungen nicht vom zweiten Ausgang gestoert werden).
+        OUTPUT(RIGHT OFF) steht im Handbuch 2.4.9.1, ist am Geraet noch ungeprueft."""
+        hinweise = []
+        for c in ("OUTPUT(LEFT OFF)", "OUTPUT(RIGHT OFF)"):
+            self._w(c); time.sleep(0.25)
+            sp = self.spoll()
+            if sp != "0":
+                hinweise.append(f"{c} nicht angenommen (spoll={sp!r})")
+        return hinweise
 
     def band_input(self, inp):
         """Eingang zwischen zwei Messwerten umschalten (bewiesene Befehle L/R)."""

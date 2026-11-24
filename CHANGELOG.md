@@ -2,6 +2,15 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.7.0 – 2026-11-24
+- **Neues Fenster ABGLEICH** (Startmenü → TOOLS, oder ⚙ ABGLEICH in der UPA-Ansicht), nutzt den ganzen Bildschirm – Abgleichliste, Pegelrechner und Live-Messung zusammen, kein Fensterwechsel mehr:
+  - **Links die Abgleichliste**: .json mit den Abgleichschritten aus dem Servicemanual laden (Format siehe `upa_abgleich.py`); sie wird in den **Geräteordner** des Prüflings kopiert (Ablage/NAS). Je Schritt Einsteller, Soll, Ist, ✓/✗. Eine vorhandene Liste mit Ist-Werten wird nur nach Rückfrage ersetzt (alte bleibt als `.alt`).
+  - **Rechts oben Schritt-Auswahl** (Pulldown oder Klick in die Liste) mit Soll, Generator, Messband, Anschluss, Hinweis – füllt den Pegelrechner automatisch.
+  - **Pegelrechner**: Wert aus dem Manual in dB re Bezug/dBs, dBV, dBu, V, mV oder Vpp → mV, dBV, dBu, Vpp. Bezug 0 dB wählbar (0,775 V / 1 V / eigener), je Prüfling gemerkt bzw. aus der Liste. Schalter „Generator an“: der Wert ist dann der Generatorpegel, sonst der Sollwert.
+  - **Live · UPA**: ▶ Generator + Live (UPA-Ausgänge L und R) bzw. Live messen (Generator aus, Messband); L/R laufend, grün/rot gegen die Soll-Grenzen, Δ Soll, dB re Bezug, dBV, L–R, Frequenz, Referenz merken. Pegel oder Frequenz geändert → ▶ NEU STARTEN.
+  - **Ins Protokoll**: Ist L/R/f mit Notiz beim Schritt speichern (in der .json im Geräteordner), weiter zum nächsten Schritt. **PDF-Abgleichblatt** (Soll/Ist/OK, Hinweise, Notizen) in den Geräteordner.
+- Neues verstecktes Programm `abgl` (live, nichts gespeichert, Status VERIFIKATION): Generator fest an beiden Ausgängen (`OUTPUT(LEFT UNBAL)` + `OUTPUT(RIGHT UNBAL)`, `SOURCE(...)` – einzeln bewährte Befehle), danach `OUTPUT(LEFT OFF)` + `OUTPUT(RIGHT OFF)` (letzteres laut Handbuch, noch ungeprüft).
+
 ## 1.6.0 – 2026-11-23
 - **Bandmessungen (Tapedeck / Tonband)** – Quelle ist das Messband, der UPA-Generator bleibt aus. Alle drei Programme sind als *VERIFIKATION* markiert, bis sie am Gerät bestätigt sind:
   - **Wow & Flutter** (Option B9): `WOWFLUTTER(DIN|NAB|JIS WTD)` laut Handbuch 2.4.8, dazu Frequenz und Geschwindigkeitsabweichung je Wert (`TRIGGER(MODE(LEV/FREQ/FNCT))`). JIS = WRMS. Die ersten 6 s zählen nicht (Einschwingen). Ergebnis: W&F max./Mittel/min., Geschwindigkeit, Schwankung, Drift.

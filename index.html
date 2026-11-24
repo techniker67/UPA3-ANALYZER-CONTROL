@@ -72,6 +72,52 @@ body.tick .pill.run::before{opacity:.2}
 #setdlg .chk input{width:auto}
 #setdlg .ctl{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
 #setdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:6px}
+.sm-klein{grid-template-columns:repeat(4,1fr)!important}
+/* Abgleich: Abgleichliste + Pegelrechner + Live in einem Fenster (ganzer Bildschirm) */
+#abgdlg{position:fixed;inset:0;background:#01050a;display:none;z-index:16}
+#abgdlg.on{display:block}
+#abgdlg .box{position:absolute;inset:0;display:grid;grid-template-rows:auto auto 1fr;padding:16px 22px 14px;gap:0}
+#abgdlg h2{font:600 22px var(--f);letter-spacing:.4em;color:var(--cy);margin:0;text-shadow:0 0 10px var(--cy)}
+#abgdlg .kopf{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+#abgdlg .kopf .ger{font:14px var(--m);color:var(--cy2);letter-spacing:.06em}
+#abgdlg .kopf .sp{flex:1}
+#abgdlg .btn{padding:6px 14px;font-size:11px;letter-spacing:.18em}
+#abgdlg .sub{font:12px var(--m);color:var(--mut);margin:6px 0 12px;letter-spacing:.03em}
+#abgdlg .sub b{color:var(--cy2);font-weight:400} #abgdlg .warn{color:var(--or)}
+#abgdlg .haupt{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:18px;min-height:0}
+#abgdlg .liste{overflow:auto;border:1px solid var(--cyd);min-height:0}
+#abgdlg table{width:100%;border-collapse:collapse;font:12.5px var(--m);table-layout:fixed}
+#abgdlg th,#abgdlg td{text-align:left!important;white-space:normal!important;overflow-wrap:anywhere}
+#abgdlg th{position:sticky;top:0;background:#04121c;color:var(--mut);font-weight:400;letter-spacing:.14em;font-size:10.5px;padding:6px 8px;border-bottom:1px solid var(--cyd);z-index:1}
+#abgdlg td{padding:6px 8px;border-bottom:1px solid rgba(0,229,255,.1);color:var(--txt);vertical-align:top}
+#abgdlg tr.z{cursor:pointer} #abgdlg tr.z:hover td{background:rgba(0,229,255,.06)}
+#abgdlg tr.sel td{background:rgba(0,229,255,.14)}
+#abgdlg td.ok{color:var(--grn)} #abgdlg td.nok{color:var(--red)}
+#abgdlg .leer{font:13px var(--m);color:var(--mut);padding:30px;line-height:1.8}
+#abgdlg .rechts{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto;padding-right:4px}
+#abgdlg .blk{border:1px solid var(--cyd);background:#010810;padding:12px 14px}
+#abgdlg .blk>.t{font:600 11px var(--f);letter-spacing:.34em;color:var(--cy);margin-bottom:8px}
+#abgdlg .reihe{display:grid;gap:12px;align-items:end}
+#abgdlg .r3{grid-template-columns:2fr 1fr 1fr} #abgdlg .r4{grid-template-columns:1.2fr 1fr 1fr auto}
+#abgdlg dl{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;margin:8px 0 0;font:12.5px var(--m)}
+#abgdlg dt{color:var(--mut)} #abgdlg dd{margin:0;color:var(--cy2)}
+#abgdlg .hin{font:12px var(--m);color:var(--or);border-left:2px solid var(--or);padding:4px 10px;margin-top:8px}
+#abgdlg #aW{font:24px var(--m);padding:6px 12px;color:var(--cy)}
+#abgdlg .erg{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+#abgdlg .erg>div{border:1px solid var(--cyd);padding:6px 10px}
+#abgdlg .erg .k{font:10.5px var(--m);letter-spacing:.2em;color:var(--mut)}
+#abgdlg .erg .v{font:20px var(--m);color:var(--cy2);margin-top:2px}
+#abgdlg .rolle{font:11px var(--m);letter-spacing:.14em;color:var(--or);margin-top:6px}
+#abgdlg .ctl{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#abgdlg .chk{display:flex;gap:8px;align-items:center;font:12px var(--m);color:var(--txt)} #abgdlg .chk input{width:auto}
+#abgdlg .ist{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+#abgdlg .ist>div{border:1px solid var(--cyd);padding:8px 12px}
+#abgdlg .ist .k{font:11px var(--m);letter-spacing:.22em;color:var(--mut)}
+#abgdlg .ist .v{font:38px var(--m);color:var(--cy);text-shadow:0 0 10px var(--cy)}
+#abgdlg .ist .v.gut{color:var(--grn);text-shadow:0 0 10px var(--grn)} #abgdlg .ist .v.schlecht{color:var(--red);text-shadow:0 0 10px var(--red)}
+#abgdlg .ist .n{font:12px var(--m);color:var(--cy2)}
+#abgdlg .info{font:12.5px var(--m);color:var(--cy2);margin-top:8px}
+#abgdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:6px}
 #dutdlg{position:fixed;inset:0;background:rgba(1,5,10,.9);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(3px)}
 #dutdlg.on{display:flex}
 #dutdlg .box{width:min(760px,92vw);border:1px solid var(--cy);background:rgba(2,11,18,.97);padding:26px 30px;box-shadow:0 0 40px -10px var(--cy)}
@@ -356,7 +402,7 @@ tr.new td{animation:flash 1s}
     <img class="appicon" src="/icon.png" alt=""><div class="logo">UPA·3 // ANALYZER CONTROL<span class="ver" id="ver">v–</span><small><b id="firma"></b><span id="firmaSep"></span>R&amp;S UPA3 · AR488 GPIB · IEC <span id="iecTxt">07</span></small></div>
     <div class="dut" id="dut" title="Prüfling festlegen – Messungen werden im Geräteordner gesammelt"><span class="k">PRÜFLING</span><span class="v leer" id="dutTxt">KEINER – FESTLEGEN</span><span class="e">✎</span></div>
     <div class="pills"><span class="pill" id="pAd">ADAPTER</span><span class="pill" id="pUp">UPA</span><span class="pill" id="pMe">MESSUNG</span></div>
-    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="prot" title="Prüfprotokoll (PDF + DOCX) aus den Messungen des Prüflings">▤ PROTOKOLL</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn" id="toMenu" title="Zurück zum Startmenü (nicht während einer Messung oder Aufzeichnung)">⌂ MENÜ</button></div>
+    <div class="hdr-ctl"><button class="iconbtn" id="snd">♪ SOUND AN</button><button class="iconbtn" id="prot" title="Prüfprotokoll (PDF + DOCX) aus den Messungen des Prüflings">▤ PROTOKOLL</button><button class="iconbtn" id="abgBtn" title="Abgleichliste des Prüflings – Generator setzen, Ist/Soll live">⚙ ABGLEICH</button><button class="iconbtn" id="reboot">⟲ INIT</button><button class="iconbtn" id="toMenu" title="Zurück zum Startmenü (nicht während einer Messung oder Aufzeichnung)">⌂ MENÜ</button></div>
   </header>
 
   <nav class="menu" id="menu"><div class="mt">MESS-<br>PROGRAMM<small>KATALOG 19.11.</small></div></nav>
@@ -514,6 +560,7 @@ tr.new td{animation:flash 1s}
     </div>
     <div class="sm-klein">
       <div class="sm-k" id="smProt" role="button" tabindex="0"><svg width="44" height="52" viewBox="0 0 44 52" fill="none" stroke="#00e5ff" stroke-width="2"><path d="M4 3h24l12 12v34H4z"/><path d="M28 3v12h12"/><path d="M11 24h22M11 31h22M11 38h12" stroke="rgba(0,229,255,.55)"/><path d="M26 40l4 4 8-9" stroke="#3dffb5" stroke-width="2.4" stroke-linecap="round"/></svg><div><div class="n">PROTOKOLLE</div><div class="st" id="smProtSt"></div></div></div>
+      <div class="sm-k" id="smTool" role="button" tabindex="0"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="36" height="40" rx="4"/><rect x="11" y="9" width="26" height="9" rx="1.5" stroke="rgba(0,229,255,.55)"/><path d="M14 26h4M22 26h4M30 26h4M14 33h4M22 33h4M30 33h4M14 40h4M22 40h12" stroke-width="2.4"/></svg><div><div class="n">TOOLS</div><div class="st">Abgleich · Pegelrechner</div></div></div>
       <div class="sm-k" id="smSet" role="button" tabindex="0"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round"><path d="M6 12h36M6 24h36M6 36h36" stroke="rgba(0,229,255,.55)"/><circle cx="16" cy="12" r="4.5" fill="#01050a"/><circle cx="32" cy="24" r="4.5" fill="#01050a"/><circle cx="20" cy="36" r="4.5" fill="#01050a"/></svg><div><div class="n">EINSTELLUNGEN</div><div class="st">Ablage · Prüfer · Ports</div></div></div>
       <div class="sm-k aus" id="smAus" role="button" tabindex="0"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#ff3b4e" stroke-width="2.6" stroke-linecap="round"><path d="M15 12.5a16 16 0 1 0 18 0"/><path d="M24 5v18"/></svg><div><div class="n">BEENDEN</div><div class="st">UPA freigeben · Programm schließen</div></div></div>
     </div>
@@ -534,6 +581,54 @@ tr.new td{animation:flash 1s}
   </div>
   <div class="err" id="sErr"></div>
   <div class="ctl"><button class="btn ghost" id="sCancel">Abbrechen</button><button class="btn" id="sOk">Speichern</button></div>
+</div></div>
+<div id="abgdlg"><div class="box">
+  <div class="kopf"><h2>ABGLEICH</h2><span class="ger" id="aGer"></span><span class="sp"></span>
+    <input type="file" id="aDatei" accept=".json,application/json" class="hide">
+    <button class="btn ghost" id="aLaden" title="Abgleichliste (.json) laden – wird in den Geräteordner kopiert">LISTE LADEN</button>
+    <button class="btn ghost" id="aPdf" title="PDF-Abgleichblatt mit den Ist-Werten in den Geräteordner schreiben">PDF-ABGLEICHBLATT</button>
+    <button class="btn ghost" id="aOrdner" title="Geräteordner im Explorer öffnen">ORDNER</button>
+    <button class="btn" id="aZu">SCHLIESSEN</button></div>
+  <div class="sub" id="aSub"></div>
+  <div class="haupt">
+    <div class="liste" id="aListe"></div>
+    <div class="rechts">
+      <section class="blk"><div class="t">SCHRITT</div>
+        <select id="aSchritt"></select>
+        <div id="aDet"></div></section>
+      <section class="blk"><div class="t">PEGELRECHNER</div>
+        <div class="reihe r3">
+          <div><label>Bezug 0 dB im Manual</label><select id="tBez"><option value="0.775">0 dB = 0,775 V · dBs / dBu</option><option value="1">0 dB = 1 V · dBV</option><option value="x">Eigener Bezug …</option></select></div>
+          <div><label>0 dB = … V</label><input id="tBezV" type="number" step="any" value="0.775"></div>
+          <div><label>Frequenz (Hz)</label><input id="tF" type="number" step="any" value="1000"></div>
+        </div>
+        <div class="reihe r3" style="margin-top:10px">
+          <div><label id="aWLbl">Wert aus dem Manual</label><input id="aW" type="text" value="-4" autocomplete="off"></div>
+          <div><label>Einheit</label><select id="tE"><option value="db">dB re Bezug / dBs</option><option value="dbv">dBV</option><option value="dbu">dBu</option><option value="v">V rms</option><option value="mv">mV rms</option><option value="vpp">Vpp</option></select></div>
+          <div><label class="chk"><input type="checkbox" id="aGenAn"> Generator an (Wert = Generatorpegel)</label></div>
+        </div>
+        <div class="erg">
+          <div><div class="k">mV rms</div><div class="v" id="rMv">---</div></div>
+          <div><div class="k">dBV</div><div class="v" id="rDbv">---</div></div>
+          <div><div class="k">dBu / dBs</div><div class="v" id="rDbu">---</div></div>
+          <div><div class="k">Vpp (Sinus)</div><div class="v" id="rVpp">---</div></div>
+        </div>
+        <div class="rolle" id="aRolle"></div></section>
+      <section class="blk"><div class="t">LIVE · UPA</div>
+        <div class="ctl">
+          <div class="seg" id="aCh"><button data-v="L">L</button><button data-v="R">R</button><button data-v="LR">L+R</button></div>
+          <button class="btn" id="aStart">▶ START</button>
+          <button class="btn ghost" id="aStop">■ STOP</button>
+          <button class="btn ghost" id="aRef" title="Aktuellen Pegel als Referenz merken – danach Abweichung in dB (z. B. 10 kHz gegen 315 Hz)">REFERENZ MERKEN</button></div>
+        <div class="ist"><div><div class="k">KANAL L</div><div class="v" id="aL">---</div><div class="n" id="aLn"></div></div><div><div class="k">KANAL R</div><div class="v" id="aR">---</div><div class="n" id="aRn"></div></div></div>
+        <div class="info" id="aInfo"></div></section>
+      <section class="blk"><div class="t">INS PROTOKOLL</div>
+        <div class="ctl"><input id="aNotiz" placeholder="Notiz zum Schritt (optional)" style="flex:1;min-width:200px" maxlength="200">
+          <button class="btn" id="aUeb" title="Ist-Werte L/R (und Frequenz) mit Notiz beim Schritt speichern – erscheinen im PDF-Abgleichblatt">ÜBERNEHMEN</button>
+          <button class="btn ghost" id="aDel" title="Gespeicherten Ist-Wert dieses Schritts löschen">✕</button></div>
+        <div class="err" id="aErr"></div></section>
+    </div>
+  </div>
 </div></div>
 <div id="dutdlg"><div class="box">
   <h2>PRÜFLING</h2>
@@ -629,7 +724,7 @@ const BADGE={ok:"GETESTET",test:"VERIFIKATION",locked:"GESPERRT"};
 function buildMenu(){
   const m=$("menu");
   /* gesperrte Programme nicht anzeigen (Platz in der Leiste) */
-  PROGS.filter(p=>p.status!=="locked").forEach(p=>{ const b=document.createElement("button"); b.className="tile "+(p.status==="locked"?"locked":""); b.dataset.id=p.id;
+  PROGS.filter(p=>p.status!=="locked"&&!p.hidden).forEach(p=>{ const b=document.createElement("button"); b.className="tile "+(p.status==="locked"?"locked":""); b.dataset.id=p.id;
     b.title=p.lock||p.note||""; b.innerHTML=`<span class="o">${p.opt}</span><span class="n">${esc(p.name)}</span><span class="s">${esc(p.sub)}</span><span class="b ${p.status}">${BADGE[p.status]}</span>`;
     b.onclick=()=>select(p.id,true); m.appendChild(b); });
   const f=document.createElement("button"); f.className="tile fluke"; f.dataset.id="ruhe";
@@ -750,7 +845,7 @@ function view(){
   const pts=(S&&S.points)||[], pid=(S&&S.meta&&S.meta.prog)||(SEL&&SEL.id)||"fr";
   const box2=$("box2"), cards=$("cards"), ch1=$("ch1");
   $("unit").classList.toggle("hide",pid!=="fr"); $("tunit").classList.toggle("hide",!(pid==="thdf"||pid==="thdl")); $("leg").classList.toggle("hide",!pts.some(p=>p.ch==="R"));
-  const single=pid==="gain"||pid==="sn"||pid==="azi";
+  const single=pid==="gain"||pid==="sn"||pid==="azi"||pid==="abgl";
   cards.classList.toggle("hide",!single); ch1.classList.toggle("hide",single); box2.classList.toggle("hide",single);
   $("ctag").textContent=S&&S.meta&&S.meta.label?"// "+S.meta.label:"";
   const refU=ch=>{const p=pts.find(q=>q.ch===ch&&q.f_soll===1000&&q.u_true);return p&&p.u_true;};
@@ -774,8 +869,8 @@ function view(){
     drawChart($("ch2"),mkSeries(byCh(pts.filter(p=>p.u>5e-4),p=>20*Math.log10(p.u),p=>p.t),{w:1.4,dots:1}),Object.assign({},XT(),{fmt:v=>v.toFixed(0),minSpan:10,defLo:-40,defHi:0,nt:3,ylab:"dBV"}));
     return;
   }
-  if(pid==="azi"){
-    $("t1").textContent="AZIMUT LIVE";
+  if(pid==="azi"||pid==="abgl"){
+    $("t1").textContent=pid==="abgl"?"ABGLEICH LIVE":"AZIMUT LIVE";
     const ok=pts.filter(p=>!p.abbruch&&p.u>0), last=ch=>{const a=ok.filter(p=>p.ch===ch);return a[a.length-1];},
       mx=ch=>Math.max(0,...ok.filter(p=>p.ch===ch).map(p=>p.u)), dbv=u=>u>0?20*Math.log10(u):null, L=last("L"), R=last("R");
     const karte=(ch,p)=>{ if(!p) return `<div class="card"><h5>KANAL ${ch}</h5><div class="big" style="color:#2d5866;text-shadow:none">---</div></div>`;
@@ -832,6 +927,7 @@ const COLS={
   wf:[["#",p=>p.i],["K",p=>p.ch],["T S",p=>p.t!=null?p.t.toFixed(0):"–"],["HZ",p=>p.f!=null?p.f.toFixed(1):"---"],["Δ %",p=>p.dev_pct!=null?(p.dev_pct>=0?"+":"")+p.dev_pct.toFixed(2):"---"],["W&F %",p=>typeof p.wf_pc==="number"?(p.ein?"("+p.wf_pc.toFixed(3)+")":p.wf_pc.toFixed(3)):"---"]],
   bfg:[["#",p=>p.i],["K",p=>p.ch],["T S",p=>p.t!=null?p.t.toFixed(0):"–"],["HZ",p=>p.f!=null?fmtF(p.f):"---"],["U",p=>fmtU(p.u_true)]],
   azi:[["#",p=>p.i],["K",p=>p.ch],["T S",p=>p.t!=null?p.t.toFixed(0):"–"],["HZ",p=>p.f!=null?fmtF(p.f):"---"],["U",p=>fmtU(p.u_true)],["DBV",p=>p.u>0?(20*Math.log10(p.u)).toFixed(2):"---"]],
+  abgl:[["#",p=>p.i],["K",p=>p.ch],["T S",p=>p.t!=null?p.t.toFixed(0):"–"],["HZ",p=>p.f!=null?fmtF(p.f):"---"],["U",p=>fmtU(p.u_true)],["DBV",p=>p.u>0?(20*Math.log10(p.u)).toFixed(2):"---"]],
   xt:[["#",p=>p.i],["RICHT.",p=>p.dir||p.ch],["HZ",p=>fmtF(p.x)],["REF",p=>fmtU(p.ref_u)],["ÜBERSPR.",p=>fmtU(p.xt_u)],["DB",p=>p.xt_db!=null?p.xt_db.toFixed(1):"---"]]};
 function table(){
   const pts=(S&&S.points)||[], pid=(S&&S.meta&&S.meta.prog)||(SEL&&SEL.id)||"fr",
@@ -1138,6 +1234,7 @@ async function poll(){
       if(pr){ t.textContent=(pr.auftrag?pr.auftrag+" · ":"")+`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr}`; t.className="v"; $("dut").title="Ordner: "+(j.ablage||j.ablage_lokal)+"\\"+j.pruefling_ordner+" – klicken zum Ändern"; }
       else { t.textContent="KEINER – FESTLEGEN"; t.className="v leer"; } }
     wasMeasuring=j.phase==="measuring"; render(); if(VIEW==="menu") menuStatus();
+    if($("abgdlg").classList.contains("on")) abgLive();
   }catch(e){$("pgt").textContent="Server getrennt …";}
   if(!quitting) setTimeout(poll,400);
 }
@@ -1182,6 +1279,7 @@ kachel("smUpa",()=>setView("upa"));
 kachel("smMm",()=>setView("mm"));
 kachel("smProt",()=>{ if(!S) return; if(!S.pruefling){ dutOpen(); return; } protOpen(); });
 kachel("smSet",setOpen);
+kachel("smTool",()=>abgOpen());
 kachel("smAus",()=>beenden(false));
 $("smDut").onclick=()=>{ Snd.init(); Snd.click(); dutOpen(); };
 $("smUpd").onclick=()=>api("/api/link",{});
@@ -1211,6 +1309,142 @@ $("sOk").onclick=async()=>{
   if($("fPort")) $("fPort").value=$("sFl").value.trim();
   $("setdlg").classList.remove("on"); menuRender(); };
 $("setdlg").addEventListener("keydown",e=>{ if(e.key==="Escape")$("sCancel").click(); });
+// ---- ABGLEICH: Abgleichliste + Pegelrechner + Live (UPA) in einem Fenster
+const AB={liste:null,datei:null,sel:"",ref:null,ch:"LR",notiz:{},lauf:null,laufSig:null};
+function tFmtV(v){ if(!(v>0)) return "---"; const a=Math.abs(v);
+  return a>=1?(+v.toFixed(4))+" V":a>=1e-3?(+(v*1e3).toPrecision(4))+" mV":(+(v*1e6).toPrecision(4))+" µV"; }
+const aV=v=>tFmtV(v), aF=f=>f?fmtF(f)+" Hz":"";
+function aSoll(s){ if(!s) return ""; if(s.soll_text) return s.soll_text;
+  if(s.messung==="pegel") return s.min_v&&s.max_v?aV(s.min_v)+" – "+aV(s.max_v):(s.soll_v?aV(s.soll_v):"");
+  if(s.messung==="frequenz") return s.min_f&&s.max_f?aF(s.min_f)+" – "+aF(s.max_f):aF(s.soll_f); return ""; }
+function aGen(s){ return s.generator?aF(s.generator.f)+" · "+aV(s.generator.v):(s.band||"–"); }
+function aIst(e){ if(!e) return ""; return [e.l&&"L "+aV(e.l),e.r&&"R "+aV(e.r),e.f&&aF(+e.f.toFixed(1))].filter(Boolean).join(" / "); }
+const aStep=()=>AB.liste&&AB.sel?AB.liste.schritte.find(x=>x.nr===AB.sel):null;
+const aLaeuft=()=>!!(S&&S.busy&&S.meta&&S.meta.prog==="abgl");
+function tBezugV(){ const o=$("tBez").value; return o==="x"?(+$("tBezV").value):(+o); }
+function tBezugSetzen(b){ if(Math.abs(b-0.775)<1e-9) $("tBez").value="0.775"; else if(Math.abs(b-1)<1e-9) $("tBez").value="1"; else { $("tBez").value="x"; $("tBezV").value=b; }
+  if($("tBez").value!=="x") $("tBezV").value=$("tBez").value; $("tBezV").disabled=$("tBez").value!=="x"; }
+// Pegelrechner: Wert -> V rms (null bei Fehler)
+function tRechnen(){
+  const ref=tBezugV(), w=parseFloat(String($("aW").value).trim().replace(",",".")), e=$("tE").value;
+  let v=null;
+  if(ref>0&&isFinite(w)){ if(e==="db") v=ref*Math.pow(10,w/20); else if(e==="dbv") v=Math.pow(10,w/20); else if(e==="dbu") v=0.775*Math.pow(10,w/20);
+    else if(e==="v") v=w; else if(e==="mv") v=w/1000; else v=w/(2*Math.SQRT2); }
+  if(!(v>0)) v=null;
+  $("rMv").textContent=v?(+(v*1e3).toPrecision(4))+" mV":"---";
+  $("rDbv").textContent=v?(20*Math.log10(v)).toFixed(2)+" dBV":"---";
+  $("rDbu").textContent=v?(20*Math.log10(v/0.775)).toFixed(2)+" dBu":"---";
+  $("rVpp").textContent=v?(+(v*2*Math.SQRT2).toPrecision(4))+" Vpp":"---";
+  const gen=$("aGenAn").checked, f=+$("tF").value;
+  $("aWLbl").textContent=gen?"Generatorpegel (Wert aus dem Manual)":"Sollwert (Wert aus dem Manual)";
+  $("aRolle").textContent=gen?(v&&v<=5?`→ UPA-Generator L+R: ${f>0?aF(f)+" · ":""}${aV(v)}`:"Generatorpegel muss 1 mV … 5 V sein")
+    :(v?`→ Sollwert am Ausgang: ${aV(v)} · Generator aus (Messband / Signal von außen)`:"");
+  const sig=gen&&v?`${f}|${v.toPrecision(5)}`:"aus";
+  if(aLaeuft()&&AB.laufSig&&AB.laufSig!==sig) $("aRolle").textContent+="  ·  ▶ NEU STARTEN übernimmt die Änderung";
+  return v; }
+async function abgOpen(){ if(!S) return; Snd.init(); Snd.click();
+  $("abgdlg").classList.add("on"); tBezugSetzen(S.pegelbezug||0.775); await abgHolen(); }
+async function abgHolen(){
+  let j; try{ j=await (await fetch("/api/abgleich")).json(); }catch(e){ return; }
+  AB.liste=j.liste; AB.datei=j.datei; AB.fehler=j.error||"";
+  if(AB.liste){ tBezugSetzen(AB.liste.bezug_v||0.775); if(AB.sel&&!aStep()) AB.sel=""; if(!AB.sel) AB.sel=AB.liste.schritte[0].nr; }
+  else AB.sel="";
+  abgRender(true); }
+function abgSchrittWaehlen(nr){ AB.sel=nr; AB.ref=null; abgRender(true); }
+// Schritt in den Pegelrechner uebernehmen
+function abgSchrittInRechner(s){
+  if(!s) return;
+  if(s.generator){ $("aGenAn").checked=true; $("tE").value="v"; $("aW").value=+s.generator.v.toPrecision(4); $("tF").value=s.generator.f; }
+  else { $("aGenAn").checked=false; $("tE").value="v"; const z=s.soll_v||(s.min_v&&s.max_v?(s.min_v+s.max_v)/2:null);
+    if(z) $("aW").value=+z.toPrecision(4); if(s.soll_f) $("tF").value=s.soll_f; } }
+function abgRender(neu){
+  const Li=AB.liste, pr=S&&S.pruefling, s=aStep();
+  $("aGer").textContent=pr?`${pr.hersteller} ${pr.typ} · SN ${pr.seriennr}`:"";
+  $("aSub").innerHTML=!pr?'<span class="warn">Kein Prüfling festgelegt – Pegelrechner und Live gehen trotzdem; zum Laden einer Abgleichliste und für das Protokoll erst einen Prüfling festlegen.</span>'
+    :Li?`<b>${esc(Li.geraet.hersteller)} ${esc(Li.geraet.typ)}</b> · ${esc(Li.quelle||"")} · 0 dB = ${aV(Li.bezug_v)} · ${esc(AB.datei||"")} im Geräteordner · ${Object.keys(Li.ergebnisse||{}).length}/${Li.schritte.length} Schritte mit Ist-Wert`+(AB.hinweis?` · <span class="warn">${esc(AB.hinweis)}</span>`:"")
+    :`Noch keine Abgleichliste – Pegelrechner frei nutzbar.`+(AB.fehler?` <span class="warn">${esc(AB.fehler)}</span>`:"");
+  $("aPdf").disabled=!Li; $("aOrdner").disabled=!pr; $("aLaden").disabled=!pr;
+  // Liste links
+  $("aListe").innerHTML=!Li?`<div class="leer">Eine Abgleichliste (.json) enthält die Abgleichschritte aus dem Servicemanual: Einsteller, Generator, Soll, Toleranz.<br>Sie wird im Chat aus dem SM erstellt und mit <b>LISTE LADEN</b> eingelesen – danach liegt sie im Geräteordner (Ablage/NAS), zusammen mit dem PDF-Abgleichblatt.</div>`
+    :`<table><colgroup><col style="width:40px"><col style="width:24%"><col style="width:20%"><col style="width:22%"><col><col style="width:26px"></colgroup><tr><th>NR</th><th>SCHRITT</th><th>EINSTELLER</th><th>SOLL</th><th>IST</th><th></th></tr>`+
+      Li.schritte.map(x=>{ const e=(Li.ergebnisse||{})[x.nr], ok=e&&e.ok===true, nok=e&&e.ok===false;
+        return `<tr class="z${x.nr===AB.sel?" sel":""}" data-nr="${esc(x.nr)}"><td>${esc(x.nr)}</td><td>${esc(x.titel)}</td><td>${esc(x.einsteller||"")}</td><td>${esc(aSoll(x))}</td><td>${esc(aIst(e))}</td><td class="${ok?"ok":nok?"nok":""}">${ok?"✓":nok?"✗":""}</td></tr>`; }).join("")+`</table>`;
+  $("aListe").querySelectorAll("tr.z").forEach(t=>t.onclick=()=>{ Snd.init(); Snd.click(); abgSchrittWaehlen(t.dataset.nr); });
+  const tr=$("aListe").querySelector("tr.sel"); if(neu&&tr) tr.scrollIntoView({block:"nearest"});
+  // Schritt-Auswahl (Pulldown)
+  $("aSchritt").innerHTML=`<option value="">— freie Eingabe (ohne Schritt) —</option>`+(Li?Li.schritte.map(x=>`<option value="${esc(x.nr)}">${esc(x.nr)} · ${esc(x.titel)}${x.einsteller?" · "+esc(x.einsteller):""}</option>`).join(""):"");
+  $("aSchritt").value=AB.sel||"";
+  const e=s&&(Li.ergebnisse||{})[s.nr];
+  $("aDet").innerHTML=!s?"":`<dl><dt>Soll</dt><dd>${esc(aSoll(s)||"–")}</dd><dt>Generator</dt><dd>${s.generator?esc(aF(s.generator.f)+" · "+aV(s.generator.v)+" an UPA-Ausgang L+R"):"aus"}</dd>
+    ${s.band?`<dt>Messband</dt><dd>${esc(s.band)}</dd>`:""}${s.anschluss?`<dt>Anschluss</dt><dd>${esc(s.anschluss)}</dd>`:""}
+    ${e?`<dt>Ist gespeichert</dt><dd>${esc(aIst(e))} · ${esc(e.zeit||"")}</dd>`:""}</dl>${s.hinweis?`<div class="hin">${esc(s.hinweis)}</div>`:""}`;
+  if(neu){ abgSchrittInRechner(s); $("aNotiz").value=(e&&e.notiz)||AB.notiz[AB.sel]||""; $("aErr").textContent=""; }
+  $("aUeb").disabled=!s; $("aDel").style.display=e?"":"none";
+  $("aUeb").title=s?"Ist-Werte L/R (und Frequenz) mit Notiz beim Schritt speichern – erscheinen im PDF-Abgleichblatt":"Nur mit einem Schritt aus einer Abgleichliste";
+  document.querySelectorAll("#aCh button").forEach(b=>b.classList.toggle("on",b.dataset.v===AB.ch));
+  tRechnen(); abgLive(); }
+function abgWerte(){ const pts=(aLaeuft()||(S&&S.meta&&S.meta.prog==="abgl"))&&AB.lauf===(AB.sel||"frei")?(S.points||[]).filter(p=>!p.abbruch&&p.u>0):[];
+  const last=ch=>{ for(let i=pts.length-1;i>=0;i--) if(pts[i].ch===ch) return pts[i]; return null; };
+  const L=last("L"), R=last("R"); return {l:L&&L.u_true, r:R&&R.u_true, f:(L&&L.f)||(R&&R.f)||null, n:pts.length}; }
+function abgLive(){ if(!$("abgdlg").classList.contains("on")) return;
+  const s=aStep(), w=abgWerte(), lf=aLaeuft(), gen=$("aGenAn").checked, ziel=tRechnen();
+  $("aStart").textContent=lf?"▶ NEU STARTEN":(gen?"▶ GENERATOR + LIVE":"▶ LIVE MESSEN"); $("aStop").disabled=!lf;
+  $("aStart").disabled=!!(S&&S.busy&&!lf);
+  // Soll-Grenzen: aus dem Schritt, sonst (Generator aus) der Rechner-Wert als Sollwert
+  const lo=s&&s.messung==="pegel"?s.min_v:null, hi=s&&s.messung==="pegel"?s.max_v:null, sollV=(s&&s.soll_v)||(!gen?ziel:null);
+  const zeig=(id,v)=>{ const el=$(id); el.textContent=v?aV(v):"---"; el.className="v";
+    if(v&&(lo||hi)) el.classList.add(((!lo||v>=lo)&&(!hi||v<=hi))?"gut":"schlecht");
+    const bez=tBezugV(), t=[];
+    if(v){ t.push(`${(20*Math.log10(v/bez)).toFixed(2)} dB re ${aV(bez)}`); t.push(`${(20*Math.log10(v)).toFixed(2)} dBV`);
+      if(sollV) t.push(`Δ Soll ${(20*Math.log10(v/sollV)>=0?"+":"")+(20*Math.log10(v/sollV)).toFixed(2)} dB`);
+      if(AB.ref) t.push(`${(20*Math.log10(v/AB.ref)).toFixed(2)} dB re Referenz`); }
+    $(id+"n").textContent=t.join(" · "); };
+  zeig("aL",w.l); zeig("aR",w.r);
+  const fi=[]; if(w.f) fi.push(`Frequenz ${w.f.toFixed(1)} Hz`+(s&&s.messung==="frequenz"&&(s.min_f||s.max_f)?(((!s.min_f||w.f>=s.min_f)&&(!s.max_f||w.f<=s.max_f))?" ✓":" ✗"):""));
+  if(w.l&&w.r) fi.push(`L–R ${(20*Math.log10(w.l/w.r)).toFixed(2)} dB`);
+  if(AB.ref) fi.push(`Referenz ${aV(AB.ref)}`);
+  if(lf&&AB.lauf!==(AB.sel||"frei")) fi.push(`Live läuft noch für ${AB.lauf==="frei"?"freie Eingabe":"Schritt "+AB.lauf} – ▶ NEU STARTEN`);
+  else fi.push(lf?`läuft · ${w.n} Werte`:(S&&S.boot_ok?"bereit":"UPA nicht verbunden – erst „UPA-Messung“ → System starten"));
+  $("aInfo").textContent=fi.join("  ·  "); }
+async function abgStart(){ Snd.init(); Snd.click(); $("aErr").textContent="";
+  if(!(S&&S.boot_ok)){ $("aErr").textContent="UPA nicht verbunden – erst „UPA-Messung“ → System starten, dann hier weiter."; Snd.denied(); return; }
+  const v=tRechnen(), gen=$("aGenAn").checked, f=+$("tF").value;
+  if(gen&&!(v&&v>=0.001&&v<=5)){ $("aErr").textContent="Generatorpegel muss 1 mV … 5 V sein"; Snd.denied(); return; }
+  if(gen&&!(f>=10&&f<=50000)){ $("aErr").textContent="Frequenz 10 Hz … 50 kHz"; Snd.denied(); return; }
+  if(aLaeuft()){ await fetch("/api/stop",{method:"POST"}); for(let i=0;i<60&&S&&S.busy;i++) await new Promise(r=>setTimeout(r,250)); }
+  AB.lauf=AB.sel||"frei"; AB.laufSig=gen?`${f}|${v.toPrecision(5)}`:"aus";
+  const r=await api("/api/run",{prog:"abgl",channels:AB.ch,rng:"AUTO",lp22:false,hp22:false,atten:1,dauer:900,gen_f:gen?f:1000,gen_v:gen?+v.toPrecision(5):0});
+  if(!r.ok){ $("aErr").textContent=r.error||"Start nicht möglich"; Snd.denied(); } }
+async function abgUebernehmen(loeschen){ const s=aStep(); if(!s) return; const w=abgWerte();
+  if(!loeschen&&!w.l&&!w.r&&!w.f){ $("aErr").textContent="Noch keine Live-Werte für diesen Schritt – erst ▶ starten."; return; }
+  const r=await api("/api/abgleich/ergebnis",{nr:s.nr,l:w.l,r:w.r,f:w.f,notiz:$("aNotiz").value,loeschen});
+  if(!r.ok){ $("aErr").textContent=r.error||"Nicht gespeichert"; Snd.denied(); return; }
+  AB.liste=r.liste; Snd.init(); Snd.click(); delete AB.notiz[s.nr];
+  if(!loeschen){ const i=AB.liste.schritte.findIndex(x=>x.nr===s.nr); if(i>=0&&i<AB.liste.schritte.length-1){ AB.sel=AB.liste.schritte[i+1].nr; AB.ref=null; } }
+  abgRender(true); }
+function tBezugSpeichern(){ const v=tBezugV(); if(v>0) api("/api/pegelbezug",{v}).then(()=>{ if(S) S.pegelbezug=v; }); }
+$("tBez").onchange=()=>{ if($("tBez").value!=="x") $("tBezV").value=$("tBez").value; $("tBezV").disabled=$("tBez").value!=="x"; abgLive(); tBezugSpeichern(); };
+$("tBezV").addEventListener("change",()=>{ abgLive(); tBezugSpeichern(); });
+["aW","tBezV","tF"].forEach(i=>$(i).addEventListener("input",abgLive)); $("tE").onchange=abgLive; $("aGenAn").onchange=abgLive;
+$("aSchritt").onchange=()=>{ Snd.init(); Snd.click(); abgSchrittWaehlen($("aSchritt").value); };
+document.querySelectorAll("#aCh button").forEach(b=>b.onclick=()=>{ AB.ch=b.dataset.v; document.querySelectorAll("#aCh button").forEach(x=>x.classList.toggle("on",x===b)); });
+$("aStart").onclick=abgStart; $("aStop").onclick=()=>{ Snd.init(); Snd.click(); fetch("/api/stop",{method:"POST"}); };
+$("aRef").onclick=()=>{ const w=abgWerte(); AB.ref=w.l||w.r||null; abgLive(); };
+$("aNotiz").oninput=()=>{ if(AB.sel) AB.notiz[AB.sel]=$("aNotiz").value; };
+$("aUeb").onclick=()=>abgUebernehmen(false); $("aDel").onclick=()=>abgUebernehmen(true);
+$("aLaden").onclick=()=>{ $("aDatei").value=""; $("aDatei").click(); };
+$("aDatei").onchange=async()=>{ const f=$("aDatei").files[0]; if(!f) return; let liste;
+  try{ liste=JSON.parse(await f.text()); }catch(e){ alert("Datei ist keine gültige JSON-Datei: "+e.message); return; }
+  let r=await api("/api/abgleich/laden",{liste});
+  if(!r.ok&&r.frage){ if(!confirm(r.error+".\n\nDurch die neue Liste ersetzen? (Die alte bleibt als .alt im Geräteordner.)")) return; r=await api("/api/abgleich/laden",{liste,ersetzen:true}); }
+  if(!r.ok){ Snd.denied(); alert(r.error||"Liste nicht geladen"); return; }
+  AB.hinweis=r.hinweis||""; AB.sel=""; Snd.init(); Snd.click(); await abgHolen(); };
+$("aPdf").onclick=async()=>{ const r=await api("/api/abgleich/pdf",{}); if(!r.ok){ Snd.denied(); alert(r.error||"PDF nicht erstellt"); return; }
+  Snd.init(); Snd.click(); oeffne(r.datei,false); };
+$("aOrdner").onclick=()=>api("/api/oeffnen",{});
+$("aZu").onclick=()=>{ if(aLaeuft()&&!confirm("Live-Messung läuft – stoppen und schließen?")) return; if(aLaeuft()) fetch("/api/stop",{method:"POST"}); $("abgdlg").classList.remove("on"); };
+$("abgdlg").addEventListener("keydown",e=>{ if(e.key==="Escape"&&e.target.tagName!=="SELECT")$("aZu").click(); });
+$("abgBtn").onclick=abgOpen;
 fetch("/api/ports").then(r=>r.json()).then(ps=>{$("portlist").innerHTML=ps.map(p=>`<option value="${esc(p.device)}">${esc(p.desc)}</option>`).join("");}).catch(()=>{});
 fetch("/api/programs").then(r=>r.json()).then(ps=>{PROGS=ps;buildMenu();let last="fr";try{last=localStorage.getItem("upa_prog")||"fr";}catch(e){}
   select(PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();
