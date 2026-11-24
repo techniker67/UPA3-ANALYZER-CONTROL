@@ -6,7 +6,10 @@ Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0
 - **Neue Kachel „Tools“ im Startmenü** mit dem **Pegelrechner**: Werte aus Service-Manuals live umrechnen – Eingabe in dB (re Bezug) / dBs, dBV, dBu, V, mV oder Vpp; Ausgabe V rms, mV, dBV, dBu/dBs, dB re Bezug und Vpp (Sinus, z. B. für den FNIRSI).
 - **Bezug „0 dB“ wählbar:** 0,775 V (dBs/dBu/dBm 600 Ω – Vorgabe, so rechnen Sony, JVC u. a.), 1 V (dBV) oder eigener Wert; wird je Prüfling gemerkt.
 - Zeile **UPA**: Generatoreingabe (Wert + Taste V) und Analysator-Sollwert; Knopf **→ als Generatorpegel übernehmen** setzt Pegel und Frequenz in der UPA-Messung. Liste der umgerechneten Werte (Enter = in Liste).
-- Nichts davon spricht den UPA an.
+- **Abgleichliste** (Tools → ABGLEICHLISTE … oder ⚙ ABGLEICH in der UPA-Ansicht): eine .json-Datei mit den Abgleichschritten aus dem Servicemanual laden (Format siehe `upa_abgleich.py`). Sie wird in den **Geräteordner** des Prüflings kopiert (Ablage/NAS); eine vorhandene Liste mit Ist-Werten wird nur nach Rückfrage ersetzt (alte bleibt als `.alt`).
+- Je Schritt: Einsteller, Generator/Messband, Anschluss, Soll, Hinweis. **▶ Generator + Live** (bzw. Live messen bei Messband): UPA-Generator auf Frequenz/Pegel des Schritts, Analysator liest L/R laufend – Ist grün/rot gegen die Soll-Grenzen, dB re Bezug, dBV, L–R, Frequenz; **Referenz merken** für relative Schritte (z. B. 10 kHz gegen 315 Hz). **Ist übernehmen** speichert L/R/f und Notiz in der Liste und springt zum nächsten Schritt.
+- **PDF-Abgleichblatt** im Hausstil mit Soll/Ist/OK, Hinweisen und Notizen – in den Geräteordner.
+- Neues verstecktes Programm `abgl` (live, nichts gespeichert, Status VERIFIKATION): Generator fest an (`OUTPUT(LEFT UNBAL)`, `SOURCE(...)` – bewährte Befehle), sonst wie die Bandmessungen.
 
 ## 1.6.0 – 2026-11-23
 - **Bandmessungen (Tapedeck / Tonband)** – Quelle ist das Messband, der UPA-Generator bleibt aus. Alle drei Programme sind als *VERIFIKATION* markiert, bis sie am Gerät bestätigt sind:

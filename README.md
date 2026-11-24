@@ -34,6 +34,7 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 
 - Filters LP 22 kHz / HP 22 Hz, range AUTO (4 digits) or HOLD (3 digits), live charts (log frequency axis, THD+N in % or dB).
 - **Tools → level calculator**: convert service-manual levels live (dB re reference / dBs, dBV, dBu, V, mV, Vpp); reference "0 dB" selectable per device (0.775 V, 1 V or custom), one click copies the result to the generator level.
+- **Tools → adjustment list**: load a JSON list of service-manual adjustment steps; per step set the generator and watch actual vs. target live, store the results and print an adjustment sheet (PDF) into the device folder.
 - **Device under test**: enter manufacturer, type and serial number (optionally an order number) — all following measurements are collected in one folder with CSV, chart (PNG) and a summary of the key results.
 - **Test report** as **PDF and DOCX** from the selected measurements: device data, result overview, one page per measurement with settings, chart and measured values, remarks, signature line. Open, print or edit in Word directly from the program. Measurements and reports that are no longer needed can be moved to a **recycle bin** subfolder of the device folder (✕) and restored from there (↺).
 - **Quiescent current / DC offset logger** with a **Fluke 287/289** via the IR-USB cable: live adjustment display with trend and tolerance colour, or recording over 10 min … 2 h with time marks — chosen directly from the **start menu**, works without the UPA. See [docs/fluke.md](docs/fluke.md).

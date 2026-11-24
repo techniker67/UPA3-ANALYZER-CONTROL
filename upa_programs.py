@@ -67,6 +67,13 @@ PROGRAMS = [
      "def": {"lp22": False, "hp22": False, "rng": "AUTO", "ch": "LR", "dauer": 600},
      "note": "Azimut-Band (10 kHz) abspielen. Zeigt Pegel L und R abwechselnd, den Höchstwert und den Abstand "
              "dazu – Kopf auf Maximum und L≈R stellen. Nichts wird gespeichert. (Phase L–R bräuchte laut Handbuch eine Sonderverkabelung.)"},
+    # Abgleich live (aus Tools -> Abgleichliste gestartet, nicht in der Kachelleiste)
+    {"id": "abgl", "name": "Abgleich live", "sub": "Generator fest · Pegel L/R laufend", "opt": "B6",
+     "status": "test", "band": True, "live": True, "hidden": True, "x": "time", "est": 4,
+     "ui": {"band": True, "dauer": True, "gen": True},
+     "def": {"lp22": False, "hp22": False, "rng": "AUTO", "ch": "LR", "dauer": 900},
+     "note": "Abgleich nach Liste: UPA-Generator gibt den Schritt-Ton aus (oder aus = Messband), der Analysator "
+             "liest L/R laufend. Nichts wird gespeichert – Ist-Werte im Abgleich-Dialog übernehmen."},
     {"id": "sinad", "name": "SINAD", "sub": "Signal / (Rausch+Klirr)", "opt": "B8", "status": "locked",
      "x": "freq", "est": 22, "ui": {}, "def": {},
      "lock": "Befehl noch nicht am Gerät geprüft."},
@@ -155,13 +162,15 @@ def run_band(u, prog, p, emit, log, stop):
         mode, func = "LEV/FREQ/FNCT", [f"WOWFLUTTER({p['wfnorm']} WTD)"]
     else:
         mode, func = "LEV/FREQ", []
-    err = u.band_setup(CH[chans[0]][1], mode, _filters(p), func=func, rng="AUTO")
+    gen = (p["gen_f"], p["gen_v"]) if pid == "abgl" and p.get("gen_v") else None
+    err = u.band_setup(CH[chans[0]][1], mode, _filters(p), func=func, rng="AUTO", gen=gen)
     for c in getattr(u, "neu_ok", []):
         log(f"  [OK] neuer Befehl angenommen: {c}")
     if err:
         emit({"ch": chans[0], "x": 0, "t": 0, "abbruch": err, "raw": "", "f": None, "u": None, "u_true": None})
         return
-    log(f"  Analysator eingestellt (Generator aus), lese Werte – Kanal {'/'.join(chans)} ...")
+    log(f"  Analysator eingestellt ({'Generator ' + format(gen[0], 'g') + ' Hz / ' + format(gen[1], 'g') + ' V' if gen else 'Generator aus'}),"
+        f" lese Werte – Kanal {'/'.join(chans)} ...")
     t0 = time.time()
     k = 0
     ton_gesehen, ruhe_seit = False, None

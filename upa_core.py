@@ -422,7 +422,7 @@ class UPA:
     # lesen, erst danach neu einstellen). Gelesen wird per _read_value (wartet,
     # bis der Wert fertig ist) - also weder zu frueh noch zu oft.
     # -----------------------------------------------------------------------
-    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO"):
+    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO", gen=None):
         """Analysator fuer Bandmessungen einstellen. Liefert None oder Abbruchtext.
         Ungepruefte Befehle einzeln senden und per ++spoll pruefen (wie measure)."""
         self.ifc()
@@ -435,7 +435,10 @@ class UPA:
         sp = self.spoll()
         if sp != "0":
             return f"{DELIM_CMD} nicht angenommen (spoll={sp!r})"
-        kette = (["OUTPUT(LEFT OFF)", f"INPUT({inp})", "MEASUREMENT(AC)", "MEASUREMENT(LEVEL VOLT)"]
+        # Generator aus (Messband) oder fest an (Abgleich): bewaehrte Befehle wie in measure()
+        generator = (["OUTPUT(LEFT UNBAL)", f"SOURCE(FREQUENCY){gen[0]:g}", f"SOURCE(LEVEL VOLT){gen[1]:g}"]
+                     if gen else ["OUTPUT(LEFT OFF)"])
+        kette = (generator + [f"INPUT({inp})", "MEASUREMENT(AC)", "MEASUREMENT(LEVEL VOLT)"]
                  + list(func) + ["DETECTOR(RMS)"] + list(filters)
                  + [f"RANGE(LEVEL {rng})", f"TRIGGER(MODE({mode}))"])
         for c in kette:
