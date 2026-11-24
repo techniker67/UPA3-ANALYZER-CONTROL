@@ -111,6 +111,7 @@ class App:
                 "fw_getestet": bool(self.version) and any(g in self.version for g in GETESTETE_FIRMWARE),
                 "firma": load_settings().get("firma", ""),
                 "pruefling": self.pruefling,
+                "pegelbezug": pegelbezug(self.pruefling),
                 "pruefling_ordner": report.ordnername(self.pruefling) if self.pruefling else None,
                 "ablage": paths.ABLAGE, "ablage_lokal": paths.mess_dir_lokal(),
                 "diagramme": report.plt is not None,
@@ -594,6 +595,21 @@ def validate_einstellungen(b, app):
     return neu
 
 
+PEGELBEZUG_STD = 0.775     # 0 dB = 0,775 V (dBs/dBu) - Vorgabe der meisten Service-Manuals
+
+
+def pegelbezug(pr):
+    """Bezugspegel (V fuer 0 dB) des Prueflings, sonst zuletzt benutzter, sonst 0,775 V."""
+    st = load_settings()
+    je = st.get("pegelbezug") if isinstance(st.get("pegelbezug"), dict) else {}
+    try:
+        if pr and report.ordnername(pr) in je:
+            return float(je[report.ordnername(pr)])
+        return float(st.get("pegelbezug_letzt", PEGELBEZUG_STD))
+    except (TypeError, ValueError):
+        return PEGELBEZUG_STD
+
+
 def load_settings():
     """Einstellungen (Firmenname ...) aus upa_einstellungen.json - optional."""
     try:
@@ -876,6 +892,20 @@ def make_handler(app):
                     return self._send(400, {"error": str(e)})
                 app.log("Prüfprotokoll erstellt: " + ", ".join(dateien))
                 return self._send(200, {"ok": True, "dateien": dateien})
+            if u.path == "/api/pegelbezug":
+                # Bezugspegel des Pegelrechners (0 dB = x V) je Pruefling merken
+                try:
+                    v = float(body.get("v"))
+                except (TypeError, ValueError):
+                    return self._send(400, {"error": "Bezugspegel fehlt"})
+                if not (0.001 <= v <= 100):
+                    return self._send(400, {"error": "Bezugspegel 0,001 bis 100 V"})
+                st = load_settings()
+                je = st.get("pegelbezug") if isinstance(st.get("pegelbezug"), dict) else {}
+                if app.pruefling:
+                    je[report.ordnername(app.pruefling)] = v
+                save_settings({"pegelbezug": je, "pegelbezug_letzt": v})
+                return self._send(200, {"ok": True, "v": v})
             if u.path == "/api/papierkorb":
                 # Messung/Protokoll in den Papierkorb des Geraeteordners verschieben bzw. zurueckholen
                 pr = app.pruefling

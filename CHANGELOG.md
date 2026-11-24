@@ -2,6 +2,12 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.7.0 – 2026-11-24
+- **Neue Kachel „Tools“ im Startmenü** mit dem **Pegelrechner**: Werte aus Service-Manuals live umrechnen – Eingabe in dB (re Bezug) / dBs, dBV, dBu, V, mV oder Vpp; Ausgabe V rms, mV, dBV, dBu/dBs, dB re Bezug und Vpp (Sinus, z. B. für den FNIRSI).
+- **Bezug „0 dB“ wählbar:** 0,775 V (dBs/dBu/dBm 600 Ω – Vorgabe, so rechnen Sony, JVC u. a.), 1 V (dBV) oder eigener Wert; wird je Prüfling gemerkt.
+- Zeile **UPA**: Generatoreingabe (Wert + Taste V) und Analysator-Sollwert; Knopf **→ als Generatorpegel übernehmen** setzt Pegel und Frequenz in der UPA-Messung. Liste der umgerechneten Werte (Enter = in Liste).
+- Nichts davon spricht den UPA an.
+
 ## 1.6.0 – 2026-11-23
 - **Bandmessungen (Tapedeck / Tonband)** – Quelle ist das Messband, der UPA-Generator bleibt aus. Alle drei Programme sind als *VERIFIKATION* markiert, bis sie am Gerät bestätigt sind:
   - **Wow & Flutter** (Option B9): `WOWFLUTTER(DIN|NAB|JIS WTD)` laut Handbuch 2.4.8, dazu Frequenz und Geschwindigkeitsabweichung je Wert (`TRIGGER(MODE(LEV/FREQ/FNCT))`). JIS = WRMS. Die ersten 6 s zählen nicht (Einschwingen). Ergebnis: W&F max./Mittel/min., Geschwindigkeit, Schwankung, Drift.

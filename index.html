@@ -72,6 +72,30 @@ body.tick .pill.run::before{opacity:.2}
 #setdlg .chk input{width:auto}
 #setdlg .ctl{display:flex;gap:12px;justify-content:flex-end;margin-top:20px}
 #setdlg .err{font:12px var(--m);color:var(--red);min-height:16px;margin-top:6px}
+#tooldlg{position:fixed;inset:0;background:rgba(1,5,10,.9);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(3px)}
+#tooldlg.on{display:flex}
+#tooldlg .box{width:min(980px,94vw);max-height:94vh;overflow:auto;border:1px solid var(--cy);background:rgba(2,11,18,.97);padding:24px 30px;box-shadow:0 0 40px -10px var(--cy)}
+#tooldlg h2{font:600 20px var(--f);letter-spacing:.4em;color:var(--cy);margin:0 0 4px;text-shadow:0 0 10px var(--cy)}
+#tooldlg .sub{font:12px var(--m);color:var(--mut);margin-bottom:16px;letter-spacing:.04em}
+#tooldlg .g{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:14px;margin-bottom:12px;align-items:end}
+#tooldlg .ein{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:14px;align-items:end}
+#tooldlg .ein input{font:26px var(--m);padding:8px 12px;color:var(--cy)}
+#tooldlg .erg{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0 10px}
+#tooldlg .erg>div{border:1px solid var(--cyd);background:#010810;padding:10px 14px}
+#tooldlg .erg .k{font:11px var(--m);letter-spacing:.22em;color:var(--mut)}
+#tooldlg .erg .v{font:24px var(--m);color:var(--cy2);margin-top:4px}
+#tooldlg .erg .v.haupt{color:var(--cy);text-shadow:0 0 10px var(--cy)}
+#tooldlg .upa{border:1px solid rgba(255,155,47,.55);background:rgba(255,155,47,.06);padding:10px 14px;font:13px var(--m);color:var(--txt);display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+#tooldlg .upa b{color:var(--or);font-weight:400}
+#tooldlg .merk{font:11.5px var(--m);color:var(--mut);margin-top:12px;line-height:1.7;letter-spacing:.03em}
+#tooldlg .hist{margin-top:12px;font:12.5px var(--m)}
+#tooldlg .hist table{width:100%;border-collapse:collapse}
+#tooldlg .hist td,#tooldlg .hist th{padding:3px 8px;border-bottom:1px solid rgba(0,229,255,.12);text-align:right;color:var(--cy2)}
+#tooldlg .hist th{color:var(--mut);font-weight:400;letter-spacing:.14em;font-size:11px}
+#tooldlg .hist td:first-child,#tooldlg .hist th:first-child{text-align:left}
+#tooldlg .ctl{display:flex;gap:12px;justify-content:flex-end;margin-top:16px}
+#tooldlg .err{font:12px var(--m);color:var(--red);min-height:16px}
+.sm-klein{grid-template-columns:repeat(4,1fr)!important}
 #dutdlg{position:fixed;inset:0;background:rgba(1,5,10,.9);display:none;align-items:center;justify-content:center;z-index:15;backdrop-filter:blur(3px)}
 #dutdlg.on{display:flex}
 #dutdlg .box{width:min(760px,92vw);border:1px solid var(--cy);background:rgba(2,11,18,.97);padding:26px 30px;box-shadow:0 0 40px -10px var(--cy)}
@@ -514,6 +538,7 @@ tr.new td{animation:flash 1s}
     </div>
     <div class="sm-klein">
       <div class="sm-k" id="smProt" role="button" tabindex="0"><svg width="44" height="52" viewBox="0 0 44 52" fill="none" stroke="#00e5ff" stroke-width="2"><path d="M4 3h24l12 12v34H4z"/><path d="M28 3v12h12"/><path d="M11 24h22M11 31h22M11 38h12" stroke="rgba(0,229,255,.55)"/><path d="M26 40l4 4 8-9" stroke="#3dffb5" stroke-width="2.4" stroke-linecap="round"/></svg><div><div class="n">PROTOKOLLE</div><div class="st" id="smProtSt"></div></div></div>
+      <div class="sm-k" id="smTool" role="button" tabindex="0"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round"><rect x="6" y="4" width="36" height="40" rx="4"/><rect x="11" y="9" width="26" height="9" rx="1.5" stroke="rgba(0,229,255,.55)"/><path d="M14 26h4M22 26h4M30 26h4M14 33h4M22 33h4M30 33h4M14 40h4M22 40h12" stroke-width="2.4"/></svg><div><div class="n">TOOLS</div><div class="st">Pegelrechner dBs · dBV · V</div></div></div>
       <div class="sm-k" id="smSet" role="button" tabindex="0"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#00e5ff" stroke-width="2" stroke-linecap="round"><path d="M6 12h36M6 24h36M6 36h36" stroke="rgba(0,229,255,.55)"/><circle cx="16" cy="12" r="4.5" fill="#01050a"/><circle cx="32" cy="24" r="4.5" fill="#01050a"/><circle cx="20" cy="36" r="4.5" fill="#01050a"/></svg><div><div class="n">EINSTELLUNGEN</div><div class="st">Ablage · Prüfer · Ports</div></div></div>
       <div class="sm-k aus" id="smAus" role="button" tabindex="0"><svg width="48" height="48" viewBox="0 0 48 48" fill="none" stroke="#ff3b4e" stroke-width="2.6" stroke-linecap="round"><path d="M15 12.5a16 16 0 1 0 18 0"/><path d="M24 5v18"/></svg><div><div class="n">BEENDEN</div><div class="st">UPA freigeben · Programm schließen</div></div></div>
     </div>
@@ -534,6 +559,32 @@ tr.new td{animation:flash 1s}
   </div>
   <div class="err" id="sErr"></div>
   <div class="ctl"><button class="btn ghost" id="sCancel">Abbrechen</button><button class="btn" id="sOk">Speichern</button></div>
+</div></div>
+<div id="tooldlg"><div class="box">
+  <h2>TOOLS · PEGELRECHNER</h2>
+  <div class="sub">Werte aus dem Servicemanual umrechnen – live. Bezug „0 dB“ steht meist im Manual (z. B. „0 dB = 0.775 V“, JVC: „−4 dBs (0.5 V)“). Der Bezug wird je Prüfling gemerkt.</div>
+  <div class="g">
+    <div><label>Bezug 0 dB im Manual</label><select id="tBez"><option value="0.775">0 dB = 0,775 V · dBs / dBu / dBm 600 Ω</option><option value="1">0 dB = 1 V · dBV</option><option value="x">Eigener Bezug …</option></select></div>
+    <div><label>0 dB = … V (eigener Bezug)</label><input id="tBezV" type="number" step="any" value="0.775"></div>
+    <div><label>Frequenz für den Generator (Hz)</label><input id="tF" type="number" step="any" value="1000"></div>
+  </div>
+  <div class="ein">
+    <div><label>Wert aus dem Manual</label><input id="tW" type="text" value="-4" autocomplete="off"></div>
+    <div><label>Einheit</label><select id="tE"><option value="db">dB (re Bezug) / dBs</option><option value="dbv">dBV (1 V)</option><option value="dbu">dBu (0,775 V)</option><option value="v">V rms</option><option value="mv">mV rms</option><option value="vpp">Vpp</option></select></div>
+    <div class="err" id="tErr"></div>
+  </div>
+  <div class="erg">
+    <div><div class="k">SPANNUNG RMS</div><div class="v haupt" id="rV">---</div></div>
+    <div><div class="k">dBV (0 dB = 1 V)</div><div class="v" id="rDbv">---</div></div>
+    <div><div class="k">dBu / dBs (0,775 V)</div><div class="v" id="rDbu">---</div></div>
+    <div><div class="k">dB RE BEZUG</div><div class="v" id="rDb">---</div></div>
+    <div><div class="k">Vpp (Sinus) · FNIRSI</div><div class="v" id="rVpp">---</div></div>
+    <div><div class="k">mV rms</div><div class="v" id="rMv">---</div></div>
+  </div>
+  <div class="upa"><span><b>UPA:</b> <span id="rUpa">---</span></span><button class="btn ghost" id="tUeb" title="Pegel und Frequenz in die UPA-Messung übernehmen (Feld Generator-Pegel / Frequenz)">→ ALS GENERATORPEGEL ÜBERNEHMEN</button><button class="btn ghost" id="tMerk" title="Zeile in die Liste unten übernehmen">+ IN LISTE</button></div>
+  <div class="hist" id="tHist"></div>
+  <div class="merk">Merke: 0 dBV = 1 V · 0 dBu = 0 dBs = 0 dBm (600 Ω) = 0,775 V · dBu = dBV + 2,21 dB · Vpp = Vrms × 2,828 (nur Sinus) · Sony/JVC/Pioneer-Manuals meist 0 dB = 0,775 V.</div>
+  <div class="ctl"><button class="btn" id="tZu">Schließen</button></div>
 </div></div>
 <div id="dutdlg"><div class="box">
   <h2>PRÜFLING</h2>
@@ -1182,6 +1233,44 @@ kachel("smUpa",()=>setView("upa"));
 kachel("smMm",()=>setView("mm"));
 kachel("smProt",()=>{ if(!S) return; if(!S.pruefling){ dutOpen(); return; } protOpen(); });
 kachel("smSet",setOpen);
+kachel("smTool",toolOpen);
+// ---- Tools: Pegelrechner (rein im Fenster, nichts am UPA)
+const TL={hist:[]};
+function tBezugV(){ const o=$("tBez").value; return o==="x"?(+$("tBezV").value):(+o); }
+function tFmtV(v){ if(!(v>0)) return "---"; const a=Math.abs(v);
+  return a>=1?v.toFixed(4).replace(/0+$/,"").replace(/\.$/,"")+" V":a>=1e-3?(v*1e3).toPrecision(4)+" mV":(v*1e6).toPrecision(4)+" µV"; }
+function tDb(x){ return isFinite(x)?(x>=0?"+":"")+x.toFixed(2)+" dB":"---"; }
+function tRechnen(){
+  const ref=tBezugV(), roh=String($("tW").value).trim().replace(",","."), w=parseFloat(roh), e=$("tE").value;
+  $("tErr").textContent="";
+  if(!(ref>0)){ $("tErr").textContent="Bezug ungültig"; return null; }
+  if(!isFinite(w)){ ["rV","rDbv","rDbu","rDb","rVpp","rMv","rUpa"].forEach(i=>$(i).textContent="---"); return null; }
+  let v;
+  if(e==="db") v=ref*Math.pow(10,w/20); else if(e==="dbv") v=Math.pow(10,w/20); else if(e==="dbu") v=0.775*Math.pow(10,w/20);
+  else if(e==="v") v=w; else if(e==="mv") v=w/1000; else v=w/(2*Math.SQRT2);
+  if(!(v>0)){ $("tErr").textContent="Spannung muss größer 0 sein"; return null; }
+  const r={ein:roh+" "+$("tE").selectedOptions[0].textContent.split(" ")[0], v, dbv:20*Math.log10(v), dbu:20*Math.log10(v/0.775), db:20*Math.log10(v/ref), vpp:v*2*Math.SQRT2};
+  $("rV").textContent=tFmtV(v); $("rDbv").textContent=tDb(r.dbv).replace(" dB"," dBV"); $("rDbu").textContent=tDb(r.dbu).replace(" dB"," dBu");
+  $("rDb").textContent=tDb(r.db); $("rVpp").textContent=r.vpp.toPrecision(4)+" Vpp"; $("rMv").textContent=(v*1e3).toPrecision(5)+" mV";
+  const f=+$("tF").value;
+  $("rUpa").textContent=(v<=10?`Generator ${f>0?fmtF(f)+" Hz, ":""}${+v.toPrecision(4)} V (Ziffern → Taste V)`:"über 10 V – nicht als Generatorpegel")+` · Analysator-Soll ${tFmtV(v)} = ${r.dbv.toFixed(2)} dBV`;
+  $("tUeb").disabled=!(v<=10&&v>=0.001);
+  return r;
+}
+async function toolOpen(){ if(!S) return;
+  const b=S.pegelbezug||0.775;
+  if(Math.abs(b-0.775)<1e-9) $("tBez").value="0.775"; else if(Math.abs(b-1)<1e-9) $("tBez").value="1"; else { $("tBez").value="x"; $("tBezV").value=b; }
+  $("tBezV").disabled=$("tBez").value!=="x"; tHist(); tRechnen(); $("tooldlg").classList.add("on"); setTimeout(()=>{$("tW").focus();$("tW").select();},50); }
+function tBezugSpeichern(){ const v=tBezugV(); if(v>0) api("/api/pegelbezug",{v}).then(()=>{ if(S) S.pegelbezug=v; }); }
+$("tBez").onchange=()=>{ if($("tBez").value!=="x") $("tBezV").value=$("tBez").value; $("tBezV").disabled=$("tBez").value!=="x"; tRechnen(); tBezugSpeichern(); };
+$("tBezV").addEventListener("change",()=>{ tRechnen(); tBezugSpeichern(); });
+["tW","tBezV","tF"].forEach(i=>$(i).addEventListener("input",tRechnen)); $("tE").onchange=tRechnen;
+$("tW").addEventListener("keydown",ev=>{ if(ev.key==="Enter"){ ev.preventDefault(); $("tMerk").click(); } });
+function tHist(){ $("tHist").innerHTML=TL.hist.length?`<table><tr><th>MANUAL</th><th>V RMS</th><th>dBV</th><th>dBu/dBs</th><th>Vpp</th></tr>${TL.hist.map(r=>`<tr><td>${esc(r.ein)}${r.bez!==0.775?" (0 dB = "+r.bez+" V)":""}</td><td>${tFmtV(r.v)}</td><td>${r.dbv.toFixed(2)}</td><td>${r.dbu.toFixed(2)}</td><td>${r.vpp.toPrecision(4)}</td></tr>`).join("")}</table>`:""; }
+$("tMerk").onclick=()=>{ const r=tRechnen(); if(!r) return; r.bez=tBezugV(); TL.hist.unshift(r); TL.hist=TL.hist.slice(0,12); tHist(); Snd.init(); Snd.click(); $("tW").select(); };
+$("tUeb").onclick=()=>{ const r=tRechnen(); if(!r) return; $("lev").value=+r.v.toPrecision(4); const f=+$("tF").value; if(f>0) $("fix").value=f;
+  try{ paintFields(); }catch(e){} Snd.init(); Snd.click(); $("tErr").style.color="var(--grn)"; $("tErr").textContent=`✓ Generator-Pegel ${+r.v.toPrecision(4)} V${f>0?" / "+fmtF(f)+" Hz":""} in die UPA-Messung übernommen (Programm „Pegel / Gain“ o. ä.)`; setTimeout(()=>{$("tErr").style.color="";},4000); };
+$("tZu").onclick=()=>$("tooldlg").classList.remove("on");
 kachel("smAus",()=>beenden(false));
 $("smDut").onclick=()=>{ Snd.init(); Snd.click(); dutOpen(); };
 $("smUpd").onclick=()=>api("/api/link",{});
@@ -1211,6 +1300,7 @@ $("sOk").onclick=async()=>{
   if($("fPort")) $("fPort").value=$("sFl").value.trim();
   $("setdlg").classList.remove("on"); menuRender(); };
 $("setdlg").addEventListener("keydown",e=>{ if(e.key==="Escape")$("sCancel").click(); });
+$("tooldlg").addEventListener("keydown",e=>{ if(e.key==="Escape")$("tZu").click(); });
 fetch("/api/ports").then(r=>r.json()).then(ps=>{$("portlist").innerHTML=ps.map(p=>`<option value="${esc(p.device)}">${esc(p.desc)}</option>`).join("");}).catch(()=>{});
 fetch("/api/programs").then(r=>r.json()).then(ps=>{PROGS=ps;buildMenu();let last="fr";try{last=localStorage.getItem("upa_prog")||"fr";}catch(e){}
   select(PROGS.some(p=>p.id===last&&p.status!=="locked")?last:"fr",false);view();table();
