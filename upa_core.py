@@ -422,7 +422,7 @@ class UPA:
     # lesen, erst danach neu einstellen). Gelesen wird per _read_value (wartet,
     # bis der Wert fertig ist) - also weder zu frueh noch zu oft.
     # -----------------------------------------------------------------------
-    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO", gen=None):
+    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO", gen=None, gen_folgt=True):
         """Analysator fuer Bandmessungen einstellen. Liefert None oder Abbruchtext.
         Ungepruefte Befehle einzeln senden und per ++spoll pruefen (wie measure)."""
         self.ifc()
@@ -436,9 +436,12 @@ class UPA:
         if sp != "0":
             return f"{DELIM_CMD} nicht angenommen (spoll={sp!r})"
         # Generator aus (Messband) oder fest an (Abgleich): bewaehrte Befehle wie in measure()
-        # Abgleich: beide unsymmetrischen Ausgaenge (BNC L und R, Handbuch 2.4.9.1) mit demselben Signal
-        generator = (["OUTPUT(LEFT UNBAL)", "OUTPUT(RIGHT UNBAL)", f"SOURCE(FREQUENCY){gen[0]:g}",
-                      f"SOURCE(LEVEL VOLT){gen[1]:g}"]
+        # Abgleich: Der UPA hat EINEN Generatorkanal (Handbuch 2.3.2.1) - das Signal liegt nur an
+        # Ausgang L ODER R, der andere ist intern mit 1 kOhm abgeschlossen. Darum folgt der Ausgang
+        # dem gemessenen Kanal (gen_folgt) oder bleibt fest auf L (Y-Kabel fuer beide Kanaele).
+        self.band_gen_folgt = bool(gen) and gen_folgt
+        ausgang = inp if gen_folgt else "LEFT UNBAL"
+        generator = ([f"OUTPUT({ausgang})", f"SOURCE(FREQUENCY){gen[0]:g}", f"SOURCE(LEVEL VOLT){gen[1]:g}"]
                      if gen else ["OUTPUT(LEFT OFF)"])
         kette = (generator + [f"INPUT({inp})", "MEASUREMENT(AC)", "MEASUREMENT(LEVEL VOLT)"]
                  + list(func) + ["DETECTOR(RMS)"] + list(filters)
@@ -458,9 +461,8 @@ class UPA:
         return None
 
     def gen_aus(self):
-        """Beide Generatorausgaenge abschalten (nach dem Abgleich, damit spaetere
-        Einkanal-Messungen nicht vom zweiten Ausgang gestoert werden).
-        OUTPUT(RIGHT OFF) steht im Handbuch 2.4.9.1, ist am Geraet noch ungeprueft."""
+        """Generator nach dem Abgleich auf 0 V schalten (Handbuch 2.4.9.1: OFF legt den
+        Ausgang auf 0 V). OUTPUT(RIGHT OFF) ist am Geraet noch ungeprueft."""
         hinweise = []
         for c in ("OUTPUT(LEFT OFF)", "OUTPUT(RIGHT OFF)"):
             self._w(c); time.sleep(0.25)
@@ -472,6 +474,8 @@ class UPA:
     def band_input(self, inp):
         """Eingang zwischen zwei Messwerten umschalten (bewiesene Befehle L/R)."""
         if inp != getattr(self, "band_inp", None):
+            if getattr(self, "band_gen_folgt", False):
+                self._w(f"OUTPUT({inp})"); time.sleep(0.25)     # Generator auf denselben Kanal
             self._w(f"INPUT({inp})"); time.sleep(0.3)
             self.band_inp = inp
 

@@ -2,6 +2,12 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.7.1 – 2026-11-25
+- **Korrektur Abgleich-Generator:** Der UPA hat nur **einen** Generatorkanal (Handbuch 2.3.2.1) – das Signal liegt an Ausgang L **oder** R, der andere Kanal ist intern mit 1 kΩ abgeschlossen. v1.7.0 schickte `OUTPUT(LEFT UNBAL)` und danach `OUTPUT(RIGHT UNBAL)`, dadurch war immer nur R aktiv. Jetzt:
+  - **„Generator folgt Kanal“** (Vorgabe): Ausgang und Eingang werden gemeinsam umgeschaltet – bei L+R wird abwechselnd L und R angeregt und gemessen.
+  - **„Generator fest L (Y-Kabel)“**: Ausgang bleibt auf L, für Schritte, bei denen beide Kanäle gleichzeitig Signal brauchen (Y-Kabel vom Ausgang L auf LINE IN L+R).
+- Generator nach dem Abgleich auf 0 V (`OUTPUT(LEFT OFF)` / `OUTPUT(RIGHT OFF)`).
+
 ## 1.7.0 – 2026-11-24
 - **Neues Fenster ABGLEICH** (Startmenü → TOOLS, oder ⚙ ABGLEICH in der UPA-Ansicht), nutzt den ganzen Bildschirm – Abgleichliste, Pegelrechner und Live-Messung zusammen, kein Fensterwechsel mehr:
   - **Links die Abgleichliste**: .json mit den Abgleichschritten aus dem Servicemanual laden (Format siehe `upa_abgleich.py`); sie wird in den **Geräteordner** des Prüflings kopiert (Ablage/NAS). Je Schritt Einsteller, Soll, Ist, ✓/✗. Eine vorhandene Liste mit Ist-Werten wird nur nach Rückfrage ersetzt (alte bleibt als `.alt`).
