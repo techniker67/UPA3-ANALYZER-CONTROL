@@ -2,6 +2,13 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.8.0 – 2026-11-25
+- **Zweites Multimeter (MM2): Voltcraft VC-7055BT** über RS-232 (FTDI-USB-Seriell + Nullmodemkabel, 115200 8N1). Im Multimeter-Fenster unter dem Fluke: Port (Vorgabe COM5, *Suchen*), EIN/AUS, eigene Bezeichnung, Sollwert und Toleranz. Intervall, Dauer und Zeitmarken gelten für beide Geräte, Live-Abgleich / Aufzeichnen / Stop steuern beide.
+  - Anzeige: MM1 Fluke (cyan) und MM2 Voltcraft (orange) nebeneinander, beim Voltcraft mit Funktion und Bereich aus dem Gerät (z. B. „VOLT DC · Bereich 50 mV · AUTO“). Verlauf mit beiden Kurven, Zeitmarken-Tabelle mit je einer Spalte.
+  - Nur lesen: `*IDN?`, `FUNC?`, `RANGE?`, `AUTO?`, `MEAS1?` – am Gerät am 25.11.2026 per Testskript bestätigt. **Kein `SYST:REM`**: das Gerät bleibt von Hand bedienbar. Überlauf (`1E+9`) erscheint als OL.
+  - Aufzeichnung: MM2 wird als eigene Messreihe gespeichert (CSV `upa_ruhe_mm2_…`, Diagramm, eigener Eintrag im Prüfprotokoll). Fällt MM2 aus, läuft der Fluke weiter.
+  - Status *VERIFIKATION*, bis ein Prüfprotokoll vom Gerät vorliegt.
+
 ## 1.7.2 – 2026-11-25
 - **Abgleich: „Generator L+R (beide)“** ersetzt „Generator fest L (Y-Kabel)“. Der UPA3 kann beide Generatorausgänge gleichzeitig einschalten: `OUTPUT(BOTH UNBAL)`. Der Befehl steht nicht im Handbuch (Ausgabe E-7), wurde aber am 25.11.2026 am Gerät per Testskript bestätigt (Taste L+R → `OUTPUT?` meldet `OUTPUT(BOTH UNBAL)`; als Setzbefehl Status 0, Rücklesen ok, LEDs L+R). Damit brauchen Abgleichschritte mit Signal auf beiden Kanälen kein Y-Kabel mehr. Am 25.11.2026 im Abgleichfenster am Gerät bestätigt (beide Kanäle zeigen den Generatorpegel) und in die Liste der bewährten Befehle (`PROVEN`) aufgenommen – keine Einzelprüfung per ++spoll mehr.
 - „Generator folgt Kanal“ bleibt die Vorgabe.

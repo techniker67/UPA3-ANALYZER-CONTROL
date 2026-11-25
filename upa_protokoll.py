@@ -354,13 +354,19 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
         raise ValueError("Keine Messungen ausgewählt")
     adapter = next((e.get("adapter") for e in reversed(ms) if e.get("adapter") and e["programm"] != "ruhe"), "–")
     multimeter = next((e.get("adapter") for e in reversed(ms) if e["programm"] == "ruhe" and e.get("adapter")), "")
+    mm_namen = []                                   # Fluke 287 und/oder Voltcraft VC-7055BT
+    for e in ms:
+        if e["programm"] == "ruhe" and e.get("adapter"):
+            n = "Voltcraft VC-7055BT" if "VC7055" in e["adapter"].upper().replace("-", "") else "Fluke 287"
+            if n not in mm_namen:
+                mm_namen.append(n)
     hat_upa = any(e["programm"] != "ruhe" for e in ms)
     software = ms[-1].get("software", "")
     tage = sorted({_datum(e.get("start"))[:10] for e in ms})
     b = [("titel", "PRÜFPROTOKOLL"),
          ("untertitel", f"{g['hersteller'].upper()} {g['typ']} · Audiomessung"),
          ("grau", f"Seriennummer {g['seriennr']} · Messsystem "
-                  + " + ".join(([("R&S UPA Audioanalysator")] if hat_upa else []) + (["Fluke 287"] if multimeter else []))),
+                  + " + ".join(([("R&S UPA Audioanalysator")] if hat_upa else []) + (mm_namen if multimeter else []))),
          ("datum", f"Protokolldatum: {datetime.now().strftime('%d.%m.%Y')}"),
          ("h1", "1. Prüfling und Messsystem"),
          ("tabelle", ["Parameter", "Wert"],
@@ -369,7 +375,7 @@ def inhalt(ordner, auswahl=None, bemerkung="", firma=""):
            ["Prüfdatum", ", ".join(tage)],
            ["Prüfer", firma or "–"],
            ] + ([["Messsystem", "R&S UPA Audioanalysator, AR488-GPIB-Adapter"],
-                 ["Adapter-Firmware", adapter]] if hat_upa else []) + ([["Multimeter", multimeter]] if multimeter else []) + [
+                 ["Adapter-Firmware", adapter]] if hat_upa else []) + ([["Multimeter", " / ".join(dict.fromkeys(e["adapter"] for e in ms if e["programm"] == "ruhe" and e.get("adapter")))]] if multimeter else []) + [
            ["Software", f"UPA-Analyzer-Control v{software}"]], [3000, 6638], True),
          ("h1", "2. Ergebnisübersicht")]
     z = []

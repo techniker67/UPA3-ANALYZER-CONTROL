@@ -25,6 +25,7 @@ import upa_paths as paths
 import upa_programs as progs
 import upa_report as report
 import upa_fluke as fluke
+import upa_voltcraft as voltcraft
 import upa_protokoll as protokoll
 import upa_abgleich as abgleich
 import upa_window as window
@@ -63,6 +64,12 @@ class App:
         self.fl_ident = ""
         self.fl_port = load_settings().get("fluke_port", "")
         self.fl_csv = None
+        # MM2: Voltcraft VC-7055BT (RS-232) - laeuft gemeinsam mit dem Fluke-Lauf
+        self.m2 = None               # laufender/letzter fluke.Logger fuer MM2
+        self.m2_p = {}
+        self.m2_ident = ""
+        self.m2_port = load_settings().get("mm2_port", "") or "COM5"
+        self.m2_csv = None
         paths.set_ablage(load_settings().get("ablage", ""))
         try:                         # zuletzt festgelegter Pruefling
             self.pruefling = report.pruefling_pruefen(load_settings().get("pruefling"))
@@ -197,12 +204,8 @@ class App:
             while self.fl_busy and time.time() < ende:
                 time.sleep(0.05)
 
-    def fluke_state(self):
-        lg, p = self.fl, self.fl_p
-        st = {"busy": self.fl_busy, "port": self.fl_port, "ident": self.fl_ident,
-              "modus": p.get("modus"), "bezeichnung": p.get("bezeichnung", ""),
-              "soll": p.get("soll"), "tol": p.get("tol"), "dauer_s": p.get("dauer_s"),
-              "csv": os.path.basename(self.fl_csv) if self.fl_csv else None}
+    @staticmethod
+    def _logger_state(lg, st):
         if lg:
             pk = lg.punkte
             st.update({"t": pk[-1][0] if pk else 0.0, "wert": lg.letzter, "hinweis": lg.hinweis,
@@ -210,6 +213,36 @@ class App:
                        "verlauf": lg.verlauf(), "luecken": lg.luecken(),
                        "marken": list(lg.marken), "n": len(pk)})
         return st
+
+    def fluke_state(self):
+        p = self.fl_p
+        st = {"busy": self.fl_busy, "port": self.fl_port, "ident": self.fl_ident,
+              "modus": p.get("modus"), "bezeichnung": p.get("bezeichnung", ""),
+              "soll": p.get("soll"), "tol": p.get("tol"), "dauer_s": p.get("dauer_s"),
+              "csv": os.path.basename(self.fl_csv) if self.fl_csv else None}
+        self._logger_state(self.fl, st)
+        q = self.m2_p
+        m2 = {"an": bool(q), "port": self.m2_port, "ident": self.m2_ident,
+              "bezeichnung": q.get("bezeichnung", ""), "soll": q.get("soll"), "tol": q.get("tol"),
+              "csv": os.path.basename(self.m2_csv) if self.m2_csv else None}
+        self._logger_state(self.m2, m2)
+        if self.m2:
+            lm = self.m2.letzte_m or {}
+            m2.update({"funktion": lm.get("einheit", ""), "bereich": lm.get("bereich", ""),
+                       "auto": lm.get("auto")})
+        st["mm2"] = m2
+        return st
+
+    def mm2_suchen(self):
+        if self.fl_busy:
+            raise ValueError("Multimeter-Messung läuft")
+        port, info = voltcraft.suchen(ausser=[self.port, self.fl_port])
+        if not port:
+            raise ValueError(info)
+        self.m2_port, self.m2_ident = port, info
+        save_settings({"mm2_port": port})
+        self.log(f"MM2 gefunden an {port}: {info}")
+        return port, info
 
     def fluke_suchen(self):
         if self.fl_busy:
@@ -228,9 +261,11 @@ class App:
                 return False
             self.fl_busy, self.fl_stop = True, False
             self.fl_p, self.fl, self.fl_csv = p, None, None
+            self.m2_p, self.m2, self.m2_csv = {}, None, None
 
         def job():
-            f = None
+            f = v = None
+            m2_thread = None
             try:
                 port = p.get("port") or self.fl_port
                 if not port:
@@ -245,40 +280,88 @@ class App:
                 soll = f", Soll {p['soll']:g} ± {p['tol']:g} mV" if p.get("soll") is not None else ""
                 self.log(f"=== Fluke {port} ({self.fl_ident}): {art}{soll}"
                          + (f" – {p['bezeichnung']}" if p.get("bezeichnung") else "") + " ===")
+                q = p.get("mm2")
+                if q:                                    # MM2 Voltcraft: Fehler beenden nur MM2
+                    try:
+                        v = voltcraft.Voltcraft(q.get("port") or self.m2_port)
+                        self.m2_ident = v.oeffnen()
+                        if v.port != self.m2_port:
+                            self.m2_port = v.port
+                            save_settings({"mm2_port": v.port})
+                        p2 = dict(p, soll=q["soll"], tol=q["tol"], bezeichnung=q["bezeichnung"])
+                        self.m2_p = p2
+                        sl = f", Soll {q['soll']:g} ± {q['tol']:g} mV" if q.get("soll") is not None else ""
+                        self.log(f"=== MM2 {v.port} ({self.m2_ident}): nur lesen{sl}"
+                                 + (f" – {q['bezeichnung']}" if q.get("bezeichnung") else "") + " ===")
+                    except voltcraft.MessFehler as e:
+                        self.log(f"FEHLER MM2: {e} – Messung läuft nur mit dem Fluke.")
+                        if v:
+                            v.schliessen()
+                        v = None
                 self.fl = fluke.Logger(f, p, self.log, lambda: self.fl_stop)
                 self.fl.meta = {"start": fluke.jetzt_iso(), "pruefling": self.pruefling}
-                self.fl.laufen(lambda: None)
+                if v:
+                    self.m2 = fluke.Logger(v, self.m2_p, lambda t: self.log("MM2 " + t), lambda: self.fl_stop)
+                    self.m2.meta = dict(self.fl.meta)
+
+                    def m2_lauf():
+                        try:
+                            self.m2.laufen(lambda: None)
+                        except voltcraft.MessFehler as e:
+                            self.log(f"FEHLER MM2: {e} – Fluke läuft weiter.")
+                    m2_thread = threading.Thread(target=m2_lauf, daemon=True)
+                    m2_thread.start()
+                try:
+                    self.fl.laufen(lambda: None)
+                finally:
+                    if m2_thread:
+                        if self.fl.punkte and not self.fl_stop:
+                            # Fluke fertig (Dauer erreicht): MM2 hoechstens 2 Intervalle nachlaufen lassen
+                            m2_thread.join(2 * float(p.get("intervall") or 1) + 1)
+                        self.fl_stop = True
+                        m2_thread.join(5)
                 if p["modus"] == "rec":
                     self.fluke_ablegen()
+                    if self.m2:
+                        self.fluke_ablegen(mm2=True)
             except fluke.FlukeFehler as e:
                 self.log(f"FEHLER Fluke: {e}")
             except Exception as e:
                 self.log(f"FEHLER Fluke: {e}")
             finally:
+                self.fl_stop = True
+                if m2_thread:
+                    m2_thread.join(5)
                 if f:
                     f.schliessen()
+                if v:
+                    v.schliessen()
                 with self.lock:
                     self.fl_busy = False
-                self.log("Fluke-Messung beendet.")
+                self.log("Multimeter-Messung beendet." if v else "Fluke-Messung beendet.")
         threading.Thread(target=job, daemon=True).start()
         return True
 
-    def fluke_ablegen(self):
-        """Aufzeichnung speichern: CSV, Diagramm, Eintrag in messungen.json."""
-        lg, p = self.fl, self.fl_p
+    def fluke_ablegen(self, mm2=False):
+        """Aufzeichnung speichern: CSV, Diagramm, Eintrag in messungen.json.
+        mm2=True: dasselbe fuer MM2 (Voltcraft) als eigene Messreihe."""
+        if mm2:
+            lg, p, ident, port, name = self.m2, self.m2_p, self.m2_ident, self.m2_port, "MM2"
+        else:
+            lg, p, ident, port, name = self.fl, self.fl_p, self.fl_ident, self.fl_port, "Fluke"
         if not lg or not lg.punkte:
-            self.log("Fluke: keine Messwerte – nichts gespeichert.")
+            self.log(f"{name}: keine Messwerte – nichts gespeichert.")
             return
         pr = lg.meta.get("pruefling")
         ziel = report.ordner(pr)
         if report.WARNUNG:
             self.log("ACHTUNG: " + report.WARNUNG)
         stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        pfad = os.path.join(ziel, f"upa_ruhe_{stamp}.csv")
+        pfad = os.path.join(ziel, f"upa_ruhe_{'mm2_' if mm2 else ''}{stamp}.csv")
         firma = load_settings().get("firma", "")
         with open(pfad, "w", encoding="utf-8", newline="") as fh:
             fh.write(f"# UPA-Software v{__version__}" + (f" · {firma}" if firma else "") + "\n")
-            fh.write(f"# Multimeter: {self.fl_ident} an {self.fl_port}\n")
+            fh.write(f"# Multimeter: {ident} an {port}\n")
             if pr:
                 fh.write(f"# Prüfling: {report.bezeichnung(pr)}\n")
             fh.write(f"# Bezeichnung: {p.get('bezeichnung', '')} · Soll: {p.get('soll')} mV ± {p.get('tol')} mV"
@@ -288,7 +371,10 @@ class App:
                 ok = lg.ok(v)
                 fh.write(f"{t};{fluke.zeit_txt(t)};{'' if v is None else f'{v:.4f}'};"
                          f"{'' if ok is None else ('ja' if ok else 'nein')};{h}\n")
-        self.fl_csv = pfad
+        if mm2:
+            self.m2_csv = pfad
+        else:
+            self.fl_csv = pfad
         self.log(f"CSV gespeichert: {pfad}")
         if not pr:
             return
@@ -319,7 +405,7 @@ class App:
                 "programm": "ruhe", "name": "Ruhestrom / Offset",
                 "start": lg.meta.get("start"), "ende": fluke.jetzt_iso(),
                 "bezeichnung": p.get("bezeichnung", ""), "csv": os.path.basename(pfad), "png": png,
-                "adapter": self.fl_ident, "software": __version__,
+                "adapter": ident, "software": __version__,
                 "parameter": {k: p.get(k) for k in ("soll", "tol", "dauer_s", "intervall", "marken_min")},
                 "marken": lg.marken, "ende_wert": ende[1], "ende_t": ende[0], "ende_ol": ende_ol, "statistik": stat,
                 "ergebnis": [{"kanal": p.get("bezeichnung") or "–", "werte": werte}],
@@ -508,7 +594,19 @@ def validate_fluke(b):
                 raise ValueError("Zeitmarken in Minuten > 0")
             marken.append(m)
     port = str(b.get("port", "") or "").strip()
-    return {"modus": modus, "soll": soll, "tol": tol, "dauer_s": dauer_min * 60 if modus == "rec" and dauer_min else None,
+    mm2 = None
+    if b.get("mm2_an") in (True, "1", 1, "true", "EIN"):
+        s2, t2 = zahl("mm2_soll"), zahl("mm2_tol")
+        if s2 is not None and (t2 is None or t2 <= 0):
+            raise ValueError("MM2: zum Sollwert bitte eine Toleranz > 0 angeben")
+        if s2 is None:
+            t2 = None
+        p2 = str(b.get("mm2_port", "") or "").strip()
+        if len(p2) > 40 or any(c in p2 for c in '"<>|*?;&'):
+            raise ValueError("Ungültiger MM2-Port")
+        mm2 = {"port": p2, "soll": s2, "tol": t2,
+               "bezeichnung": str(b.get("mm2_bezeichnung", "") or "").strip()[:60]}
+    return {"mm2": mm2, "modus": modus, "soll": soll, "tol": tol, "dauer_s": dauer_min * 60 if modus == "rec" and dauer_min else None,
             "intervall": intervall, "marken_min": sorted(set(marken)) if modus == "rec" else [],
             "bezeichnung": str(b.get("bezeichnung", "") or "").strip()[:60], "port": port}
 
@@ -580,7 +678,7 @@ def validate_einstellungen(b, app):
     neu = {}
     if "firma" in b:
         neu["firma"] = " ".join(str(b.get("firma") or "").split())[:80]
-    for k in ("port", "fluke_port"):
+    for k in ("port", "fluke_port", "mm2_port"):
         if k in b:
             v = str(b.get(k) or "").strip()
             if len(v) > 40 or any(c in v for c in '"<>|*?;&'):
@@ -1025,6 +1123,8 @@ def make_handler(app):
                         app.addr = neu["addr"]
                     if "fluke_port" in neu:
                         app.fl_port = neu["fluke_port"]
+                    if neu.get("mm2_port"):
+                        app.m2_port = neu["mm2_port"]
                     app.log("Einstellungen gespeichert: " + ", ".join(sorted(neu)))
                 return self._send(200, {"ok": True})
             if u.path == "/api/ordnerwahl":
@@ -1047,6 +1147,12 @@ def make_handler(app):
             if u.path == "/api/fluke/suchen":
                 try:
                     port, info = app.fluke_suchen()
+                except ValueError as e:
+                    return self._send(400, {"error": str(e)})
+                return self._send(200, {"ok": True, "port": port, "ident": info})
+            if u.path == "/api/mm2/suchen":
+                try:
+                    port, info = app.mm2_suchen()
                 except ValueError as e:
                     return self._send(400, {"error": str(e)})
                 return self._send(200, {"ok": True, "port": port, "ident": info})

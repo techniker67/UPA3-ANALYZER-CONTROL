@@ -45,7 +45,8 @@ Entwickelt für Vintage Audio Repair Magdeburg (Erik, GitHub `techniker67`), MIT
 | `upa_core.py` | Adapter-Check, Messkette `measure()`, `PROVEN`-Befehlsliste, Band-Messweg `band_*` |
 | `upa_programs.py` | Messprogramme mit `status` ok / test / locked |
 | `upa_abgleich.py` | Abgleichlisten (.json) für das Fenster ABGLEICH |
-| `upa_fluke.py` | Fluke-287-Logger |
+| `upa_fluke.py` | Fluke-287-Logger (Logger-Klasse auch für MM2) |
+| `upa_voltcraft.py` | MM2 Voltcraft VC-7055BT (RS-232, nur lesen) |
 | `upa_report.py` | Diagramme (matplotlib, DPI 300), Auswertungen |
 | `upa_protokoll.py` | Prüfprotokoll PDF + DOCX, Papierkorb |
 | `upa_server.py` | HTTP-Server 127.0.0.1:8488, API, Jobs, CSV |
@@ -57,6 +58,10 @@ Entwickelt für Vintage Audio Repair Magdeburg (Erik, GitHub `techniker67`), MIT
 - AR488 (ESP32-S2, Build Hans W./DiyEMC) an **COM4**, Firmware **0.53.26 (JW)** –
   vorerst **nicht** updaten, alle Verifikationen hängen daran.
 - Fluke 287 (FW V1.41) an **COM3**, IR-USB-Kabel (FTDI), 115200 8N1, nur lesend (`ID`, `QM`).
+- Voltcraft VC-7055BT (FW V3.0.0, SN 2210062) als MM2 an **COM5** (FTDI + Nullmodem), 115200 8N1,
+  Abschluss LF, kein Echo. Nur lesen: `*IDN?`, `FUNC?` (`"VOLT"`, `"VOLT AC"`, `"RES"`), `RANGE?`
+  (Ω als GBK), `AUTO?`, `MEAS1?` (Überlauf `1E+9`). **Kein `SYST:REM`** (sperrt nur die Tasten),
+  `CONF?` antwortet nicht. Befunde: Projektdoc `claude/VC-7055BT_Befunde.md`.
 - Asymmetrische HiFi-Messung über BNC; der UPA hat keinen symmetrischen XLR-Eingang.
 
 ## GPIB / UPA – nicht neu herausfinden!
