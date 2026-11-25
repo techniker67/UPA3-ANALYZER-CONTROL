@@ -33,7 +33,9 @@ PROVEN = {"OUTPUT(LEFT UNBAL)", "INPUT(LEFT UNBAL)", "MEASUREMENT(AC)",
           # bestaetigt 19.11.2026 20:27 (Stoerabstand):
           "OUTPUT(LEFT OFF)", "FILTER(HP22HZ)",
           # bestaetigt 19.11.2026 20:41 (Kanaltrennung L->R):
-          "INPUT(RIGHT UNBAL)", "OUTPUT(RIGHT UNBAL)"}   # 20:48 (R->L)
+          "INPUT(RIGHT UNBAL)", "OUTPUT(RIGHT UNBAL)",   # 20:48 (R->L)
+          # bestaetigt 25.11.2026 17:26 (Abgleich live, Generator L+R, Erik):
+          "OUTPUT(BOTH UNBAL)"}
 
 
 def is_proven(cmd):
