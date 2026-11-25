@@ -108,14 +108,15 @@ def suchen(ausser=()):
     return None, "kein Fluke gefunden – FlukeView Forms geschlossen? IR-Kopf aufgesteckt? Fluke an?"
 
 
-def als_mv(m):
-    """Messwert in mV (nur Spannungsfunktionen). Liefert (mV oder None, Hinweis)."""
+def als_mv(m, name="Fluke"):
+    """Messwert in mV (nur Spannungsfunktionen). Liefert (mV oder None, Hinweis).
+    name = Geraet im Hinweistext (Fluke oder Voltcraft)."""
     e = (m.get("einheit") or "").upper()
     if m.get("wert") is None:
         return None, "Überlauf (OL)"
     if e in ("VDC", "VAC", "VAC_PLUS_DC", "V"):
         return m["wert"] * 1000.0, ("" if e == "VDC" else f"Achtung: {e} statt V DC")
-    return None, f"Fluke steht auf {e or '?'} – bitte mV DC wählen"
+    return None, f"{name} steht auf {e or '?'} – bitte {'mV' if name == 'Fluke' else 'V'} DC wählen"
 
 
 # ---------------------------------------------------------------------------
@@ -129,6 +130,8 @@ class Logger:
         self.t0 = None
         self.letzter = None
         self.hinweis = ""
+        self.letzte_m = {}          # letzte Rohantwort (Einheit, Bereich ...)
+        self.name = getattr(fluke, "name", "Fluke")
 
     def ok(self, v):
         soll, tol = self.p.get("soll"), self.p.get("tol")
@@ -179,13 +182,14 @@ class Logger:
                 break
             try:
                 m = self.f.messen()
-                v, self.hinweis = als_mv(m)
+                self.letzte_m = m
+                v, self.hinweis = als_mv(m, self.name)
                 fehler_folge = 0
             except FlukeFehler as e:
                 fehler_folge += 1
                 v, self.hinweis = None, str(e)
                 if fehler_folge >= 5:
-                    raise FlukeFehler(f"Verbindung zum Fluke verloren: {e}")
+                    raise FlukeFehler(f"Verbindung zum {self.name} verloren: {e}")
             self.punkte.append((round(t, 2), v, self.hinweis))
             self.letzter = v
             while offen and t >= offen[0] * 60.0:

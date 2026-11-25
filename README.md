@@ -49,6 +49,7 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
 - R&S UPA audio analyzer with IEC bus (options as listed above)
 - AR488-compatible GPIB adapter — tested: [ESP32-S2 adapter by DiyEMC](https://www.diyemc.com/Products/Esp32s2Ar488/) with firmware **0.53.26 (JW)**; other adapters and versions run but are flagged in the log
 - Optional: Fluke 287/289 multimeter with Fluke IR-USB cable (quiescent current / offset logging)
+- Optional second meter (MM2): Voltcraft VC-7055BT / OWON XDM1041 via RS-232 (USB-serial + null-modem cable), read-only
 - Windows 10 or 11 (64 bit). The program window uses Microsoft Edge WebView2, which is part of current Windows versions.
 
 ## Installation
@@ -156,7 +157,7 @@ Windows-Programm zur Steuerung des **R&S UPA Audioanalysators** über einen **AR
 - **Prüfling** (Hersteller, Typ, Seriennummer, optional Auftragsnummer) im Startmenü oder in der Kopfzeile festlegen – alle Messungen landen dann in einem eigenen Ordner.
 - **Einstellungen:** Ablageordner, Prüfer/Firma, Ports; Hinweis auf neue Versionen (fragt beim Start GitHub, abschaltbar).
 - **▤ PROTOKOLL** erstellt das Prüfprotokoll als PDF und DOCX; Drucken direkt aus dem Programm. Nicht mehr benötigte Messungen und Protokolle wandern mit ✕ in den Unterordner `Papierkorb` des Geräteordners und lassen sich dort mit ↺ zurückholen.
-- **Ruhestrom / Offset** mit dem Fluke 287 (IR-USB-Kabel): Live-Abgleich mit Trend oder Aufzeichnung 10 min … 2 h mit Zeitmarken – direkt über die Kachel **Multimeter** im Startmenü, auch ohne UPA.
+- **Ruhestrom / Offset** mit dem Fluke 287 (IR-USB-Kabel): Live-Abgleich mit Trend oder Aufzeichnung 10 min … 2 h mit Zeitmarken – direkt über die Kachel **Multimeter** im Startmenü, auch ohne UPA. Optional parallel ein **zweites Multimeter (MM2, Voltcraft VC-7055BT)** – z. B. Ruhestrom L und R gleichzeitig.
 - **Daten:** `Dokumente\UPA-Analyzer-Control` (Einstellungen, Kalibrierung, Messungen, Protokoll); der Ablageordner für Messungen ist frei wählbar, z. B. ein NAS.
 
 Getestet mit UPA3 und dem [ESP32-S2-GPIB-Adapter von DiyEMC](https://www.diyemc.com/Products/Esp32s2Ar488/) (Firmware 0.53.26 (JW)) – vielen Dank an Hans W. für Adapter und Firmware. Links zu AR488, den ESP32-Varianten und dem Forumsthread unter „Related projects & thanks". Die Oberfläche ist derzeit deutsch. Kein offizielles Produkt von Rohde & Schwarz; Nutzung auf eigene Gefahr.
