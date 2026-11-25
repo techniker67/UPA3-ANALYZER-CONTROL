@@ -2,6 +2,10 @@
 
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
+## 1.8.1 – 2026-11-25
+- **MM2 Voltcraft: Bereichswechsel ausgefiltert.** Bei automatischer Bereichswahl liefert das VC-7055BT beim Umschalten kurz genau 0,000000 V (Prüfprotokoll JVC DD-9 vom 25.11.: Einbrüche auf 0 nur beim Voltcraft, genau an den Spannungssprüngen; mit festem Bereich keine Einbrüche). Solche Werte (höchstens 2 in Folge, Wert davor ≥ 10 mV) gelten jetzt als Lücke „Bereichswechsel“: kein Einfluss auf Min/Max/Mittel, Anzeige behält den letzten Wert, eine Zeitmarke nimmt den nächsten gültigen Wert, Endwert = letzter gültiger Wert. Bleibt das Gerät länger auf 0 (z. B. Messleitung abgezogen), wird ab dem 3. Wert wieder 0 angezeigt.
+- Vergleich am Gerät (25.11.): Voltcraft liegt 0,06–0,1 % unter dem Fluke 287 – MM2 damit bestätigt.
+
 ## 1.8.0 – 2026-11-25
 - **Zweites Multimeter (MM2): Voltcraft VC-7055BT** über RS-232 (FTDI-USB-Seriell + Nullmodemkabel, 115200 8N1). Im Multimeter-Fenster unter dem Fluke: Port (Vorgabe COM5, *Suchen*), EIN/AUS, eigene Bezeichnung, Sollwert und Toleranz. Intervall, Dauer und Zeitmarken gelten für beide Geräte, Live-Abgleich / Aufzeichnen / Stop steuern beide.
   - Anzeige: MM1 Fluke (cyan) und MM2 Voltcraft (orange) nebeneinander, beim Voltcraft mit Funktion und Bereich aus dem Gerät (z. B. „VOLT DC · Bereich 50 mV · AUTO“). Verlauf mit beiden Kurven, Zeitmarken-Tabelle mit je einer Spalte.

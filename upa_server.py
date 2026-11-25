@@ -388,7 +388,8 @@ class App:
         except Exception as e:
             self.log(f"Diagramm nicht erstellt: {e}")
         ab_t = lg.marken[0]["t"] if lg.marken else 0.0      # Min/Max ab erster Zeitmarke
-        stat, ende = lg.statistik(ab_t), lg.punkte[-1]
+        stat = lg.statistik(ab_t)
+        ende = next((pk for pk in reversed(lg.punkte) if pk[2] != fluke.BEREICHSWECHSEL), lg.punkte[-1])
         ende_ol = ende[1] is None and lg.ist_ol(ende[2])
         ende_ok = False if ende_ol and p.get("soll") is not None else lg.ok(ende[1])
         werte = []

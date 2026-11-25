@@ -25,6 +25,12 @@ from upa_fluke import FlukeFehler as MessFehler
 
 BAUD = 115200
 UEBERLAUF = 9.9e8          # VC-7055BT meldet OL als 1E+9
+# Bereichswechsel bei AUTO: das Geraet liefert kurz genau 0.000000 (Pruefprotokoll
+# 25.11.2026: Einbrueche auf 0 nur beim Voltcraft, genau an Spannungsspruengen; mit
+# festem Bereich keine Einbrueche). Bis zu NULL_MAX solcher Werte in Folge gelten
+# als Luecke, wenn der Wert davor mindestens NULL_AB (V) betrug.
+NULL_AB = 0.01
+NULL_MAX = 2
 
 # FUNC?-Antwort -> Einheitenkennung wie beim Fluke (VDC, VAC, ...)
 FUNKTIONEN = {"VOLT": "VDC", "VOLT DC": "VDC", "VOLT AC": "VAC", "CURR": "ADC", "CURR DC": "ADC",
@@ -44,6 +50,8 @@ class Voltcraft:
         self.auto = None
         self.lock = threading.Lock()
         self._n = 0
+        self._letzter = None       # letzter gueltiger Wert (Grundeinheit)
+        self._nullen = 0           # Bereichswechsel-Nullen in Folge
 
     def oeffnen(self):
         if serial is None:
@@ -108,6 +116,13 @@ class Voltcraft:
         status = "NORMAL"
         if abs(wert) >= UEBERLAUF:
             wert, status = None, "OL"
+        elif (wert == 0.0 and self.auto and self._letzter is not None
+              and abs(self._letzter) >= NULL_AB and self._nullen < NULL_MAX):
+            self._nullen += 1                 # kurze 0 beim automatischen Bereichswechsel
+            wert, status = None, "BEREICH"
+        else:
+            self._nullen = 0
+            self._letzter = wert
         return {"wert": wert, "einheit": FUNKTIONEN.get(f, f), "status": status,
                 "bereich": self.bereich, "auto": self.auto}
 
