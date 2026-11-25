@@ -422,7 +422,7 @@ class UPA:
     # lesen, erst danach neu einstellen). Gelesen wird per _read_value (wartet,
     # bis der Wert fertig ist) - also weder zu frueh noch zu oft.
     # -----------------------------------------------------------------------
-    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO", gen=None, gen_folgt=True):
+    def band_setup(self, inp="LEFT UNBAL", mode="LEV/FREQ", filters=(), func=(), rng="AUTO", gen=None, gen_aus="folgt"):
         """Analysator fuer Bandmessungen einstellen. Liefert None oder Abbruchtext.
         Ungepruefte Befehle einzeln senden und per ++spoll pruefen (wie measure)."""
         self.ifc()
@@ -436,11 +436,14 @@ class UPA:
         if sp != "0":
             return f"{DELIM_CMD} nicht angenommen (spoll={sp!r})"
         # Generator aus (Messband) oder fest an (Abgleich): bewaehrte Befehle wie in measure()
-        # Abgleich: Der UPA hat EINEN Generatorkanal (Handbuch 2.3.2.1) - das Signal liegt nur an
-        # Ausgang L ODER R, der andere ist intern mit 1 kOhm abgeschlossen. Darum folgt der Ausgang
-        # dem gemessenen Kanal (gen_folgt) oder bleibt fest auf L (Y-Kabel fuer beide Kanaele).
-        self.band_gen_folgt = bool(gen) and gen_folgt
-        ausgang = inp if gen_folgt else "LEFT UNBAL"
+        # Abgleich: OUTPUT(LEFT ...) und OUTPUT(RIGHT ...) sind EIN Ausgangszustand - der letzte
+        # Befehl gewinnt (v1.7.0-Fehler). gen_aus="folgt": Ausgang wechselt mit dem gemessenen
+        # Kanal. gen_aus="LR": OUTPUT(BOTH UNBAL) - beide Ausgaenge gleichzeitig. Steht nicht im
+        # Handbuch (E-7), an Eriks UPA3 am 25.11.2026 per Testskript bestaetigt (Status 0,
+        # OUTPUT? liest BOTH zurueck, LEDs L+R). In der Software noch Verifikation -> per spoll.
+        beide = gen_aus == "LR"
+        self.band_gen_folgt = bool(gen) and not beide
+        ausgang = "BOTH UNBAL" if beide else inp
         generator = ([f"OUTPUT({ausgang})", f"SOURCE(FREQUENCY){gen[0]:g}", f"SOURCE(LEVEL VOLT){gen[1]:g}"]
                      if gen else ["OUTPUT(LEFT OFF)"])
         kette = (generator + [f"INPUT({inp})", "MEASUREMENT(AC)", "MEASUREMENT(LEVEL VOLT)"]
