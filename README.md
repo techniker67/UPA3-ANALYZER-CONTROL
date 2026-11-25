@@ -5,7 +5,7 @@
 Windows program for the **Rohde & Schwarz UPA** audio analyzer (tested on a UPA3), controlled over IEC bus (GPIB) with a low-cost **AR488** USB–GPIB adapter.
 Built for daily use on the repair bench: frequency response, gain, THD+N, signal-to-noise and crosstalk — with charts, CSV files and a printable test report (PDF + DOCX).
 
-> **Version 1.7.0** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
+> **Version 1.7.1** — stable release (first public release: 1.0.0). All measurement programs marked *GETESTET* (tested) have been verified on a real UPA3.
 > The user interface is currently in German; an English UI is planned.
 
 🇩🇪 [Deutsche Kurzfassung weiter unten](#deutsch)
@@ -33,7 +33,7 @@ Built for daily use on the repair bench: frequency response, gain, THD+N, signal
   | SINAD, weighted S/N (A/CCIR), phase L–R | – | locked until verified |
 
 - Filters LP 22 kHz / HP 22 Hz, range AUTO (4 digits) or HOLD (3 digits), live charts (log frequency axis, THD+N in % or dB).
-- **Tools → adjustment window** (full screen): load a JSON list of service-manual adjustment steps, pick a step, convert manual levels (dBs/dBu/dBV/V/Vpp), set the generator (L+R) and compare L/R live against the target, store the results with notes and print an adjustment sheet (PDF) into the device folder.
+- **Tools → adjustment window** (full screen): load a JSON list of service-manual adjustment steps, pick a step, convert manual levels (dBs/dBu/dBV/V/Vpp), set the generator (output follows the measured channel, or fixed L for a Y-cable) and compare L/R live against the target, store the results with notes and print an adjustment sheet (PDF) into the device folder.
 - **Device under test**: enter manufacturer, type and serial number (optionally an order number) — all following measurements are collected in one folder with CSV, chart (PNG) and a summary of the key results.
 - **Test report** as **PDF and DOCX** from the selected measurements: device data, result overview, one page per measurement with settings, chart and measured values, remarks, signature line. Open, print or edit in Word directly from the program. Measurements and reports that are no longer needed can be moved to a **recycle bin** subfolder of the device folder (✕) and restored from there (↺).
 - **Quiescent current / DC offset logger** with a **Fluke 287/289** via the IR-USB cable: live adjustment display with trend and tolerance colour, or recording over 10 min … 2 h with time marks — chosen directly from the **start menu**, works without the UPA. See [docs/fluke.md](docs/fluke.md).

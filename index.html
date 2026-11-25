@@ -617,6 +617,7 @@ tr.new td{animation:flash 1s}
       <section class="blk"><div class="t">LIVE · UPA</div>
         <div class="ctl">
           <div class="seg" id="aCh"><button data-v="L">L</button><button data-v="R">R</button><button data-v="LR">L+R</button></div>
+          <select id="aGenAus" style="width:auto" title="Der UPA hat nur einen Generatorkanal: das Signal liegt an Ausgang L ODER R. 'folgt Kanal' schaltet den Ausgang mit dem Messkanal um; 'fest L' für ein Y-Kabel, wenn beide Kanäle gleichzeitig Signal brauchen."><option value="folgt">Generator folgt Kanal</option><option value="L">Generator fest L (Y-Kabel)</option></select>
           <button class="btn" id="aStart">▶ START</button>
           <button class="btn ghost" id="aStop">■ STOP</button>
           <button class="btn ghost" id="aRef" title="Aktuellen Pegel als Referenz merken – danach Abweichung in dB (z. B. 10 kHz gegen 315 Hz)">REFERENZ MERKEN</button></div>
@@ -1337,9 +1338,9 @@ function tRechnen(){
   $("rVpp").textContent=v?(+(v*2*Math.SQRT2).toPrecision(4))+" Vpp":"---";
   const gen=$("aGenAn").checked, f=+$("tF").value;
   $("aWLbl").textContent=gen?"Generatorpegel (Wert aus dem Manual)":"Sollwert (Wert aus dem Manual)";
-  $("aRolle").textContent=gen?(v&&v<=5?`→ UPA-Generator L+R: ${f>0?aF(f)+" · ":""}${aV(v)}`:"Generatorpegel muss 1 mV … 5 V sein")
+  $("aRolle").textContent=gen?(v&&v<=5?`→ UPA-Generator ${$("aGenAus").value==="L"?"Ausgang L (Y-Kabel)":"am Ausgang des Messkanals"}: ${f>0?aF(f)+" · ":""}${aV(v)}`:"Generatorpegel muss 1 mV … 5 V sein")
     :(v?`→ Sollwert am Ausgang: ${aV(v)} · Generator aus (Messband / Signal von außen)`:"");
-  const sig=gen&&v?`${f}|${v.toPrecision(5)}`:"aus";
+  const sig=gen&&v?`${f}|${v.toPrecision(5)}|${$("aGenAus").value}`:"aus";
   if(aLaeuft()&&AB.laufSig&&AB.laufSig!==sig) $("aRolle").textContent+="  ·  ▶ NEU STARTEN übernimmt die Änderung";
   return v; }
 async function abgOpen(){ if(!S) return; Snd.init(); Snd.click();
@@ -1375,7 +1376,7 @@ function abgRender(neu){
   $("aSchritt").innerHTML=`<option value="">— freie Eingabe (ohne Schritt) —</option>`+(Li?Li.schritte.map(x=>`<option value="${esc(x.nr)}">${esc(x.nr)} · ${esc(x.titel)}${x.einsteller?" · "+esc(x.einsteller):""}</option>`).join(""):"");
   $("aSchritt").value=AB.sel||"";
   const e=s&&(Li.ergebnisse||{})[s.nr];
-  $("aDet").innerHTML=!s?"":`<dl><dt>Soll</dt><dd>${esc(aSoll(s)||"–")}</dd><dt>Generator</dt><dd>${s.generator?esc(aF(s.generator.f)+" · "+aV(s.generator.v)+" an UPA-Ausgang L+R"):"aus"}</dd>
+  $("aDet").innerHTML=!s?"":`<dl><dt>Soll</dt><dd>${esc(aSoll(s)||"–")}</dd><dt>Generator</dt><dd>${s.generator?esc(aF(s.generator.f)+" · "+aV(s.generator.v)):"aus"}</dd>
     ${s.band?`<dt>Messband</dt><dd>${esc(s.band)}</dd>`:""}${s.anschluss?`<dt>Anschluss</dt><dd>${esc(s.anschluss)}</dd>`:""}
     ${e?`<dt>Ist gespeichert</dt><dd>${esc(aIst(e))} · ${esc(e.zeit||"")}</dd>`:""}</dl>${s.hinweis?`<div class="hin">${esc(s.hinweis)}</div>`:""}`;
   if(neu){ abgSchrittInRechner(s); $("aNotiz").value=(e&&e.notiz)||AB.notiz[AB.sel]||""; $("aErr").textContent=""; }
@@ -1412,8 +1413,8 @@ async function abgStart(){ Snd.init(); Snd.click(); $("aErr").textContent="";
   if(gen&&!(v&&v>=0.001&&v<=5)){ $("aErr").textContent="Generatorpegel muss 1 mV … 5 V sein"; Snd.denied(); return; }
   if(gen&&!(f>=10&&f<=50000)){ $("aErr").textContent="Frequenz 10 Hz … 50 kHz"; Snd.denied(); return; }
   if(aLaeuft()){ await fetch("/api/stop",{method:"POST"}); for(let i=0;i<60&&S&&S.busy;i++) await new Promise(r=>setTimeout(r,250)); }
-  AB.lauf=AB.sel||"frei"; AB.laufSig=gen?`${f}|${v.toPrecision(5)}`:"aus";
-  const r=await api("/api/run",{prog:"abgl",channels:AB.ch,rng:"AUTO",lp22:false,hp22:false,atten:1,dauer:900,gen_f:gen?f:1000,gen_v:gen?+v.toPrecision(5):0});
+  AB.lauf=AB.sel||"frei"; AB.laufSig=gen?`${f}|${v.toPrecision(5)}|${$("aGenAus").value}`:"aus";
+  const r=await api("/api/run",{prog:"abgl",channels:AB.ch,rng:"AUTO",lp22:false,hp22:false,atten:1,dauer:900,gen_f:gen?f:1000,gen_v:gen?+v.toPrecision(5):0,gen_aus:$("aGenAus").value});
   if(!r.ok){ $("aErr").textContent=r.error||"Start nicht möglich"; Snd.denied(); } }
 async function abgUebernehmen(loeschen){ const s=aStep(); if(!s) return; const w=abgWerte();
   if(!loeschen&&!w.l&&!w.r&&!w.f){ $("aErr").textContent="Noch keine Live-Werte für diesen Schritt – erst ▶ starten."; return; }
@@ -1425,7 +1426,7 @@ async function abgUebernehmen(loeschen){ const s=aStep(); if(!s) return; const w
 function tBezugSpeichern(){ const v=tBezugV(); if(v>0) api("/api/pegelbezug",{v}).then(()=>{ if(S) S.pegelbezug=v; }); }
 $("tBez").onchange=()=>{ if($("tBez").value!=="x") $("tBezV").value=$("tBez").value; $("tBezV").disabled=$("tBez").value!=="x"; abgLive(); tBezugSpeichern(); };
 $("tBezV").addEventListener("change",()=>{ abgLive(); tBezugSpeichern(); });
-["aW","tBezV","tF"].forEach(i=>$(i).addEventListener("input",abgLive)); $("tE").onchange=abgLive; $("aGenAn").onchange=abgLive;
+["aW","tBezV","tF"].forEach(i=>$(i).addEventListener("input",abgLive)); $("tE").onchange=abgLive; $("aGenAn").onchange=abgLive; $("aGenAus").onchange=abgLive;
 $("aSchritt").onchange=()=>{ Snd.init(); Snd.click(); abgSchrittWaehlen($("aSchritt").value); };
 document.querySelectorAll("#aCh button").forEach(b=>b.onclick=()=>{ AB.ch=b.dataset.v; document.querySelectorAll("#aCh button").forEach(x=>x.classList.toggle("on",x===b)); });
 $("aStart").onclick=abgStart; $("aStop").onclick=()=>{ Snd.init(); Snd.click(); fetch("/api/stop",{method:"POST"}); };

@@ -738,6 +738,7 @@ def validate_run(body):
         if ui.get("gen"):
             p["gen_v"] = _f(body, "gen_v", 0) or 0.0          # 0 = Generator aus (Messband)
             p["gen_f"] = _f(body, "gen_f", 1000)
+            p["gen_aus"] = "L" if body.get("gen_aus") == "L" else "folgt"   # Generatorausgang
             if p["gen_v"] and not (LEVEL_MIN <= p["gen_v"] <= LEVEL_MAX):
                 raise ValueError(f"Generatorpegel {LEVEL_MIN} bis {LEVEL_MAX} V")
             if not (FREQ_MIN <= p["gen_f"] <= FREQ_MAX):
