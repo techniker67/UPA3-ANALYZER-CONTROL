@@ -83,7 +83,8 @@ Entwickelt für Vintage Audio Repair Magdeburg (Erik, GitHub `techniker67`), MIT
 - **Generatorausgang:** `OUTPUT(LEFT …)` und `OUTPUT(RIGHT …)` sind EIN Zustand, der
   letzte Befehl gewinnt. Beide Ausgänge gleichzeitig: **`OUTPUT(BOTH UNBAL)`** – steht nicht
   im Handbuch (E-7), an Eriks UPA3 am 25.11.2026 bestätigt (Taste L+R → `OUTPUT?` meldet
-  BOTH; als Setzbefehl Status 0, Rücklesen ok, LEDs L+R).
+  BOTH; als Setzbefehl Status 0, Rücklesen ok, LEDs L+R); 17:26 im Abgleich live bestätigt →
+  in `PROVEN`. `OUTPUT(RIGHT OFF)` weiterhin ungeprüft.
 - **Setup abfragen ohne CLEAR** (Tastenstellung bleibt): `++ren 1` → `DELIMITER(TYPE(NL/EOI))`
   → Abfrage (z. B. `OUTPUT?`) → 3 s warten → genau EIN `++read eoi` → `++spoll` → `++loc` →
   `++ren 0`. Ohne DELIMITER bzw. zu früh gelesen: „NOT TRIGGERED“-Flut, Adapter hängt, UPA

@@ -3,7 +3,7 @@
 Versionsschema: MAJOR.MINOR.PATCH. PATCH = Korrektur, MINOR = neue Funktion, 1.0.0 = erste GitHub-Veröffentlichung.
 
 ## 1.7.2 – 2026-11-25
-- **Abgleich: „Generator L+R (beide)“** ersetzt „Generator fest L (Y-Kabel)“. Der UPA3 kann beide Generatorausgänge gleichzeitig einschalten: `OUTPUT(BOTH UNBAL)`. Der Befehl steht nicht im Handbuch (Ausgabe E-7), wurde aber am 25.11.2026 am Gerät per Testskript bestätigt (Taste L+R → `OUTPUT?` meldet `OUTPUT(BOTH UNBAL)`; als Setzbefehl Status 0, Rücklesen ok, LEDs L+R). Damit brauchen Abgleichschritte mit Signal auf beiden Kanälen kein Y-Kabel mehr. In der Software noch *VERIFIKATION*: der Befehl wird beim Start per ++spoll geprüft.
+- **Abgleich: „Generator L+R (beide)“** ersetzt „Generator fest L (Y-Kabel)“. Der UPA3 kann beide Generatorausgänge gleichzeitig einschalten: `OUTPUT(BOTH UNBAL)`. Der Befehl steht nicht im Handbuch (Ausgabe E-7), wurde aber am 25.11.2026 am Gerät per Testskript bestätigt (Taste L+R → `OUTPUT?` meldet `OUTPUT(BOTH UNBAL)`; als Setzbefehl Status 0, Rücklesen ok, LEDs L+R). Damit brauchen Abgleichschritte mit Signal auf beiden Kanälen kein Y-Kabel mehr. Am 25.11.2026 im Abgleichfenster am Gerät bestätigt (beide Kanäle zeigen den Generatorpegel) und in die Liste der bewährten Befehle (`PROVEN`) aufgenommen – keine Einzelprüfung per ++spoll mehr.
 - „Generator folgt Kanal“ bleibt die Vorgabe.
 
 ## 1.7.1 – 2026-11-25
