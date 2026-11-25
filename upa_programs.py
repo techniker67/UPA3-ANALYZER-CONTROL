@@ -72,7 +72,7 @@ PROGRAMS = [
      "status": "test", "band": True, "live": True, "hidden": True, "x": "time", "est": 4,
      "ui": {"band": True, "dauer": True, "gen": True},
      "def": {"lp22": False, "hp22": False, "rng": "AUTO", "ch": "LR", "dauer": 900},
-     "note": "Abgleich nach Liste: UPA-Generator gibt den Schritt-Ton am Ausgang des gemessenen Kanals aus (oder fest L für ein Y-Kabel; aus = Messband), der Analysator "
+     "note": "Abgleich nach Liste: UPA-Generator gibt den Schritt-Ton am Ausgang des gemessenen Kanals aus (oder an beiden Ausgängen L+R; aus = Messband), der Analysator "
              "liest L/R laufend. Nichts wird gespeichert – Ist-Werte im Abgleich-Dialog übernehmen."},
     {"id": "sinad", "name": "SINAD", "sub": "Signal / (Rausch+Klirr)", "opt": "B8", "status": "locked",
      "x": "freq", "est": 22, "ui": {}, "def": {},
@@ -179,13 +179,13 @@ def _run_band(u, prog, p, emit, log, stop):
         mode, func = "LEV/FREQ", []
     gen = (p["gen_f"], p["gen_v"]) if pid == "abgl" and p.get("gen_v") else None
     err = u.band_setup(CH[chans[0]][1], mode, _filters(p), func=func, rng="AUTO", gen=gen,
-                       gen_folgt=p.get("gen_aus", "folgt") != "L")
+                       gen_aus=p.get("gen_aus", "folgt"))
     for c in getattr(u, "neu_ok", []):
         log(f"  [OK] neuer Befehl angenommen: {c}")
     if err:
         emit({"ch": chans[0], "x": 0, "t": 0, "abbruch": err, "raw": "", "f": None, "u": None, "u_true": None})
         return
-    log(f"  Analysator eingestellt ({'Generator ' + format(gen[0], 'g') + ' Hz / ' + format(gen[1], 'g') + ' V, Ausgang ' + ('fest L (Y-Kabel)' if p.get('gen_aus') == 'L' else 'folgt Kanal') if gen else 'Generator aus'}),"
+    log(f"  Analysator eingestellt ({'Generator ' + format(gen[0], 'g') + ' Hz / ' + format(gen[1], 'g') + ' V, Ausgang ' + ('L+R (beide)' if p.get('gen_aus') == 'LR' else 'folgt Kanal') if gen else 'Generator aus'}),"
         f" lese Werte – Kanal {'/'.join(chans)} ...")
     t0 = time.time()
     k = 0

@@ -617,7 +617,7 @@ tr.new td{animation:flash 1s}
       <section class="blk"><div class="t">LIVE · UPA</div>
         <div class="ctl">
           <div class="seg" id="aCh"><button data-v="L">L</button><button data-v="R">R</button><button data-v="LR">L+R</button></div>
-          <select id="aGenAus" style="width:auto" title="Der UPA hat nur einen Generatorkanal: das Signal liegt an Ausgang L ODER R. 'folgt Kanal' schaltet den Ausgang mit dem Messkanal um; 'fest L' für ein Y-Kabel, wenn beide Kanäle gleichzeitig Signal brauchen."><option value="folgt">Generator folgt Kanal</option><option value="L">Generator fest L (Y-Kabel)</option></select>
+          <select id="aGenAus" style="width:auto" title="'folgt Kanal': der Generatorausgang wechselt mit dem Messkanal (bei L+R abwechselnd). 'L+R': beide Generatorausgänge gleichzeitig an, nur der Eingang wechselt – für Schritte, bei denen beide Kanäle zugleich Signal brauchen (kein Y-Kabel nötig)."><option value="folgt">Generator folgt Kanal</option><option value="LR">Generator L+R (beide)</option></select>
           <button class="btn" id="aStart">▶ START</button>
           <button class="btn ghost" id="aStop">■ STOP</button>
           <button class="btn ghost" id="aRef" title="Aktuellen Pegel als Referenz merken – danach Abweichung in dB (z. B. 10 kHz gegen 315 Hz)">REFERENZ MERKEN</button></div>
@@ -1338,7 +1338,7 @@ function tRechnen(){
   $("rVpp").textContent=v?(+(v*2*Math.SQRT2).toPrecision(4))+" Vpp":"---";
   const gen=$("aGenAn").checked, f=+$("tF").value;
   $("aWLbl").textContent=gen?"Generatorpegel (Wert aus dem Manual)":"Sollwert (Wert aus dem Manual)";
-  $("aRolle").textContent=gen?(v&&v<=5?`→ UPA-Generator ${$("aGenAus").value==="L"?"Ausgang L (Y-Kabel)":"am Ausgang des Messkanals"}: ${f>0?aF(f)+" · ":""}${aV(v)}`:"Generatorpegel muss 1 mV … 5 V sein")
+  $("aRolle").textContent=gen?(v&&v<=5?`→ UPA-Generator ${$("aGenAus").value==="LR"?"an beiden Ausgängen L+R":"am Ausgang des Messkanals"}: ${f>0?aF(f)+" · ":""}${aV(v)}`:"Generatorpegel muss 1 mV … 5 V sein")
     :(v?`→ Sollwert am Ausgang: ${aV(v)} · Generator aus (Messband / Signal von außen)`:"");
   const sig=gen&&v?`${f}|${v.toPrecision(5)}|${$("aGenAus").value}`:"aus";
   if(aLaeuft()&&AB.laufSig&&AB.laufSig!==sig) $("aRolle").textContent+="  ·  ▶ NEU STARTEN übernimmt die Änderung";

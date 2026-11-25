@@ -80,6 +80,14 @@ Entwickelt für Vintage Audio Repair Magdeburg (Erik, GitHub `techniker67`), MIT
   `RANGE(LEVEL HOLD(n))` (Ausnahme: Bandmessungen und Messungen mit P78 → AUTO).
 - `measure()` braucht ca. 20 s pro Punkt; für Bandmessungen den schnelleren `band_*`-Weg.
 - Generator startet mit 0 V – Amplitude immer explizit setzen.
+- **Generatorausgang:** `OUTPUT(LEFT …)` und `OUTPUT(RIGHT …)` sind EIN Zustand, der
+  letzte Befehl gewinnt. Beide Ausgänge gleichzeitig: **`OUTPUT(BOTH UNBAL)`** – steht nicht
+  im Handbuch (E-7), an Eriks UPA3 am 25.11.2026 bestätigt (Taste L+R → `OUTPUT?` meldet
+  BOTH; als Setzbefehl Status 0, Rücklesen ok, LEDs L+R).
+- **Setup abfragen ohne CLEAR** (Tastenstellung bleibt): `++ren 1` → `DELIMITER(TYPE(NL/EOI))`
+  → Abfrage (z. B. `OUTPUT?`) → 3 s warten → genau EIN `++read eoi` → `++spoll` → `++loc` →
+  `++ren 0`. Ohne DELIMITER bzw. zu früh gelesen: „NOT TRIGGERED“-Flut, Adapter hängt, UPA
+  bleibt auf REM. Weg, unbekannte Befehle zu finden: am Gerät von Hand einstellen, abfragen.
 - Hängt der Adapter (keine `++`-Antwort): USB physisch neu stecken.
 
 ## Messtechnik
