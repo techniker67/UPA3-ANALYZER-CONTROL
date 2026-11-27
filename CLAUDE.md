@@ -61,7 +61,8 @@ Entwickelt für Vintage Audio Repair Magdeburg (Erik, GitHub `techniker67`), MIT
 - Voltcraft VC-7055BT (FW V3.0.0, SN 2210062) als MM2 an **COM5** (FTDI + Nullmodem), 115200 8N1,
   Abschluss LF, kein Echo. Nur lesen: `*IDN?`, `FUNC?` (`"VOLT"`, `"VOLT AC"`, `"RES"`), `RANGE?`
   (Ω als GBK), `AUTO?`, `MEAS1?` (Überlauf `1E+9`). **Kein `SYST:REM`** (sperrt nur die Tasten),
-  `CONF?` antwortet nicht. Befunde: Projektdoc `claude/VC-7055BT_Befunde.md`.
+  `CONF?` antwortet nicht. Bei AUTO liefert es beim Bereichswechsel kurz genau 0 →
+  bis 2 Werte in Folge verworfen (v1.8.1). Vergleich mit Fluke: −0,06…−0,1 %. Befunde: Projektdoc `claude/VC-7055BT_Befunde.md`.
 - Asymmetrische HiFi-Messung über BNC; der UPA hat keinen symmetrischen XLR-Eingang.
 
 ## GPIB / UPA – nicht neu herausfinden!

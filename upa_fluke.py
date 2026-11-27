@@ -21,6 +21,7 @@ except Exception:          # pragma: no cover
 
 BAUD = 115200
 UEBERLAUF = 9e37           # Fluke meldet OL als 9.99999999E+37
+BEREICHSWECHSEL = "Bereichswechsel (Wert verworfen)"   # nur Voltcraft MM2, siehe upa_voltcraft
 
 
 class FlukeFehler(Exception):
@@ -113,6 +114,8 @@ def als_mv(m, name="Fluke"):
     name = Geraet im Hinweistext (Fluke oder Voltcraft)."""
     e = (m.get("einheit") or "").upper()
     if m.get("wert") is None:
+        if m.get("status") == "BEREICH":
+            return None, BEREICHSWECHSEL
         return None, "Überlauf (OL)"
     if e in ("VDC", "VAC", "VAC_PLUS_DC", "V"):
         return m["wert"] * 1000.0, ("" if e == "VDC" else f"Achtung: {e} statt V DC")
@@ -191,8 +194,11 @@ class Logger:
                 if fehler_folge >= 5:
                     raise FlukeFehler(f"Verbindung zum {self.name} verloren: {e}")
             self.punkte.append((round(t, 2), v, self.hinweis))
-            self.letzter = v
-            while offen and t >= offen[0] * 60.0:
+            wechsel = v is None and self.hinweis == BEREICHSWECHSEL
+            if not wechsel:
+                self.letzter = v
+            # Zeitmarke nicht auf einen verworfenen Wert legen - naechsten Wert nehmen
+            while offen and not wechsel and t >= offen[0] * 60.0:
                 mm = offen.pop(0)
                 mk = {"minute": mm, "t": round(t, 1), "wert": v, "ok": self.ok(v)}
                 if v is None and self.ist_ol(self.hinweis):

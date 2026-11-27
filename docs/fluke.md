@@ -29,4 +29,4 @@ Optional, since v1.8.0 (status: verification). A Voltcraft VC-7055BT (identical 
 2. Multimeter window → section **MM2**: port (default COM5, *Suchen* finds it), **EIN**, designation, set value and tolerance.
 3. Switch the meter to **V DC** by hand. *Live-Abgleich* / *Aufzeichnen* / *Stop* control both meters; interval, duration and time marks apply to both.
 
-The software only reads (`*IDN?`, `FUNC?`, `RANGE?`, `AUTO?`, `MEAS1?`) and never sends `SYST:REM`, so the keys stay usable. Overload (`1E+9`) shows as OL. A recording stores MM2 as its own series (CSV `upa_ruhe_mm2_…`, chart, own entry in the test report). If MM2 fails, the Fluke keeps running.
+The software only reads (`*IDN?`, `FUNC?`, `RANGE?`, `AUTO?`, `MEAS1?`) and never sends `SYST:REM`, so the keys stay usable. Overload (`1E+9`) shows as OL. With auto-ranging the meter briefly reports exactly 0 V while switching ranges; up to two such readings in a row are discarded as a gap (“Bereichswechsel”) and do not affect min/max or time marks. A recording stores MM2 as its own series (CSV `upa_ruhe_mm2_…`, chart, own entry in the test report). If MM2 fails, the Fluke keeps running.
